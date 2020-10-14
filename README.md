@@ -29,7 +29,7 @@ This may take a few minutes, so take a moment to read over the rest of this Read
 Note: If you're using Brunch, you must be in Dev Mode to use this script. That *shouldn't* be an issue as Dev Mode is enabled by default, but if you've disabled dev mode, be aware that you will not be able to use this script until Dev Mode is enabled again.
 
 ## How to Use
-If you're using Brunch already, please read the above section. The script will not work correctly on Brunch systems without chromebrew isntalled!
+If you're using Brunch already, please read the above section. The script will not work correctly on Brunch systems without chromebrew installed!
 - Download the brunch-toolkit-*version*.sh file from the releases tab https://github.com/WesBosch/brunch-toolkit/releases/latest
 - Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
 - Type: cd ~/Downloads 
