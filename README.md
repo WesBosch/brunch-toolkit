@@ -13,11 +13,11 @@ This software is provided as-is with no warranty. I am not an expert and I am no
 
 Please do not use or showcase my script in videos, and do not use this script in any other projects. If you'd like permission to do so please contact me.
 
-# What is Brunch?
+## What is Brunch?
 Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at it's official source: https://github.com/sebanc/brunch
 
 ## Before you start
-The Brunch Toolkit has a few dependencies. In linux the toolkit will install these itself, however Brunch users are currently required to install chromebrew *before* they can use the toolkit. This step may become automatic in the future, but as chromebrew is a very large project, I am requiring that users install if for themselves. If you are using linux, or have already installed chromebrew before, you do *not* need to do this.
+The Brunch Toolkit has a few dependencies. In Linux, the toolkit will usually install these itself, however Brunch users are currently required to install chromebrew *before* they can use the toolkit. This step may become automatic in the future, but since chromebrew is a very large project I am requiring that users install it for themselves. If you are using linux, or have already installed chromebrew before, you do *not* need to do this.
 
 Check out the Chromebrew project here: https://github.com/skycocker/chromebrew
 To install chromebrew: 
@@ -69,7 +69,7 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
         Skips the main menu and starts the Brunch update function.
 
     --changelog (-c)
-        Displays a changlog for the last several updates of this script
+        Displays a changelog for the last several updates of this script
 
     --chrome (-cr)
         Brunch Exclusive
@@ -81,6 +81,7 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
 
     --debug (-d)
         Tests the script without allowing updates or installs.
+        File operations and downloads will still happen. 
 
     --help (-h)
         Displays this page.
