@@ -1,7 +1,33 @@
 # Brunch Toolkit
 Stable release channel for the Brunch Toolkit
 
+This is my first script, expect bugs!
+Special thanks to all of the helpful folks of the Brunch Discord group.
+You can find me there as well:
+https://discord.gg/x2EgK2M
+
+-- Wisteria
+
+## Disclaimer
+This software is provided as-is with no warranty. I am not an expert and I am not liable for any accidental damage to your hardware or files. The toolkit has access to disks and partitions, and it can erase a disk if something goes wrong. Please send me any such bug reports.
+
+Please do not use or showcase my script in videos, and do not use this script in any other projects. If you'd like permission to do so please contact me.
+
+# What is Brunch?
+Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at it's official source: https://github.com/sebanc/brunch
+
+## Before you start
+The Brunch Toolkit has a few dependencies. In linux the toolkit will install these itself, however Brunch users are currently required to install chromebrew *before* they can use the toolkit. This step may become automatic in the future, but as chromebrew is a very large project, I am requiring that users install if for themselves. If you are using linux, or have already installed chromebrew before, you do *not* need to do this.
+
+Check out the Chromebrew project here: https://github.com/skycocker/chromebrew
+To install chromebrew: 
+- Open a terminal with ctrl + alt + t and type "shell" at the prompt
+- type: curl -Ls git.io/vddgY | bash
+- Wait for it to install. 
+This may take a few minutes, so take a moment to read over the rest of this ReadMe. When it's finished, you can begin using the Brunch Toolkit.
+
 ## How to Use
+If you're using Brunch already, please read the above section. The script will not work correctly on Brunch systems without chromebrew isntalled!
 - Download the brunch-toolkit-*version*.sh file from the releases tab https://github.com/WesBosch/brunch-toolkit/releases/latest
 - Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
 - Type: cd ~/Downloads 
