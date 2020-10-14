@@ -33,7 +33,7 @@ If you're using Brunch already, please read the above section. The script will n
 - Download the brunch-toolkit-*version*.sh file from the releases tab https://github.com/WesBosch/brunch-toolkit/releases/latest
 - Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
 - Type: cd ~/Downloads 
-- Type: bash brunch-toolkit-*version*.sh  (replace "*version*" with the actual verion you're using. Hint: it's just the filename.)
+- Type: bash brunch-toolkit-*version*.sh  (replace "*version*" with the actual version you're using. Hint: *it's just the filename*.)
 - Follow the on screen prompts. If something requires that you download a file, the script will probably offer to do it for you.
 
 Note: The toolkit relies on ~/Downloads being avaliable (except in WSL) if you use an alternate download location, the toolkit may not work properly. In most cases the script will correct itself, but I strongly suggest running the script from the ~/Downloads folder whenever you use it (Unless you choose to install it to your Brunch system)
