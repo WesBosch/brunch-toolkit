@@ -458,7 +458,7 @@ echo ""
     echo "Getting boot animation files, please wait..."
     echo ""
     if [ -z  "$ANIMS" ] && [ "$OFFLINE" == "false" ] ; then
-            downloadanims
+            webanimcheck
         elif [ -z  "$ANIMS" ] && [ "$OFFLINE" == "true" ] ; then
             echo "[ERROR] No boot animation files found!"
             echo "Looking for any .zip in ~/Downloads..."
