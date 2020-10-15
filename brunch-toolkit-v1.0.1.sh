@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0"
+TOOLVER="v1.0.1"
 OPTS="$1"
 BRUNCH=
 CHROME=
@@ -98,7 +98,7 @@ echo ""
         WEBANIMSPREFIX="https://github.com/WesBosch/brunch-bootsplash/releases/download/"
     # Get the latest brunch version directly from github, fail quietly if not able
         if [ $OFFLINE == false ]; then
-            WEBANIMS="$(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip')"
+            WEBANIMS="$(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip' | sed -e s/.zip//)"
             LATESTBRUNCH=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' )
             TKLA=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
             TKLAURL=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'browser_' | cut -d\" -f4 | grep '.sh')
@@ -461,8 +461,7 @@ echo ""
             webanimcheck
         elif [ -z  "$ANIMS" ] && [ "$OFFLINE" == "true" ] ; then
             echo "[ERROR] No boot animation files found!"
-            echo "Looking for any .zip in ~/Downloads..."
-            getanyzip
+            cleanexit
         elif [ "$OFFLINE" == "true" ] ; then
             echo "Boot animation files found!"
             selectanimoffline
@@ -524,10 +523,11 @@ echo ""
 
     getnewanim() {
         echo "Now downloading animation from github, please wait..."
-        wget -q --show-progress '$WEBANIMSPREFIX$WEBSPLASH'
+        wget -q --show-progress $WEBANIMSPREFIX$WEBSPLASH/$WEBSPLASH.zip
         echo "Boot animation downloaded! Refreshing, please wait..."
         echo ""
         ANIMS="$(find boot_splash*.zip 2> /dev/null)"
+        echo "[DEBUG] $ANIMS"
         selectanimoffline
     }
 
