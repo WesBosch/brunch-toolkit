@@ -1,6 +1,9 @@
 #!/bin/bash
-TOOLVER="v1.0.1"
+TOOLVER="v1.0.4b"
 OPTS="$1"
+# Do not move the DOWNLOADS variable from line 5!
+DOWNLOADS="$HOME/Downloads"
+SHELLTOOLS='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,'
 BRUNCH=
 CHROME=
 METHOD=
@@ -75,6 +78,7 @@ echo ""
         if [ -z "$CURRENT" ] ; then
         CURRENT=false
         fi
+        CRB=$(printenv | grep CHROMEOS_RELEASE_BOARD | cut -d"=" -f2 | cut -d"-" -f1)
         PS3=" >> "
     # Save a user's current working directory no matter where this script is called from
         BOOKMARK=$(pwd)
@@ -83,12 +87,13 @@ echo ""
         KERNEL3=$(uname -r 2>/dev/null | awk -F'[_.]' '{print $3}' | cut -c1-3)
         CPUTYPE=$(cat /proc/cpuinfo | grep "model name" | head -1 | awk -F '[:]' '{print $2}')
     # Set the working directory to simplify downloads and processes
-        if [ "$BOOKMARK" != ~/Downloads ] && [ "$WSL" == "false" ] ; then
-            cd ~/Downloads 2> /dev/null || { echo "[ERROR] Could not access ~/Downloads!" ; cleanexit ; }
-        elif [ "$BOOKMARK" != ~/Downloads ] && [ "$WSL" == "true" ] ; then
+        if [ "$BOOKMARK" != $DOWNLOADS ] && [ "$WSL" == "false" ] ; then
+            cd $DOWNLOADS 2> /dev/null || { echo "[ERROR] Could not access $DOWNLOADS!" ; cleanexit ; }
+        elif [ "$BOOKMARK" != $DOWNLOADS ] && [ "$WSL" == "true" ] ; then
             :
         fi
     # Find and count all necessary files
+        FINDSHELL=$(ls /usr/local/bin/brunch-toolkit-assets/shell-tools.btst 2> /dev/null)
         FILES="$(find *runch*tar.gz 2> /dev/null | sort -r)"
         FILECOUNT=$(find *runch*.tar.gz 2> /dev/null | sort -r | wc -l)
         OTHERTARGZ="$(find *.tar.gz 2> /dev/null | sort -r)"
@@ -125,6 +130,12 @@ echo ""
 # Checks to see if brunch_version exists and warns users if it doesn't. This file should only exist on brunch systems.
 # Boots into linux mode on linux devices
     checkcurrentos() {
+            # check if script is run as root
+        uid=`id -u $USERNAME`
+        if [ $uid -eq 0 ]; then
+            echo "$0 must NOT be run as root."
+            cleanexit
+        fi
             vanity
             RELEASE=$(cat /etc/brunch_version 2>/dev/null)
         if [ -z "$RELEASE" ] && [[ $(grep icrosoft /proc/version 2> /dev/null) ]] ; then
@@ -220,7 +231,7 @@ echo ""
         if [ "$LINUX" == "true" ] ; then
         linuxfunction
         else
-        select FUNCTION in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change Boot Animation" "Install/Update Toolkit" "Changelog" "Version" "About" Quit; do
+        select FUNCTION in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change Boot Animation" "Install/Update Toolkit" "Shell Options" "Changelog" "Version" "About" Quit; do
         if [[ -z "$FUNCTION" ]] ; then
            echo "[ERROR] Invalid option"
         elif [[ $FUNCTION == "Update Brunch" ]] ; then
@@ -241,6 +252,8 @@ echo ""
             mfbootanim
         elif [[ $FUNCTION == "Install/Update Toolkit" ]] ; then
             mftoolkit
+        elif [[ $FUNCTION == "Shell Options" ]] ; then
+            brunchshellsetup
         elif [[ $FUNCTION == "Quit" ]] ; then
             cleanexit
         else
@@ -249,6 +262,7 @@ echo ""
         done
         fi
     }
+
 
     linuxfunction() {
     select FUNCTION in "Install Brunch" "Compatibility Check" "Changelog" "Version" "About" Quit; do
@@ -374,7 +388,7 @@ echo ""
             echo ""
             echo "You're already using the latest version of the Brunch Toolkit"
         fi
-        if [ "$OFFLINE" == "true" ] ; then 
+        if [ "$OFFLINE" == "true" ] ; then
             tkoffline
             cleanexit
         fi
@@ -401,7 +415,7 @@ echo ""
         done
         cleanexit
     }
-    
+
     tkoffline(){
         echo ""
         echo "Current toolkit version:   $TOOLVER"
@@ -421,10 +435,11 @@ echo ""
         done
         cleanexit
     }
-    
+
     tbinstall(){
-        mv ~/Downloads/brunch-toolkit-$TOOLVER.sh /usr/local/bin/brunch-toolkit
+        mv -f $DOWNLOADS/brunch-toolkit-$TOOLVER.sh /usr/local/bin/brunch-toolkit
         chmod +x /usr/local/bin/brunch-toolkit
+        mkdir /usr/local/bin/brunch-toolkit-assets
         echo "Brunch Toolkit has been installed!"
         echo "To use the installed version, just type 'brunch-toolkit' without quotes"
         echo "It should look something like this:"
@@ -436,13 +451,13 @@ echo ""
         echo "Note that the installed version does not require '.sh' at the end"
         cleanexit
     }
-    
+
     tbupdate(){
         echo "Downloading latest Brunch Toolkit, please wait..."
         wget -q --show-progress "$TKLAURL"
         echo "Downloaded successfully!"
     }
-    
+
     tbupandin(){
         tbupdate
         TOOLVER=$TKLA
@@ -454,6 +469,15 @@ echo ""
 #####################################################################
 
     getanim(){
+    CURRENTLYSET=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+    PREVIOUSSET=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+    if [ -n "$PREVIOUSSET" ] && [ -z "$CURRENTLYSET" ] ; then
+    echo ""
+    echo "The boot animation was reset to the default, this is typical after an update."
+    echo "You can reset it to your last animation with the options here,"
+    echo "or reset it quickly by running the script again with -qb"
+    RESETPOSSIBLE=true
+    fi
     echo ""
     echo "Getting boot animation files, please wait..."
     echo ""
@@ -474,6 +498,27 @@ echo ""
     selectanim() {
         echo ""
         echo "Enter the number of the animation you want to use."
+        if [ "$RESETPOSSIBLE" == "true" ] ; then
+        echo "Your previously set animation was $PREVIOUSSET"
+        echo ""
+        select BOOTSPLASH in "Use previous animation" "Download others from github" ${ANIMS} Quit; do
+        if [ -z "$BOOTSPLASH" ] ; then
+           echo "[ERROR] Invalid option"
+        elif [[ $BOOTSPLASH =~ .*"previous".* ]] ; then
+            resetanim
+        elif [[ $BOOTSPLASH =~ .*"Download".* ]] ; then
+            webanimcheck
+        elif [ "$BOOTSPLASH" == "Quit" ] ; then
+            cleanexit
+        else
+            echo "Boot animation file selected."
+            changebootsplash
+        fi
+        done
+        else
+        if [ -n "$CURRENTLYSET" ] ; then
+        echo "Your currently set animation is $CURRENTLYSET"
+        fi
         echo ""
         select BOOTSPLASH in "Download others from github" ${ANIMS} Quit; do
         if [ -z "$BOOTSPLASH" ] ; then
@@ -487,11 +532,31 @@ echo ""
             changebootsplash
         fi
         done
+        fi
     }
 
     selectanimoffline() {
         echo ""
         echo "Enter the number of the animation you want to use."
+        if [ "$RESETPOSSIBLE" == "true" ] ; then
+        echo "Your previously set animation was $PREVIOUSSET"
+        echo ""
+        select BOOTSPLASH in "Use previous animation" ${ANIMS} Quit ; do
+        if [ -z "$BOOTSPLASH" ] ; then
+           echo "[ERROR] Invalid option"
+        elif [[ $BOOTSPLASH =~ .*"previous".* ]] ; then
+            resetanim
+        elif [ "$BOOTSPLASH" == "Quit" ] ; then
+            cleanexit
+        else
+            echo "Boot animation file selected."
+            changebootsplash
+        fi
+        done
+        else
+        if [ -n "$CURRENTLYSET" ] ; then
+        echo "Your currently set animation is $CURRENTLYSET"
+        fi
         echo ""
         select BOOTSPLASH in ${ANIMS} Quit ; do
         if [ -z "$BOOTSPLASH" ] ; then
@@ -503,6 +568,7 @@ echo ""
             changebootsplash
         fi
         done
+        fi
     }
 
     webanimcheck(){
@@ -535,10 +601,16 @@ echo ""
     # Unzip selection
         echo "Unzipping archive, please wait..."
         BSDIR=$(echo "$BOOTSPLASH" | sed -e s/.zip//)
-        unzip "$BOOTSPLASH" -d ~/Downloads/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
-        sudo cp ~/Downloads/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; }
-        sudo cp ~/Downloads/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
-        rm -rf ~/Downloads/$BSDIR/
+        unzip "$BOOTSPLASH" -d $DOWNLOADS/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
+        sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; }
+        sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
+        mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
+        sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
+        sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
+        rm /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
+        sudo touch /usr/share/chromeos-assets/images_100_percent/$BSDIR.btbs 2> /dev/null
+        sudo touch /usr/local/bin/brunch-toolkit-assets/$BSDIR.btbs 2> /dev/null
+        rm -rf $DOWNLOADS/$BSDIR
     # Cleanup
     # Prompt to reboot
         echo "New boot animation applied, please reboot to see results."
@@ -548,6 +620,26 @@ echo ""
         cleanexit
     }
 
+    resetanim(){
+    echo ""
+        if [ -z "$PREVIOUSSET" ] ; then
+    echo "[ERROR] Your previous boot animation could not be detected!"
+    echo "If you've just updated the toolkit or haven't installed a boot animation yet"
+    echo "please use the toolkit's menu to set an animation manually first."
+    echo ""
+    cleanexit
+    fi
+    echo "Quickly resetting your custom boot animation, please wait..."
+        sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; } 2> /dev/null
+        sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent
+        sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
+        sudo touch /usr/share/chromeos-assets/images_100_percent/$PREVIOUSSET.btbs 2> /dev/null
+        echo "New boot animation applied, please reboot to see results."
+        echo "Custom boot animations will only last until a framework or system update."
+        echo "Updating Brunch, ChromeOS or your framework options may remove the animation."
+        echo ""
+        cleanexit
+    }
 
 #####################################################################
 # Brunch Updater Functions
@@ -562,7 +654,7 @@ echo ""
             getupdate
         elif [ -z  "$FILES" ] && [ "$OFFLINE" == "true" ] ; then
             echo "[ERROR] No Brunch files found!"
-            echo "Looking for any .tar.gz in ~/Downloads..."
+            echo "Looking for any .tar.gz in $DOWNLOADS..."
             wrongfile
         elif [ "$OFFLINE" == "true" ] ; then
             echo "Brunch files found!"
@@ -739,7 +831,7 @@ echo ""
     selectcrosoffline() {
         if [ -z $CROS ] ; then
             echo "[ERROR] Chrome OS recoveries could not be identified!"
-            echo "Make sure the recovery bin or bin.zip is in ~/Downloads and the filename contains 'chromeos'"
+            echo "Make sure the recovery bin or bin.zip is in $DOWNLOADS and the filename contains 'chromeos'"
             echo "Updating Brunch only..."
             INCLUDECHROME=false
             sanitycheck
@@ -765,7 +857,7 @@ echo ""
             checkunzip
             if [ -z "$CHROME" ] && [ "$INSTALLING" == "true" ] ; then
                 echo "[ERROR] Chrome OS recovery could not be identified!"
-                echo "Make sure the recovery bin or bin.zip is in ~/Downloads and the filename contains 'chromeos'"
+                echo "Make sure the recovery bin or bin.zip is in $DOWNLOADS and the filename contains 'chromeos'"
                 echo "Unable to install, please verify your files and install manually..."
                 cleanexit
             elif [ -n "$CHROME" ] && [ "$INSTALLING" == "true" ]; then
@@ -829,7 +921,7 @@ echo ""
 # If no brunch update is present, prompt user to download most recent to link to github releases
 # getbrunch can probably be combined with this to reduce user input
     getupdate() {
-        echo "[ERROR] A Brunch release file was not found in ~/Downloads"
+        echo "[ERROR] A Brunch release file was not found in $DOWNLOADS"
         echo ""
         echo "What would you like to do?"
         echo "Select one of the following options."
@@ -901,7 +993,7 @@ echo ""
 
 # If no brunch update is present, prompt user to download most recent to link to github releases
     getcrosupdate() {
-        echo "[ERROR] A Chrome OS recovery file was not found in ~/Downloads"
+        echo "[ERROR] A Chrome OS recovery file was not found in $DOWNLOADS"
         echo ""
         echo "What would you like to do?"
         echo "Select one of the following options."
@@ -976,7 +1068,7 @@ echo ""
         echo "Grunt only works on AMD Stoney Ridge CPUs"
         echo "Samus is suggested for Intel Core ix 3rd gen and older CPUs."
         echo "Rammus is suggested for Intel Core ix 4th gen and newer CPUS."
-        echo "All other CPUs are currently unsupported"
+        echo "All other CPUs are currently unsupported."
         echo ""
         select RECOVERYTODOWNLOAD in rammus samus grunt "Choose another" Quit; do
         if [[ -z "$RECOVERYTODOWNLOAD" ]] ; then
@@ -988,10 +1080,14 @@ echo ""
         fi
         done
         fi
+        echo ""
         echo "Which recovery would you like to download?"
         echo "If you aren't sure what to use, go with the suggestion"
+        if [ "$LINUX" == "false" ] ; then
+            echo "You are currently using $CRB"
+        fi
         echo ""
-        select RECOVERYTODOWNLOAD in "Use suggested" ${RECOVERYOPTIONS} "Select another" Quit; do
+        select RECOVERYTODOWNLOAD in "Use suggested ($SUGGESTED)" ${RECOVERYOPTIONS} "Select another" Quit; do
         if [[ -z "$RECOVERYTODOWNLOAD" ]] ; then
            echo "[ERROR] Invalid option"
         elif [[ $RECOVERYTODOWNLOAD == "Quit" ]] ; then
@@ -1047,11 +1143,11 @@ echo ""
     trueupdate() {
         if [ -z "$CHROME" ] ; then
             echo "Launching Brunch update script, please wait..."
-            sudo chromeos-update -f ~/Downloads/"$BRUNCH"
+            sudo chromeos-update -f $DOWNLOADS/"$BRUNCH"
             cleanexit
         else
             echo "Launching Brunch & Chrome OS update script, please wait..."
-            sudo chromeos-update -r ~/Downloads/"$CHROME" -f ~/Downloads/"$BRUNCH"
+            sudo chromeos-update -r $DOWNLOADS/"$CHROME" -f $DOWNLOADS/"$BRUNCH"
             cleanexit
         fi
     }
@@ -1060,12 +1156,12 @@ echo ""
     debugupdate() {
         if [ -z "$RECOVERY" ] ; then
             echo "Launching Brunch update script, please wait..."
-            echo "sudo chromeos-update -f ~/Downloads/$BRUNCH"
+            echo "sudo chromeos-update -f $DOWNLOADS/$BRUNCH"
             echo "No update has happened. Exiting debug mode..."
             cleanexit
         else
             echo "Launching Brunch & Chrome OS update script, please wait..."
-            echo "sudo chromeos-update -r ~/Downloads/$RECOVERY -f ~/Downloads/$BRUNCH"
+            echo "sudo chromeos-update -r $DOWNLOADS/$RECOVERY -f $DOWNLOADS/$BRUNCH"
             echo "No update has happened. Exiting debug mode..."
             cleanexit
         fi
@@ -1073,16 +1169,16 @@ echo ""
 
     installos(){
         if [ "$LINUX" == "true" ] && [ "$WSL" == "false" ] ; then
-            { find ~/Downloads/brunch-toolkit-workspace 2> /dev/null ; rm -rf ~/Downloads/brunch-toolkit-workspace/ 2> /dev/null ; mkdir ~/Downloads/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been cleaned." ; } || { mkdir ~/Downloads/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been created." ; }
+            { find $DOWNLOADS/brunch-toolkit-workspace 2> /dev/null ; rm -rf $DOWNLOADS/brunch-toolkit-workspace/ 2> /dev/null ; mkdir $DOWNLOADS/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been cleaned." ; } || { mkdir $DOWNLOADS/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been created." ; }
             echo "Preparing to extract selected Brunch files, please wait..."
-            sudo tar zxvf ~/Downloads/$BRUNCH -C ~/Downloads/brunch-toolkit-workspace
+            sudo tar zxvf $DOWNLOADS/$BRUNCH -C $DOWNLOADS/brunch-toolkit-workspace
         elif [ "$LINUX" == "true" ] && [ "$WSL" == "true" ] ; then
             { find $BOOKMARK/brunch-toolkit-workspace 2> /dev/null ; rm -rf $BOOKMARK/brunch-toolkit-workspace/ 2> /dev/null ; mkdir $BOOKMARK/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been cleaned." ; } || { mkdir $BOOKMARK/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been created." ; }
              echo "Preparing to extract selected Brunch files, please wait..."
             sudo tar zxvf $BOOKMARK/$BRUNCH -C $BOOKMARK/brunch-toolkit-workspace
             installercheck
         else
-            { find ~/Downloads/brunch-toolkit-workspace 2> /dev/null ; rm -rf ~Downloads/brunch-toolkit-workspace/ 2> /dev/null ; mkdir ~/Downloads/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been cleaned." ; } || { mkdir ~/Downloads/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been created." ; }
+            { find $DOWNLOADS/brunch-toolkit-workspace 2> /dev/null ; rm -rf ~Downloads/brunch-toolkit-workspace/ 2> /dev/null ; mkdir $DOWNLOADS/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been cleaned." ; } || { mkdir $DOWNLOADS/brunch-toolkit-workspace ; echo "Brunch Toolkit workspace has been created." ; }
         fi
         echo ""
         echo "Please select which kind of installation you'd prefer."
@@ -1109,27 +1205,27 @@ echo ""
             echo "|                  Disks present on the device                  |"
             echo "+---------------------------------------------------------------+"
             echo ""
-            lsblk -o PATH,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1"        "$2}' | tr -s "       "
+            lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "part" | awk '{print $1"        "$2}' | tr -s "       "
             echo ""
             echo "Please select which of these disks you would like to install to."
             echo "This will erase all contents of that disk!"
             echo "Selected disk must have at least 14GB of free space."
             echo ""
-            POSSIBLEOUTS=$(lsblk -o PATH,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "part" | awk '{print $1}')
+            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "part" | awk '{print $1}')
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo ""
             echo "+---------------------------------------------------------------+"
             echo "|               Partitions present on the device                |"
             echo "+---------------------------------------------------------------+"
             echo ""
-            lsblk -o PATH,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1"        "$2}' | tr -s "       "
+            lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "disk"  | awk '{print $1"        "$2}' | tr -d "\`├─|-"
             echo ""
             echo "Please select the partition you would like to install to."
             echo "Selected partition must have at least 14GB of free space."
             echo "If you do not have a partition prepared, please make one and try again."
             echo "NTFS and EXT4 formats are supported, EXT4 is suggested."
             echo ""
-            POSSIBLEOUTS=$(lsblk -o PATH,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1}')
+            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]"  | grep -Ev "disk" | awk '{print $1}' | tr -d "\`├─|-")
         fi
         select DESTINATION in ${POSSIBLEOUTS} Quit; do
         if [ -z "$DESTINATION" ] ; then
@@ -1162,7 +1258,7 @@ echo ""
         echo "It must be greater than 14, but smaller than the destination."
         echo ""
         SIZEP1=$(df -h "$DESTINATION" | awk 'NR==2 {print $4}')
-        SIZEP2=$(lsblk -o PATH,SIZE "$DESTINATION" | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1"            "$2}')
+        SIZEP2=$(lsblk -po NAME,SIZE "$DESTINATION" | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1"            "$2}')
         echo "Destination:    Total Size:    Avaliable:"
         echo "$SIZEP2            $SIZEP1"
         echo ""
@@ -1199,11 +1295,11 @@ echo ""
     trueinstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$RECOVERY -dst $DESTINATION
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst $DESTINATION
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
             echo "Copy the boot entry from the above text and save it someplace safe!"
             echo "Please enter that boot entry into your prefered grub installation."
             cleanexit
@@ -1230,11 +1326,11 @@ echo ""
     NBtrueinstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$RECOVERY -dst $DESTINATION
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst $DESTINATION
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
             echo "Copy the boot entry from the above text and save it someplace safe"
             echo "Please enter that boot entry into your prefered grub installation."
             cleanexit
@@ -1245,12 +1341,12 @@ echo ""
     NBdebuginstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            echo "sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$CHROME -dst $DESTINATION"
+            echo "sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$CHROME -dst $DESTINATION"
             echo "No install has happened, exiting debug mode..."
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            echo "sudo bash ~/Downloads/brunch-toolkit-workspace/chromeos-install.sh -src ~/Downloads/$CHROME -dst ~/tmpmount/chromeos.img -s $SIZE"
+            echo "sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$CHROME -dst ~/tmpmount/chromeos.img -s $SIZE"
             echo "Copy the boot entry from the above text and save it someplace safe"
             echo "Please enter that boot entry into your prefered grub installation."
             echo "No install has happened, exiting debug mode..."
@@ -1288,53 +1384,29 @@ echo ""
 #####################################################################
 
 # grabs and displays a changelog from the script itself (here)
-    changelog() {
+    legacychangelog() {
         echo "
-    Changelog:
-
-        v1.0
-        Reworked Linux and WSL compatibility
-        - Script should now work fully on Brunch, most *buntu linux distros and WSL
-        Some code snippets were reworked for better compatibility
-        - Color text has been removed for compatibility with certain bash shells
-        - Hyperlinks changed to allow CTRL + Click when linking isn't supported
-        Brunch Mode now includes an installer for better toolkit access
-
-        v0.9
-        Added boot animation changing function.
-        - Only works on Brunch devices.
-
-        v0.8
-        Added install function. Currently only working on Brunch devices
-        - The framework for linux device installs is mostly finished
-        Added recovery download function.
-        - Allows user to select from a list or type a board name.
-        - File selection now unzips bin.zip entries automatically
-        Update functions and brunch install functions are considered DONE
-        New TODO list: Linux & WSL compatibility.
-        Added easter egg :)
-
-        v0.7
-        Added DEBUG compatibility check function
-        Added preliminary Linux Mode for non-brunch devices
-        - currently only running the script with -k is supported
-
-        v0.6
-        Cleaned up code
-        - Fixed typo in update function preventing updates
-        - switched instances of 'ls' to 'find'
-        - updated 'egrep ...' calls to 'grep -E ...'
-        Added section to Version for supported recoveries by Sebanc
-
-        v0.5:
-        Add DEBUG flag to prevent accidental installs while testing
-        - File operations are still permitted
-        Started work on Chrome OS update functions
-        - Downloads are not enabled yet
-        - Added file unzip
-        - Cleaned up scripts
-        Started work on seperate toolkit installer program
-
+        Legacy Changelog:
+    
+        v0.1:
+        Initial release
+        -It updated Brunch! That was all
+    
+        v0.2:
+        Add Brunch downloading funtions
+        Add sanity checks before updating
+        Overall organization improvements
+    
+        v0.3:
+        Add DEBUG changelog function
+        Add DEBUG version function
+        Add DEBUG help function
+        Add combined update function
+        Add current OS check by DennisLfromGA
+        Add code comments
+        Changed script name to Brunch Toolkit
+        Overall organization improvements
+    
         v0.4:
         Improvements to Brunch update downloader
         - Now checks against files and current version
@@ -1348,26 +1420,89 @@ echo ""
         - Allows the user to update without any prompts
         - Uses default mode if there are multiple files
         Set placeholders for other planned functions
+        
+        v0.5:
+        Add DEBUG flag to prevent accidental installs while testing
+        - File operations are still permitted
+        Started work on Chrome OS update functions
+        - Downloads are not enabled yet
+        - Added file unzip
+        - Cleaned up scripts
+        Started work on seperate toolkit installer program
+        
+        v0.6
+        Cleaned up code
+        - Fixed typo in update function preventing updates
+        - switched instances of 'ls' to 'find'
+        - updated 'egrep ...' calls to 'grep -E ...'
+        Added section to Version for supported recoveries by Sebanc
+        
+        v0.6
+        Cleaned up code
+        - Fixed typo in update function preventing updates
+        - switched instances of 'ls' to 'find'
+        - updated 'egrep ...' calls to 'grep -E ...'
+        Added section to Version for supported recoveries by Sebanc
+        
+        v0.7
+        Added DEBUG compatibility check function
+        Added preliminary Linux Mode for non-brunch devices
+        - currently only running the script with -k is supported
 
-        v0.3:
-        Add DEBUG changelog function
-        Add DEBUG version function
-        Add DEBUG help function
-        Add combined update function
-        Add current OS check by DennisLfromGA
-        Add code comments
-        Changed script name to Brunch Toolkit
-        Overall organization improvements
+        v0.8
+        Added install function. Currently only working on Brunch devices
+        - The framework for linux device installs is mostly finished
+        Added recovery download function.
+        - Allows user to select from a list or type a board name
+        - File selection now unzips bin.zip entries automatically
+        Update functions and brunch install functions are considered DONE
+        New TODO list: Linux & WSL compatibility.
+        Added easter egg :)
+        
+        v0.9
+        Added boot animation changing function.
+        - Only works on Brunch devices.
 
-        v0.2:
-        Add Brunch downloading funtions
-        Add sanity checks before updating
-        Overall organization improvements
+        v1.0
+        Reworked Linux and WSL compatibility
+        - Script should now work fully on Brunch, most *buntu linux distros and WSL
+        Some code snippets were reworked for better compatibility
+        - Color text has been removed for compatibility with certain bash shells
+        - Hyperlinks changed to allow CTRL + Click when linking isn't supported
+        Brunch Mode now includes an installer for better toolkit access
 
-        v0.1:
-        Initial release
-        -It updated Brunch! That was all.
-
+        v1.0.1b
+        Fixed bug with downloading boot_splash files
+        
+        v1.0.2b
+        Added new DOWNLOADS variable to allow pro users to have more control
+        
+        v1.0.3b
+        Added new feature to Version and Cros Recovery downloading in Brunch Mode
+        - Now reminds user of which recovery they're currently using
+        Added check for sudo and sudo su to help mitigate errors
+        Added --legacychangelog (-lc) to view entire changelog
+        - updated --changelog (-c) to only display most recent changes
+        Added new check to boot animation changing function for previous installs
+        - Now includes a method to quickly reinstall previous animations on resets
+        - Added --quickbootsplash (-qb) to do this near instantly without input
+        
+        v1.0.4b
+        Add --shell (-s) to allow adding and modifying the crosh shell tools
+        - This feature is intended to work alongside an extention to modify crosh
+        - Get it here: https://github.com/WesBosch/chrome-secure-shell/releases/latest
+        "
+        cleanexit
+    }
+    
+    changelog(){
+        echo "
+        Recent Changelog
+        
+        v1.0.4b
+        Add --shell (-s) to allow adding and modifying the crosh shell tools
+        - This feature is intended to work alongside an extention to modify crosh
+        - Get it here: https://github.com/WesBosch/chrome-secure-shell/releases/latest
         "
         cleanexit
     }
@@ -1383,6 +1518,9 @@ echo ""
         getcrosver
         echo "    System: $CROSVER"
         echo "    Kernel: $KERNEL1.$KERNEL2.$KERNEL3"
+        if [ "$LINUX" == "false" ] ; then
+            echo "    Recovery: ${CRB^}"
+        fi
         getbrunchver
         echo ""
        cleanexit
@@ -1407,7 +1545,7 @@ echo ""
         else
             CROSVER=$"$GOOGLE_CRASH_ID $VERSION $BUILD_ID"
         fi
-    }
+        }
 
 # Determine if user is running Brunch or another system.
     getbrunchver() {
@@ -1455,6 +1593,9 @@ echo ""
     --help (-h)
         Displays this page.
         Run the program without command line arguments for normal usage.
+        
+    --legacychangelog (-lc)
+        Displays the entire changlog of this script.
 
     --install (-n)
         Skips the main menu and starts the Brunch install function.
@@ -1468,16 +1609,24 @@ echo ""
         This is an experimental quick update process.
         Only use this if you know what you're doing!
         The toolkit will update Brunch WITHOUT prompts using the
-        brunch file in ~/Downloads. (It will only look for one)
+        brunch file in $DOWNLOADS. (~/Downloads by default, it will only look for one)
         If the latest release does not match the file it auto-downloads it.
         If there are no brunch files it auto-downloads the latest.
         If there are multiple files it will exit quick mode.
         This is only meant to be used with one update file present.
-
+    
+    --quickbootsplash (-qb)
+        Checks for a previously installed boot animation, and resets the current one.
+        This is useful for when an update returns the animation to the default.
+    
     --quickignore (-qi)
         Same as --quick but ignores the current version check,
         allows users to update into the release they are already on.
 
+
+    --shell (-s)
+        Allows the user to install and modify crosh shell tools for brunch.
+        
     --version (-v)
         Displays useful system information including:
         The version of the toolkit you're using
@@ -1489,7 +1638,7 @@ echo ""
 
     Usage Notes:
 
-        This toolkit looks for files in the ~/Downloads directory.
+        This toolkit looks for files in the $DOWNLOADS directory. (~/Downloads by default)
         It does expect files to have the default filenames!
         Brunch files must start with brunch and have a tar.gz extention.
         Chrome revoveries must start with chromeos and have a .bin extention.
@@ -1516,6 +1665,9 @@ echo ""
         Displays this page.
         Run the program without command line arguments for normal usage.
 
+    --legacychangelog (-lc)
+        Displays the entire changlog of this script.
+        
     --install (-n)
         Skips the main menu and starts the Brunch install function.
 
@@ -1535,7 +1687,7 @@ echo ""
 
     Usage Notes:
 
-        This toolkit looks for files in the ~/Downloads directory.
+        This toolkit looks for files in the $DOWNLOADS directory. (~/Downloads by default)
         It does expect files to have the default filenames!
         Brunch files must start with brunch and have a tar.gz extention.
         Chrome revoveries must start with chromeos and have a .bin extention.
@@ -1579,8 +1731,8 @@ echo ""
             echo "$CPUTYPE"
             echo "$AMDTYPE"
             echo "Please report these results."
-            cat /proc/cpuinfo >> ~/Downloads/toolkit-log.txt
-            echo "CPU info should be found in ~/Downloads/toolkit.log"
+            cat /proc/cpuinfo >> $DOWNLOADS/toolkit-log.txt
+            echo "CPU info should be found in $DOWNLOADS/toolkit.log"
         fi
         echo ""
         echo "Check complete!"
@@ -1719,6 +1871,163 @@ echo ""
             SUGGESTED="unknown"
         fi
     }
+    
+# Setup /usr/local/bin/brioche-tools with a variety of commands for accesibility
+    brunchshellsetup(){
+        if [[ -z "$FINDSHELL" ]] ; then
+        touch $DOWNLOADS/shell-tools.btst
+        echo "[!] Shell tools not found, please wait..."
+        SHELLFOUND="false"
+        elif [[ -n "$FINDSHELL" ]] ; then
+        cp /usr/local/bin/brunch-toolkit-assets/shell-tools.btst $DOWNLOADS/shell-tools.btst 2> /dev/null
+        SHELLFOUND="true"
+        fi
+        echo ""
+        if [ "$SHELLFOUND" == "true" ] ; then 
+        CURRENTTOOLS=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst | sed 's/,/\n/g')
+        TOOLSVAR=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst)
+        echo "Your current shell tools are:"
+        echo "$CURRENTTOOLS"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        select SHELLOPT in "Uninstall shell tools" "Add another tool" "Remove a tool" Quit; do
+        if [[ $SHELLOPT =~ .*"Uninstall".* ]]; then
+            uninstallshelltools
+        elif [[ $SHELLOPT =~ .*"Add".* ]]; then
+            addshelltools
+        elif [[ $SHELLOPT =~ .*"Remove".* ]]; then
+            echo ""
+            echo "Choose which tool to remove."
+            echo ""
+            removeshelltools
+        elif [ "$SHELLOPT" == "Quit" ] ; then
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+        elif [ "$SHELLFOUND" == "false" ] ; then 
+            echo "The default shell tools are:"
+            echo "$SHELLTOOLS"  | sed 's/,/\n/g'
+        CURRENTTOOLS=$(echo "$SHELLTOOLS"  | sed 's/,/\n/g')
+        TOOLSVAR="$SHELLTOOLS"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        select SHELLOPT in "Install shell tools" "Add another tool" "Remove a tool" Quit; do
+        if [[ $SHELLOPT =~ .*"Install".* ]]; then
+            installshelltools
+        elif [[ $SHELLOPT =~ .*"Add".* ]]; then
+            addshelltools
+        elif [[ $SHELLOPT =~ .*"Remove".* ]]; then
+            removeshelltools
+        elif [ "$SHELLOPT" == "Quit" ] ; then
+            rm -f $DOWNLOADS/shell-tools.btst
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+        fi
+    }
+    
+    addshelltools(){
+    echo ""
+    echo "You can add your own commands here for easy access to scripts or chroots"
+    echo "These commands must be one line and can not include commas (,)"
+    echo "Type the whole command and press enter, you can remove it later."
+    echo "(You do not need to include a trailing comma, this is added automatically)"
+    echo ""
+    addshelltoolssub
+    }
+    
+    addshelltoolssub(){
+    echo "Current tools:"
+    echo "$TOOLSVAR"
+    echo ""
+    read -rp "Please enter a command to add: " ADOPT
+    case $ADOPT in
+        * ) shelltooladdition;;
+        esac
+    }
+
+    shelltooladdition(){
+    TOOLSVAR="$TOOLSVAR$ADOPT,"
+    ADOPT=
+    CURRENTTOOLS=$(echo "$TOOLSVAR"  | sed 's/,/\n/g')
+    echo ""
+    echo "Current tools:"
+    echo "$TOOLSVAR"
+    echo "Add another?"
+    echo ""
+    select ANOPT in "Add more tools" "Remove a tool" "Install these tools" Quit; do
+        if [[ -z "$ANOPT" ]]; then
+            echo "[ERROR] Invalid option"
+        elif [[ $ANOPT == "Add more tools" ]]; then
+            addshelltoolssub
+        elif [[ $ANOPT == "Remove a tool" ]]; then
+            removeshelltools
+        elif [[ $ANOPT == "Install these tools" ]]; then
+            installshelltools
+        elif [ "$ANOPT" == "Quit" ] ; then
+            rm -f $DOWNLOADS/shell-tools.btst
+            cleanexit
+        else
+            shelltoolremoval
+        fi
+        done
+    }
+
+    removeshelltools(){
+        echo ""
+        echo "Choose which tool to remove."
+        echo "You can add them back later."
+        echo ""
+        echo "Current tools:"
+        echo "$TOOLSVAR"
+        echo ""
+        IFS=$'\n' ; select RMOPT in ${CURRENTTOOLS} "Add a tool" "Install these tools" Quit; do
+        if [[ -z "$RMOPT" ]]; then
+            echo "[ERROR] Invalid option"
+        elif [[ $RMOPT == "Add a tool" ]]; then
+            addshelltools
+        elif [[ $RMOPT == "Install these tools" ]]; then
+            installshelltools
+        elif [ "$RMOPT" == "Quit" ] ; then
+            rm -f $DOWNLOADS/shell-tools.btst
+            cleanexit
+        else
+            shelltoolremoval
+        fi
+        done
+    }
+    
+    shelltoolremoval(){
+        TOOLSVAR=${TOOLSVAR//$RMOPT,/}
+        CURRENTTOOLS=$(echo "$TOOLSVAR"  | sed 's/,/\n/g')
+        removeshelltools
+    }
+        
+    
+    installshelltools(){
+        echo "$TOOLSVAR" > $DOWNLOADS/shell-tools.btst
+        mv -f $DOWNLOADS/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
+        if [ "$SHELLFOUND" = "true" ] ; then 
+            echo "Shell tools have been updated!"
+        else
+            echo "Shell tools have been installed!"
+        fi
+        cleanexit
+    }
+    
+    uninstallshelltools(){
+        echo ""
+        rm -f $DOWNLOADS/shell-tools.btst
+        rm -f /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
+        echo "Shell tools have been uninstalled!"
+        cleanexit
+    }
 
 # DEBUG option handler. Silently proceeds to set variables if no options are present.
     debug() {
@@ -1732,6 +2041,8 @@ echo ""
             version
         elif [ "$OPTS" == "--changelog" ] || [ "$OPTS" == "-c" ]; then
             changelog
+        elif [ "$OPTS" == "--legacychangelog" ] || [ "$OPTS" == "-lc" ]; then
+            legacychangelog
         elif [ "$OPTS" == "--compatibility" ] || [ "$OPTS" == "-k" ]; then
             OFFLINE=true
             compatibilitycheck
@@ -1745,6 +2056,9 @@ echo ""
         elif [ "$OPTS" == "--bootsplash" ] || [ "$OPTS" == "-b" ]; then
             setvars
             mfbootanim
+        elif [ "$OPTS" == "--quickbootsplash" ] || [ "$OPTS" == "-qb" ]; then
+            PREVIOUSSET=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+            resetanim
         elif [ "$OPTS" == "--chrome" ] || [ "$OPTS" == "-cr" ]; then
             setvars
             mfchrome
@@ -1759,6 +2073,10 @@ echo ""
         elif [ "$OPTS" == "--debug" ] || [ "$OPTS" == "-d" ]; then
             DEBUGCHECK=true
             setvars
+        elif [ "$OPTS" == "--shell" ] || [ "$OPTS" == "-s" ]; then
+            OFFLINE=true
+            setvars
+            brunchshellsetup
         elif [ "$OPTS" == "" ]; then
             setvars
         elif [ "$OPTS" != "" ] ; then
@@ -1777,6 +2095,8 @@ echo ""
             version
         elif [ "$OPTS" == "--changelog" ] || [ "$OPTS" == "-c" ]; then
             changelog
+        elif [ "$OPTS" == "--legacychangelog" ] || [ "$OPTS" == "-lc" ]; then
+            legacychangelog
         elif [ "$OPTS" == "--compatibility" ] || [ "$OPTS" == "-k" ]; then
             OFFLINE=true
             compatibilitycheck
