@@ -81,7 +81,12 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
 
     --debug (-d)
         Tests the script without allowing updates or installs.
-        File operations and downloads will still happen. 
+        File operations and downloads will still happen.
+        
+    --grub (-g)
+        Brunch Exclusive
+        Allows the user to install and modify framework options in grub
+        This is a potentially dangerous hidden option and must be called manually
 
     --help (-h)
         Displays this page.
@@ -89,7 +94,10 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
 
     --install (-n)
         Skips the main menu and starts the Brunch install function.
-
+    
+    --legacychangelog (-lc)
+        Displays the entire changlog of this script.
+        
     --offline (-o)
         Disables all internet functions of the tooklit.
         It will not prompt for an internet connection at all.
@@ -105,11 +113,24 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
         If there are no brunch files it auto-downloads the latest.
         If there are multiple files it will exit quick mode.
         This is only meant to be used with one update file present.
-
+    
+    --quickbootsplash (-qb)
+        Brunch Exclusive
+        Checks for a previously installed boot animation, and resets the current one.
+        This is useful for when an update returns the animation to the default.
+    
     --quickignore (-qi)
         Brunch Exclusive
         Same as --quick but ignores the current version check,
         allows users to update into the release they are already on.
+        
+    --shell (-s)
+        Brunch Exclusive
+        Allows the user to install and modify crosh shell tools for brunch.
+        
+    --updatetoolkit (-u)
+        Brunch Exclusive
+        Allows the user to download and install the newest brunch toolkit release.
 
     --version (-v)
         Displays useful system information including:
