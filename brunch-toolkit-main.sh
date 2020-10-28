@@ -1,9 +1,11 @@
 #!/bin/bash
-TOOLVER="v1.0.4b"
+TOOLVER="v1.0.5b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
 SHELLTOOLS='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,'
+FRAMEWORKOPTIONS='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives'
+FRAMEWORKOPTIONSALL='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8821ce rtbth disable_intel_hda asus_c302 sysfs_tablet_mode force_tablet_mode suspend_s3 advanced_als'
 BRUNCH=
 CHROME=
 METHOD=
@@ -123,6 +125,8 @@ echo ""
         echo "Installing dependencies, please wait..."
         sudo apt-get update >> $BOOKMARK/toolkit-log.txt
         sudo apt-get -y install pv cgpt unzip tar >> $BOOKMARK/toolkit-log.txt
+# Add check for fedora based systems
+#       sudo dnf install........... include curl wget? Check for other possible dependencies
         fi
     }
 
@@ -1380,6 +1384,368 @@ echo ""
     }
 
 #####################################################################
+# Grub Function
+#####################################################################
+
+    editgrubconfig(){
+        FROMMENU=false
+        echo "Loading grub configuration, please wait..."
+        if [ -z "$EDITOR" ]; then EDITOR=nano; fi
+            source=$(rootdev -d)
+        if (expr match "$source" ".*[0-9]$" >/dev/null); then
+            partsource="$source"p
+        else
+            partsource="$source"
+        fi
+        sudo mkdir -p /root/tmpgrub
+        sudo mount "$partsource"12 /root/tmpgrub
+        gruboptions
+        sudo umount /root/tmpgrub
+        echo""
+        cleanexit
+    }
+    
+    gruboptions(){
+        GRUBORIGINAL=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=" | sed "s/.*options=//")
+        GRUBOPTIONS=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=" | sed "s/.*options=//")
+        #GRUBHYPER=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "enforce=hyperthreading=1")
+    grubsub
+    }
+    
+    grubsub(){
+        echo ""
+        #if [[ -n "$GRUBHYPER" ]] ; then
+        #    GRUBHYPER=true
+        #fi
+        if [[ "$NOOP" == "true" ]] ; then
+            echo "No Framework Options currently selected"
+            echo "Select 'Update Grub' if you want to continue without framework options."
+            echo ""
+            echo "What would you like to do?"
+            echo ""
+            select GRUBOPT in "Add framework option" "Backup Grub" "Restore Grub" "Update Grub" Quit; do
+            if [[ $GRUBOPT =~ .*"Add".* ]]; then
+                addfwo
+            elif [[ $GRUBOPT =~ .*"Backup".* ]]; then
+                FROMMENU=true
+                grubbackup
+            elif [[ $GRUBOPT =~ .*"Restore".* ]]; then
+                grubrestore
+            elif [ "$GRUBOPT" == "Update Grub" ] ; then
+                updategrub
+            elif [ "$GRUBOPT" == "Quit" ] ; then
+                sudo umount /root/tmpgrub
+                cleanexit
+            else
+                echo "[ERROR] Invalid option"
+            fi
+            done
+        elif [[ -n "$GRUBOPTIONS" ]] ; then
+        echo "Framework options found!"
+        echo "$GRUBOPTIONS" | cut -d' ' -f1 | sed 's/,/\n/g'
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        select GRUBOPT in "Add framework option" "Remove framework option" "Backup Grub" "Restore Grub" Quit; do
+        if [[ $GRUBOPT =~ .*"Add".* ]]; then
+            addfwo
+        elif [[ $GRUBOPT =~ .*"Backup".* ]]; then
+                FROMMENU=true
+                grubbackup
+        elif [[ $GRUBOPT =~ .*"Restore".* ]]; then
+                grubrestore
+        elif [[ $GRUBOPT =~ .*"Remove".* ]]; then
+            echo ""
+            echo "Choose which option to remove."
+            echo ""
+            removefwo
+        elif [ "$GRUBOPT" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+        else
+        echo "Framework options not found..."
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        select GRUBOPT in "Add framework option" "Backup Grub" "Restore Grub" Quit; do
+        if [[ $GRUBOPT =~ .*"Add".* ]]; then
+            addfwo
+        elif [[ $GRUBOPT =~ .*"Backup".* ]]; then
+                FROMMENU=true
+                grubbackup
+        elif [[ $GRUBOPT =~ .*"Restore".* ]]; then
+                grubrestore
+        elif [ "$GRUBOPT" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+        fi
+    }
+
+    addfwo(){
+        echo "Current framework options:"
+        echo "$GRUBOPTIONS" | cut -d' ' -f1 | sed 's/,/\n/g'
+        echo ""
+        select GRUBADD in "Add an option manually" "Get options list" "Remove an option" "Use these options" ${FRAMEWORKOPTIONS} Quit; do
+        if [[ -z $GRUBADD ]] ; then
+            echo "[ERROR] Invalid option"
+        elif [[ "$GRUBADD" == "Add an option manually" ]] ; then
+            manualaddition
+        elif  [[ "$GRUBADD" == "Get options list" ]] ; then
+            getfolist
+        elif  [[ "$GRUBADD" == "Remove an option" ]] ; then
+            removefwo
+        elif  [[ "$GRUBADD" == "Use these options" ]] ; then
+            updategrub
+        elif  [[ "$GRUBADD" == "Quit" ]] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            if [[ "$GRUBOPTIONS" =~ .*"$GRUBADD".* ]] ; then
+                echo "This option is already added!"
+                echo ""
+                GRUBADD=
+                addfwo
+            elif [[ "$GRUBOPTIONS" =~ .*"alt_touchpad".* ]] && [[ "$GRUBADD" =~ .*"alt_touchpad".* ]] ; then
+                echo "You can only use one touchpad option at a time!"
+                echo ""
+                GRUBADD=
+                addfwo
+            else
+                GRUBOPTIONS="$GRUBOPTIONS,$GRUBADD"
+                echo "$GRUBADD option added!"
+                echo ""
+                GRUBADD=
+                addfwo
+            fi
+        fi
+        done
+    }
+    
+    manualaddition(){
+            echo ""
+            echo "You can type a valid framework option in manually."
+            echo "The script will check it against all known framework options."
+            echo "If it is not a recognized option, you will be warned (it will still be added)"
+            echo "(You do not need to include a trailing comma, this is added automatically)"
+            echo ""
+            read -rp "Please enter an option to add: " ADGRUB
+            case $ADGRUB in
+            * ) manaddsub;;
+            esac
+    }
+    
+    manaddsub(){
+        if [[ -z "$ADGRUB" ]] ; then
+            echo "[ERROR] Invalid option"
+            manualaddition
+        elif [[ "$GRUBOPTIONS" =~ .*"$ADGRUB".* ]] ; then
+            echo "[!] This option is already added!"
+        elif [[ "$GRUBOPTIONS" =~ .*"alt_touchpad".* ]] && [[ "$ADGRUB" =~ .*"alt_touchpad".* ]] ; then
+            echo "[!] You can only use one touchpad option at a time!"
+        elif [[ ! "$FRAMEWORKOPTIONSALL" =~ .*"$ADGRUB" ]] ; then
+            echo "[!] Not a recognized framework option!"
+            echo "It will still be added, and you can remove it if you'd like."
+            GRUBOPTIONS="$GRUBOPTIONS,$ADGRUB"
+            echo "$ADGRUB option added!"
+            echo ""
+            ADGRUB=
+            addfwo
+        elif [[ -n $GRUBOPTIONS ]] ; then
+            GRUBOPTIONS="$GRUBOPTIONS,$ADGRUB"
+            echo "$ADGRUB option added!"
+            echo ""
+            ADGRUB=
+            addfwo
+        elif [[ -z $GRUBOPTIONS ]] ; then
+            GRUBOPTIONS="$ADGRUB"
+            echo "$ADGRUB option added!"
+            echo ""
+            ADGRUB=
+            addfwo
+        fi
+    }
+    
+    getfolist(){
+        echo "$FRAMEWORKOPTIONSFULL"
+        addfwo
+    }
+    
+    removefwo(){
+    if [[ -z "$GRUBOPTIONS" ]] ; then
+        NOOP="true"
+        grubsub
+    fi
+    echo "$GRUBOPTIONS"
+    echo ""
+    echo "Choose which framework option to remove."
+    echo "You can add them back later."
+    echo ""
+    echo "Current framework options:"
+    echo "$GRUBOPTIONS" | cut -d' ' -f1 | sed 's/,/\n/g'
+    GRUBOPTIONSSPLIT=$(echo "$GRUBOPTIONS" | cut -d' ' -f1 | sed 's/,/ /g')
+    echo ""
+    select RMGRUB in "Add an option" "Use these options" ${GRUBOPTIONSSPLIT} Quit; do
+        if [[ -z "$RMGRUB" ]]; then
+            echo "[ERROR] Invalid option"
+        elif [[ $RMGRUB == "Add an option" ]]; then
+            addfwo
+        elif [[ $RMGRUB == "Use these options" ]]; then
+            updategrub
+        elif [ "$RMGRUB" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            gruboptremoval
+        fi
+        done
+    }
+    
+    gruboptremoval(){
+    GRUBOPTIONS=${GRUBOPTIONS//$RMGRUB,/}
+    GRUBOPTIONS=${GRUBOPTIONS//$RMGRUB/}
+    RMGRUB=
+    removefwo
+    }
+
+    updategrub(){
+        if [[ "$FROMMENU" == "true" ]] ; then
+            echo "Returning to menu..."
+            editgrubconfig
+        fi
+        if [[ "$BACKUPGRUB" != "false" ]] ; then
+            grubbackupcheck
+        fi
+        FINDOPTIONS=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=")
+        GRUBOPTIONS=$(echo "$GRUBOPTIONS" | sed 's/,*$//g' | sed 's/^,//g')
+        echo "$GRUBOPTIONS"
+        if [[ -n "$GRUBOPTIONS" ]] ; then
+            GRUBOPTIONS="options=$GRUBOPTIONS"
+            updategrubsub
+        elif [[ -z "$GRUBOPTIONS" ]] ; then
+            removegrub
+        fi
+        }
+        
+    updategrubsub(){
+        if [[ -z "$FINDOPTIONS" ]] ; then
+            # if options= is not there, find cros_debug and add options directly after.
+            echo "Options added!"
+            sudo sed -i 's/cros_debug.*/& options=/g' /root/tmpgrub/efi/boot/grub.cfg
+            sudo sed -i "s/options=/$GRUBOPTIONS/g" /root/tmpgrub/efi/boot/grub.cfg
+        else
+            echo "Options updated!"
+            sudo sed -i "s/options=$GRUBORIGINAL/$GRUBOPTIONS/g" /root/tmpgrub/efi/boot/grub.cfg
+        fi
+        echo ""
+        sudo umount /root/tmpgrub
+        cleanexit
+    }
+    
+    removegrub(){
+        if [[ -z "$FINDOPTIONS" ]] ; then
+            echo "No change!"
+        else
+            echo "Options removed!"
+            sudo sed -i "s/options=$GRUBORIGINAL//g" /root/tmpgrub/efi/boot/grub.cfg
+        fi
+        echo ""
+        sudo umount /root/tmpgrub
+        cleanexit
+    }
+
+    grubbackupcheck(){
+        echo "Current Grub Configuration (before modification)"
+        echo "*********************************************************************"
+        echo ""
+        cat /root/tmpgrub/efi/boot/grub.cfg
+        echo ""
+        echo "*********************************************************************"
+        echo ""
+        echo "[!] This tool is still in beta and may misbehave"
+        echo "Would you like to make a backup of your grub file before continuing?"
+        echo ""
+        select GRUBBAK in "Make backup" "No backup" Quit; do
+        if [[ $GRUBBAK == "Make backup" ]]; then
+            grubbackup
+        elif [[ $GRUBBAK == "No backup" ]]; then
+            echo ""
+            echo "[!] Continuing without making a backup."
+            echo ""
+            BACKUPGRUB=false
+            updategrub
+        elif [ "$GRUBBAK" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+    }
+    
+    grubbackup(){
+        ALREADYBACKUP=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
+        if [[ -z "$ALREADYBACKUP" ]] ; then
+            sudo cp /root/tmpgrub/efi/boot/grub.cfg /usr/local/bin/brunch-toolkit-assets/grub.btgc 2> /dev/null
+            echo ""
+            echo "Grub.cfg has been backed up!"
+            echo ""
+            BACKUPGRUB=false
+            updategrub
+        else
+            echo ""
+            echo "[!] There is already a backup file, would you like to replace it?"
+            echo ""
+            select GRUBBAK in "Replace backup" "Keep old backup" Quit; do
+        if [[ $GRUBBAK == "Replace backup" ]]; then
+            rm -rf /usr/local/bin/brunch-toolkit-assets/*.btgc
+            yes | sudo cp -rf /root/tmpgrub/efi/boot/grub.cfg /usr/local/bin/brunch-toolkit-assets/grub.btgc
+            echo ""
+            echo "Grub.cfg has been backed up!"
+            echo ""
+            BACKUPGRUB=false
+            updategrub
+        elif [[ $GRUBBAK == "Keep old backup" ]]; then
+            echo ""
+            echo "[!] Continuing with previous backup."
+            echo ""
+            BACKUPGRUB=false
+            updategrub
+        elif [ "$GRUBBAK" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            echo "[ERROR] Invalid option"
+        fi
+        done
+        fi
+    }
+    
+    grubrestore(){
+        ALREADYBACKUP=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
+        if [[ -z "$ALREADYBACKUP" ]] ; then
+            echo ""
+            echo "There is no backup!"
+            echo "Returning to menu..."
+            editgrubconfig
+        else 
+            sudo cp /usr/local/bin/brunch-toolkit-assets/grub.btgc /root/tmpgrub/efi/boot/grub.cfg 2> /dev/null
+            echo ""
+            echo "Grub.cfg has been restored from a backup!"
+            echo "Returning to menu..."
+            editgrubconfig
+        fi  
+    }
+
+
+#####################################################################
 # DEBUG Functions
 #####################################################################
 
@@ -1491,6 +1857,11 @@ echo ""
         Add --shell (-s) to allow adding and modifying the crosh shell tools
         - This feature is intended to work alongside an extention to modify crosh
         - Get it here: https://github.com/WesBosch/chrome-secure-shell/releases/latest
+        
+        v1.0.5b
+        Add --grub (-g) to allow adding and modifying framework options.
+        - This feature is not expected to work perfectly and is not listed in the menu
+        Add --updatetoolkit (-u) to allow the user to download and install the newest brunch toolkit release.
         "
         cleanexit
     }
@@ -1499,10 +1870,10 @@ echo ""
         echo "
         Recent Changelog
         
-        v1.0.4b
-        Add --shell (-s) to allow adding and modifying the crosh shell tools
-        - This feature is intended to work alongside an extention to modify crosh
-        - Get it here: https://github.com/WesBosch/chrome-secure-shell/releases/latest
+        v1.0.5b
+        Add --grub (-g) to allow adding and modifying framework options.
+        - This feature is not expected to work perfectly and is not listed in the menu
+        Add --updatetoolkit (-u) to allow the user to download and install the newest brunch toolkit release.
         "
         cleanexit
     }
@@ -1589,6 +1960,10 @@ echo ""
 
     --debug (-d)
         Tests the script without allowing updates or installs.
+        
+    --grub (-g)
+        Allows the user to install and modify framework options in grub
+        This is a potentially dangerous hidden option and must be called manually
 
     --help (-h)
         Displays this page.
@@ -1626,6 +2001,9 @@ echo ""
 
     --shell (-s)
         Allows the user to install and modify crosh shell tools for brunch.
+        
+    --updatetoolkit (-u)
+        Allows the user to download and install the newest brunch toolkit release.
         
     --version (-v)
         Displays useful system information including:
@@ -2074,9 +2452,18 @@ echo ""
             DEBUGCHECK=true
             setvars
         elif [ "$OPTS" == "--shell" ] || [ "$OPTS" == "-s" ]; then
+            echo "[!] Running in offline mode."
             OFFLINE=true
             setvars
             brunchshellsetup
+        elif [ "$OPTS" == "--grub" ] || [ "$OPTS" == "-g" ]; then
+            echo "[!] Running in offline mode."
+            OFFLINE=true
+            setvars
+            editgrubconfig
+        elif [ "$OPTS" == "--updatetoolkit" ] || [ "$OPTS" == "-u" ]; then
+            setvars
+            tbupandin
         elif [ "$OPTS" == "" ]; then
             setvars
         elif [ "$OPTS" != "" ] ; then
@@ -2139,6 +2526,49 @@ echo ""
         fi
 }
 
+FRAMEWORKOPTIONSFULL="
+enable_updates: allow native ChromeOS updates (use at your own risk: ChromeOS will be updated but not the Brunch framework/kernel which might render your ChromeOS install unstable or even unbootable),
+
+android_init_fix: alternative init to support devices on which the android container fails to start with the standard init.
+
+mount_internal_drives: allows automatic mounting of HDD partitions in ChromeOS (android media server will scan those drives which will cause high CPU usage until it has finished, it might take hours depending on your data), partition label will be used if it exists,
+
+broadcom_wl: enable this option if you need the broadcom_wl module,
+
+iwlwifi_backport: enable this option if your intel wireless card is not supported natively in the kernel,
+
+rtl8188eu: enable this option if you have a rtl8188eu wireless card,
+
+rtl8723bu: enable this option if you have a rtl8723bu wireless card,
+
+rtl8723de: enable this option if you have a rtl8723de wireless card,
+
+rtl8821ce: enable this option if you have a rtl8821ce wireless card,
+
+rtbth: enable this option if you have a RT3290/RT3298LE bluetooth device,
+
+acpi_power_button: try this option if long pressing the power button does not display the power menu,
+
+alt_touchpad_config: try this option if you have touchpad issues,
+
+alt_touchpad_config2: another option to try if you have touchpad issues,
+
+disable_intel_hda: some Chromebooks need to blacklist the snd_hda_intel module, use this option to reproduce it,
+
+internal_mic_fix: allows to forcefully enable internal mic on some devices,
+
+asus_c302: applies asus c302 specific firmwares and fixes,
+
+baytrail_chromebook: applies baytrail chromebooks specific audio fixes,
+
+sysfs_tablet_mode: allow to control tablet mode from sysfs (echo 1 | sudo tee /sys/bus/platform/devices/tablet_mode_switch.0/tablet_mode to acivate it or use 0 to disable it),
+
+force_tablet_mode: same as above except tablet mode is enabled by default on boot,
+
+suspend_s3: disable suspend to idle (S0ix) and use S3 suspend instead,
+
+advanced_als: default ChromeOS auto-brightness is very basic (https://chromium.googlesource.com/chromiumos/platform2/+/master/power_manager/docs/screen_brightness.md). This option activates more auto-brightness levels (based on the Google Pixel Slate implementation).
+"
 
 #####################################################################
 # Script Execution
