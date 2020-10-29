@@ -39,7 +39,7 @@ This may take a few minutes, so take a moment to read over the rest of this Read
 Note: If you're using Brunch, you must be in Dev Mode to use this script. That *shouldn't* be an issue as Dev Mode is enabled by default, but if you've disabled dev mode, be aware that you will not be able to use this script until Dev Mode is enabled again.
 
 ## Important notes about the brunch-toolchain - Please Read
-*Switching dependencies may erase backups!* This means that switching from Chromebrew to the brunch-toolchain *will* erase any custom installed scripts and brunch-toolkit backup files. If you have any toolkit backup files (grub, bootsplash, shell tools, etc) you may want to backup your files before isntalling the brunch-toolchain
+*Switching dependencies may erase backups!* This means that switching from Chromebrew to the brunch-toolchain *will* erase any custom installed scripts and brunch-toolkit backup files. If you have any toolkit backup files (grub, bootsplash, shell tools, etc) you may want to backup your files before installing the brunch-toolchain
 If you want to switch from chromebrew to Sebanc's brunch-toolchain:
 - Open a crosh shell with ctrl + alt + t and type "shell" at the prompt
 - Type: mkdir ~/tmp
