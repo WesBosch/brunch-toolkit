@@ -62,7 +62,7 @@ Note: The toolkit relies on ~/Downloads being avaliable (except in WSL) if you u
 ## Usage
 This script is designed to make installing and updating brunch easy for users that are not comfortable with the command line. If you already know what you're doing, some tasks may be faster to so manually. The toolkit will provide easy to follow prompts and present options whenever necessary for the user to select from. Some features require update files, recoveries or bootsplash archives to be in the ~/Downloads folder. It is not required to unzip anything, the toolkit will do that. If no usable files are found, the user will be able to download them. (if there is a suitable internet connection)
 
-It is not a perfect script, if you find any issues please report them. It is difficult to account for every possible situation, but I've made an attempt to cover most of them. This toolkit is intended to be used on devices running Sebanc's Brunch framework, though it has some limited functionality on standard *buntu* and debian based linux distros.
+It is not a perfect script, if you find any issues please report them. It is difficult to account for every possible situation, but I've made an attempt to cover most of them. This toolkit is intended to be used on devices running Sebanc's Brunch framework, though it has some limited functionality on standard *ubuntu* and debian based linux distros.
 
 ## Features
 Brunch exclusive features:
