@@ -27,7 +27,8 @@ To install chromebrew:
 This may take a few minutes, so take a moment to read over the rest of this ReadMe. When it's finished, you can begin using the Brunch Toolkit.
 
 If you'd prefer to use the brunch-toolchain, check it out here: https://github.com/sebanc/brunch-toolchain
-To install the brunch-toolchain
+
+To install the brunch-toolchain:
 - Downloads the lastest release: https://github.com/sebanc/brunch-toolchain/releases/latest
 - Open a crosh shell with ctrl + alt + t and type "shell" at the prompt
 - Type: `sudo rm -r /usr/local/*`   (This step removes ALL data in /usr/local! Backup custom scripts if you have any!)
