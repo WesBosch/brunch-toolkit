@@ -257,7 +257,7 @@ checkfordownloads(){
     if [ -z $DOWNLOADS ] ; then
         downloads="$HOME/Downloads"
     else
-        downloads="$downloads"
+        downloads="$DOWNLOADS"
     fi
 }
 
