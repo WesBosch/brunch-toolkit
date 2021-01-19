@@ -28,6 +28,8 @@ readonly allframeworkoptions='acpi_power_button alt_touchpad_config alt_touchpad
 readonly defaultrecoveries="eve grunt hatch lulu nami rammus samus zork" #RECOVERYOPTIONS
 # All currently known Chrome OS recoveries. Update this list as necessary (any order)
 readonly allrecoveries="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork" #VALIDRECOVERIES
+# Currently avaliable Brunch Bootsplash OPTIONS
+readonly bbsopts="blank debug default"
 
 # These variables are expected to have a "false" state unless otherwise set
 onlineallowed=true
@@ -161,10 +163,10 @@ elif [ "$plate" == "editgrubconfig" ] ; then
 cat << "EOF"
 
 ╔═══════════════════════════════════════════════════════════════╗
-║            ___                                  _             ║
-║           | __| _ __ _ _ __  _____ __ _____ _ _| |__          ║
-║           | _| '_/ _` | '  \/ -_) V  V / _ \ '_| / /          ║
-║           |_||_| \__,_|_|_|_\___|\_/\_/\___/_| |_\_\          ║
+║                       ___          _                          ║
+║                      / __|_ _ _  _| |__                       ║
+║                     | (_ | '_| || | '_ \                      ║
+║                      \___|_|  \_,_|_.__/                      ║
 ║                  ___       _   _                              ║
 ║                 / _ \ _ __| |_(_)___ _ _  ___                 ║
 ║                | (_) | '_ \  _| / _ \ ' \(_-<                 ║
@@ -177,7 +179,11 @@ EOF
 elif [ "$plate" == "editgrubconfigmenu" ] ; then
 echo "
 ┌───────────────────────────────────────────────────────────────┐
-│                  ~ Framework Options Menu ~                   │
+│                     ~ Grub Options Menu ~                     │
+│                                                               │
+│       This menu allows users to modify their grub entry.      │
+│      Misuse of the tools here can result in a non-booting     │
+│      system, please be responsible & keep backups of data.    │
 │                                                               │"
 if [[ "$nooptions" == "true" ]] ; then
 echo "│            No framework options currently selected            │"
@@ -195,13 +201,27 @@ echo "
 ┌───────────────────────────────────────────────────────────────┐
 │                   ~ Kernel Options Menu ~                     │
 │                                                               │
-│        You can change the kernel Brunch uses to boot          │
-│  WARNING: Changing kernel can prevent you from logging into   │
-│  your ChromeOS account, in which case the a powerwash is the  │
+│     Users can change the kernel Brunch uses to boot here      │
+│                                                               │
+│  WARNING! Changing kernels can prevent users from logging in  │
+│  to their ChromeOS account, in which case a powerwash is the  │
 │  only solution (CTRL + ALT + SHIFT + R at the login screen).  │
 │                                                               │
-│  Before switching to a different kernel, make sure you have   │
-│                  a backup of all your data.                   │
+│            Before switching to a different kernel,            │
+│         make sure there is a backup of all user data!         │
+│                                                               │
+│  Please select one of the following options (type the number) │
+└───────────────────────────────────────────────────────────────┘
+"
+elif [ "$plate" == "bbsmain" ] ; then
+echo "
+┌───────────────────────────────────────────────────────────────┐
+│                 ~ Brunch Bootsplash Menu ~                    │
+│                                                               │
+│    These options allow users to change what Brunch displays   │
+│     on boot. This is a seperate splashscreen from the one     │
+│    from the one ChromeOS uses. To edit that, please see the   │
+│        ChromeOS Boot Animation tool from the main menu.       │
 │                                                               │
 │  Please select one of the following options (type the number) │
 └───────────────────────────────────────────────────────────────┘
@@ -444,7 +464,7 @@ startmenu() {
     if [ "$scriptmode" != "brunch" ] ; then
         linuxmenu
     else
-        select mainmenuchoice in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Framework Options" "Changelog" "System Specs" "Help" Quit; do
+        select mainmenuchoice in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" Quit; do
             if [[ -n "$mainmenuchoice" ]] ; then
                 echo "[o] User selected: $mainmenuchoice"
             fi
@@ -470,7 +490,7 @@ startmenu() {
                 toolkitoptionsmain
             elif [[ "$mainmenuchoice" == "Shell Shortcuts" ]] ; then
                 brunchshellsetupmain
-            elif [[ "$mainmenuchoice" == "Framework Options" ]] ; then
+            elif [[ "$mainmenuchoice" == "Grub Options" ]] ; then
                 editgrubconfigmain
             elif [[ "$mainmenuchoice" == "Quit" ]] ; then
                 cleanexit
@@ -995,6 +1015,7 @@ gruboptions(){
 
 grubmain(){
     if [[ "$nooptions" == "true" ]] ; then
+    echo ""
         select grubmenuoptions in "Add framework option" "Kernel Options" "Brunch Bootsplash" "Backup Grub" "Restore Grub" "Update Grub without options" Quit; do
         if [[ -n "$grubmenuoptions" ]] ; then
             echo "[o] User selected: $grubmenuoptions"
@@ -1019,6 +1040,7 @@ grubmain(){
         fi
         done
     elif [[ -n "$gruboptions" ]] ; then
+        echo ""
     echo "[o] Current framework options:"
     echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
     echo ""
@@ -1071,9 +1093,13 @@ grubmain(){
 }
 
 addfwo(){
+    echo ""
     echo "[o] Current framework options:"
     echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
-    select addgruboptions in "Add an option manually" "Get options list" "Remove an option" "Use these options" ${defaultframeworkoptions} Quit; do
+    echo ""
+    echo "Select 'Use these options' when you're ready to update grub.
+    "
+    select addgruboptions in "Use these options" "Add an option manually" "Get options list" "Remove an option" ${defaultframeworkoptions} Quit; do
     if [[ -z $addgruboptions ]] ; then
         echo "[x] Invalid option"
     elif [[ "$addgruboptions" == "Add an option manually" ]] ; then
@@ -1171,7 +1197,9 @@ echo "Current framework options:"
 echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
 gruboptionssplit=$(echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/ /g')
 echo ""
-select removegruboptions in "Add an option" "Use these options" ${gruboptionssplit} Quit; do
+echo "Select 'Use these options' when you're ready to update grub.
+"
+select removegruboptions in "Use these options" "Add an option" ${gruboptionssplit} Quit; do
     if [[ -z "$removegruboptions" ]]; then
         echo "[x] Invalid option"
     elif [[ $removegruboptions == "Add an option" ]]; then
@@ -1200,6 +1228,7 @@ updategrub(){
         grubmain
     fi
     if [[ "$backupgrub" != "false" ]] ; then
+        returnto="updategrub"
         grubbackupcheck
     fi
     findoptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=")
@@ -1252,7 +1281,7 @@ grubbackupcheck(){
         echo "[!] Continuing without making a backup."
         echo ""
         backupgrub=false
-        updategrub
+        $returnto
     elif [ "$grubbak" == "Quit" ] ; then
         sudo umount /root/tmpgrub
         cleanexit
@@ -1270,7 +1299,7 @@ grubbackup(){
         echo "[o] Grub.cfg has been backed up!"
         echo ""
         backupgrub=false
-        updategrub
+        $returnto
     else
         echo ""
         echo "[!] There is already a backup file, would you like to replace it?"
@@ -1283,13 +1312,13 @@ grubbackup(){
         echo "[o] Grub.cfg has been backed up!"
         echo ""
         backupgrub=false
-        updategrub
+        $returnto
     elif [[ $grubbak == "Keep old backup" ]]; then
         echo ""
         echo "[!] Continuing with previous backup."
         echo ""
         backupgrub=false
-        updategrub
+        $returnto
     elif [ "$grubbak" == "Quit" ] ; then
         sudo umount /root/tmpgrub
         cleanexit
@@ -1330,20 +1359,25 @@ kerneloptions(){
         if [[ "$uvc" == "false" ]] ; then
         # too old for alternate kernel options
             echo "[x] Alternative kernel options are not avaliable."
-            echo "[x] Please update Brunch to use this feature."
+                echo "[!] Minimum Brunch version required: 20201216"
+                echo "[!] Current Brunch version installed: $currentbrunchversion"
+                echo "[x] Please update Brunch to use this feature."
             echo "[o] Returning to menu...
             "
-            #grubmain
-            kernelopts="4.19 5.4 5.10"
-            kernelmenu
+            grubmain
         elif [[ "$uvc" == "true" ]] ; then
             echo "[!] Kernels 5.4 and 4.19 are avaliable"
-            echo "[!] Please update Brunch for additional options."
+                echo "[!] Minimum Brunch version required for k5.10: 20201227"
+                echo "[!] Current Brunch version installed: $currentbrunchversion"
+                echo "[x] Please update Brunch for additional features."
             kernelopts="4.19 5.4"
             kernelmenu
         fi
     elif [[ "$uvc" == "true" ]] ; then
         #kernels 5.10 and 4.19 avaliable
+        #    echo "[!] Minimum Brunch version required for >future kernel<: $NEWneededversion"
+        #    echo "[!] Current Brunch version installed: $currentbrunchversion"
+        #    echo "[x] Please update Brunch for additional features."
         kernelopts="4.19 5.4 5.10"
         kernelmenu
     fi
@@ -1353,7 +1387,6 @@ kernelmenu(){
     plate="kerneloptions" ; vanity
     echo "[o] Your current kernel is $kernelnumber
     "
-    grubkernel=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "kernel")
     select kerneloptions in ${kernelopts} Quit; do
         if [[ -z "$kerneloptions" ]]; then
             echo "[x] Invalid option"
@@ -1367,14 +1400,17 @@ kernelmenu(){
 }
 
 kerneloptchange(){
+    if [[ "$backupgrub" != "false" ]] ; then
+        returnto="kerneloptchange"
+        grubbackupcheck
+    fi
     grubkerneloriginal=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "kernel*" | cut -d' ' -f4 | cut -d'/' -f2)
     if [[ "$kerneloptions" == "5.4" ]] ; then
         sudo sed -i "s/$grubkerneloriginal/kernel/" /root/tmpgrub/efi/boot/grub.cfg
-        echo "[o] Kernel changed succesfully! Please reboot to test changes."
     else
         sudo sed -i "s/$grubkerneloriginal/kernel-$kerneloptions/" /root/tmpgrub/efi/boot/grub.cfg
-        echo "[o] Kernel changed succesfully! Please reboot to test changes."
     fi
+    echo "[o] Kernel changed succesfully! Please reboot to test changes."
     sudo umount /root/tmpgrub
     cleanexit
 }
@@ -1382,8 +1418,123 @@ kerneloptchange(){
 brunchbootsplash(){
     neededversion="20201201"
     universalversioncheck
+    if [[ "$uvc" == false ]] ; then
+        echo "[!] Minimum Brunch version required: $neededversion"
+        echo "[!] Current Brunch version installed: $currentbrunchversion"
+        echo "[x] Please update Brunch to use this feature."
+        echo "[o] Returning to menu...
+        "
+        grubmain
+    else
+        bbsmain
+    fi
 }
 
+bbsmain(){
+    plate="bbsmain" ; vanity
+    bbsexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "bootsplash*" | sed "s/.*bootsplash=//" | cut -d' ' -f1)
+    consoleexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "console=")
+    vtgcdexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "vt.global_cursor_default=")
+      if [[ -n "$bbsexists" ]] && [[ -n "$consoleexists" ]] ; then
+        echo "[o] Your current Brunch Bootsplash is: $bbsexists"
+    elif [[ -z "$bbsexists" ]] && [[ -n "$consoleexists" ]] ; then
+        echo "[o] Your current Brunch Bootsplash is: blank"
+    elif [[ -z "$bbsexists" ]] && [[ -z "$consoleexists" ]] ; then
+        echo "[o] Your current Brunch Bootsplash is: none"
+    elif [[ -n "$bbsexists" ]] && [[ -z "$consoleexists" ]] ; then
+        echo "[!] Your current Brunch Bootsplash could not be identified"
+    fi
+    echo ""
+    select bbsoptions in ${bbsopts} Quit; do
+        if [[ -z "$bbsoptions" ]]; then
+            echo "[x] Invalid option"
+        elif [ "$bbsoptions" == "Quit" ] ; then
+            sudo umount /root/tmpgrub
+            cleanexit
+        else
+            bbsoptchange
+        fi
+        done
+}
+
+
+bbsoptchange(){
+    if [[ "$backupgrub" != "false" ]] ; then
+    returnto="bbsoptchange"
+    grubbackupcheck
+fi
+    if [[ "$bbsoptions" == "blank" ]] ; then
+    console="true"
+    vtgcd="false"
+    bbs="false"
+    #add console= and remove other options
+elif [[ "$bbsoptions" == "debug" ]] ; then
+    console="false"
+    vtgcd="false"
+    bbs="false"
+    #remove all options
+else
+    console="true"
+    vtgcd="true"
+    bbs="true"
+    #add selected options
+fi
+bbsoptsreplacer
+echo "[o] Brunch Bootsplash changed succesfully! Please reboot to test changes."
+sudo umount /root/tmpgrub
+cleanexit
+}
+
+bbsoptsreplacer(){
+#check for console= and change as needed
+    if [[ -n "$consoleexists" ]] && [[ "$console" = "true" ]] ; then
+    #do nothing
+    :
+    elif [[ -z "$consoleexists" ]] && [[ "$console" = "false" ]] ; then
+    #do nothing
+    :
+    elif [[ -n "$consoleexists" ]] && [[ "$console" = "false" ]] ; then
+    #remove console
+    sudo sed -i 's/console=//' /root/tmpgrub/efi/boot/grub.cfg
+    elif [[ -z "$consoleexists" ]] && [[ "$console" = "true" ]] ; then
+    #add console
+    sudo sed -i 's/cros_debug.*/& console=/' /root/tmpgrub/efi/boot/grub.cfg
+    fi
+#check for vt.global_cursor_default= and change as needed
+    if [[ -n "$vtgcdexists" ]] && [[ "$vtgcd" = "true" ]] ; then
+    #do nothing
+    :
+    elif [[ -z "$vtgcdexists" ]] && [[ "$vtgcd" = "false" ]] ; then
+    #do nothing
+    :
+    elif [[ -n "$vtgcdexists" ]] && [[ "$vtgcd" = "false" ]] ; then
+    #remove vt.global_cursor_default=
+    sudo sed -i 's/vt.global_cursor_default=0//' /root/tmpgrub/efi/boot/grub.cfg
+    elif [[ -z "$vtgcdexists" ]] && [[ "$vtgcd" = "true" ]] ; then
+    #add vt.global_cursor_default=
+    sudo sed -i 's/console=/& vt.global_cursor_default=0/' /root/tmpgrub/efi/boot/grub.cfg
+    fi
+#check for bootsplash= and change as needed
+    if [[ -n "$bbsexists" ]] && [[ "$bbs" = "true" ]] ; then
+    #check values
+        if [[ "$bbsexists" == "$bbsoptions" ]] ; then
+            #do nothing
+            :
+        else
+            #replace $bbsexists with $bbsoptions
+            sudo sed -i "s/$bbexists/$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
+        fi
+    elif [[ -z "$bbsexists" ]] && [[ "$bbs" = "false" ]] ; then
+    #do nothing
+    :
+    elif [[ -n "$bbsexists" ]] && [[ "$bbs" = "false" ]] ; then
+    sudo sed -i "s/bootsplash=$bbsexists//" /root/tmpgrub/efi/boot/grub.cfg
+    #remove bootsplash=
+    elif [[ -z "$bbsexists" ]] && [[ "$bbs" = "true" ]] ; then
+    #add bootsplash="$bbsexists
+    sudo sed -i "s/vt.global_cursor_default=0/& bootsplash=$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
+    fi
+}
 
 #+===============================================================+
 #|  Changelog                                                    |
