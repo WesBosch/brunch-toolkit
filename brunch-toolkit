@@ -1,11 +1,11 @@
 #!/bin/bash
-TOOLVER="v1.0.5b"
+TOOLVER="v1.0.7b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
 SHELLTOOLS='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,'
 FRAMEWORKOPTIONS='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives'
-FRAMEWORKOPTIONSALL='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8821ce rtbth disable_intel_hda asus_c302 sysfs_tablet_mode force_tablet_mode suspend_s3 advanced_als'
+FRAMEWORKOPTIONSALL='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8821ce rtl8821cu  rtl88x2bu rtl8821au mbp2018 rtbth disable_intel_hda asus_c302 sysfs_tablet_mode force_tablet_mode suspend_s3 advanced_als'
 BRUNCH=
 CHROME=
 METHOD=
@@ -28,8 +28,8 @@ INSTALLTYPE=
 DESTINATION=
 CHROMEURL=
 CHROMEURLVERS=
-RECOVERYOPTIONS="eve grunt hatch lulu nami rammus samus"
-VALIDRECOVERIES="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb"
+RECOVERYOPTIONS="eve grunt hatch lulu nami rammus samus zork"
+VALIDRECOVERIES="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork"
 DISCORD="https://discord.gg/x2EgK2M"
 
 #####################################################################
@@ -118,16 +118,14 @@ echo ""
     }
 
     getextras(){
-    EXTRAS=$(dpkg-query -l cgpt pv tar unzip | grep 'no packages found matching')
-        if [ -n "$EXTRAS" ] ; then
+    #EXTRAS=$(dpkg-query -l cgpt pv tar unzip curl | grep 'no packages found matching')
+    #    if [ ! -z "$EXTRAS" ] ; then
         echo "[!] This toolkit and the Brunch script require the following dependencies:"
-        echo "pv, cgpt, unzip and tar"
-        echo "Installing dependencies, please wait..."
-        sudo apt-get update >> $BOOKMARK/toolkit-log.txt
-        sudo apt-get -y install pv cgpt unzip tar >> $BOOKMARK/toolkit-log.txt
-# Add check for fedora based systems
-#       sudo dnf install........... include curl wget? Check for other possible dependencies
-        fi
+        echo "pv, cgpt, unzip, curl and tar"
+        echo "Installing unmet dependencies, please wait..."
+        sudo apt-get update >> $DOWNLOADS/toolkit-log.txt
+        sudo apt-get -y install pv cgpt unzip tar curl >> $DOWNLOADS/toolkit-log.txt
+    #    fi
     }
 
 # This addition was proposed by DennisLfromGA
@@ -235,7 +233,7 @@ echo ""
         if [ "$LINUX" == "true" ] ; then
         linuxfunction
         else
-        select FUNCTION in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change Boot Animation" "Install/Update Toolkit" "Shell Options" "Changelog" "Version" "About" Quit; do
+        select FUNCTION in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change Boot Animation" "Install/Update Toolkit" "Shell Options" "Framework Options" "Changelog" "Version" "About" Quit; do
         if [[ -z "$FUNCTION" ]] ; then
            echo "[ERROR] Invalid option"
         elif [[ $FUNCTION == "Update Brunch" ]] ; then
@@ -258,6 +256,8 @@ echo ""
             mftoolkit
         elif [[ $FUNCTION == "Shell Options" ]] ; then
             brunchshellsetup
+        elif [[ $FUNCTION == "Framework Options" ]] ; then
+            editgrubconfig
         elif [[ $FUNCTION == "Quit" ]] ; then
             cleanexit
         else
@@ -1050,9 +1050,13 @@ echo ""
         if [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "true" ; then
         echo "Your CPU is only compatible with Grunt."
         echo "You may select others if you want, but they may not work."
+        elif [ "$SUGGESTED" == "zork" ] && [ "$STONEYRIDGE" == "true" ; then
+        echo "Your CPU is only compatible with Zork."
+        echo "You may select others if you want, but they may not work."
         elif [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "false" ; then
-        echo "Your CPU may only be compatible with Grunt, but isn't a known Stoney Ridge CPU."
+        echo "Your CPU may be compatible with Grunt or Zork, but isn't a known CPU."
         echo "Only AMD's Stoney Ridge CPUs are compatible with Grunt."
+        echo "Only AMD's Ryzen CPUs are compatible with Zork."
         echo "You may select others if you want, but they may not work."
         elif [ "$SUGGESTED" != "grunt" ] ; then
         echo "The suggested recovery for your CPU is $SUGGESTED"
@@ -1069,12 +1073,13 @@ echo ""
         echo "You can continue, but be aware that it may not work!"
         echo "Which recovery would you like to download?"
         echo ""
-        echo "Grunt only works on AMD Stoney Ridge CPUs"
+        echo "Grunt only works on AMD Stoney Ridge CPUs."
+        echo "Zork only works on AMD Ryzen CPUs."
         echo "Samus is suggested for Intel Core ix 3rd gen and older CPUs."
         echo "Rammus is suggested for Intel Core ix 4th gen and newer CPUS."
         echo "All other CPUs are currently unsupported."
         echo ""
-        select RECOVERYTODOWNLOAD in rammus samus grunt "Choose another" Quit; do
+        select RECOVERYTODOWNLOAD in rammus samus grunt zork "Choose another" Quit; do
         if [[ -z "$RECOVERYTODOWNLOAD" ]] ; then
            echo "[ERROR] Invalid option"
         elif [[ $RECOVERYTODOWNLOAD == "Quit" ]] ; then
@@ -1158,14 +1163,14 @@ echo ""
 
 # Debug ending script. prevents accidental installs or updates while testing.
     debugupdate() {
-        if [ -z "$RECOVERY" ] ; then
+        if [ -z "$CHROME" ] ; then
             echo "Launching Brunch update script, please wait..."
             echo "sudo chromeos-update -f $DOWNLOADS/$BRUNCH"
             echo "No update has happened. Exiting debug mode..."
             cleanexit
         else
             echo "Launching Brunch & Chrome OS update script, please wait..."
-            echo "sudo chromeos-update -r $DOWNLOADS/$RECOVERY -f $DOWNLOADS/$BRUNCH"
+            echo "sudo chromeos-update -r $DOWNLOADS/$CHROME -f $DOWNLOADS/$BRUNCH"
             echo "No update has happened. Exiting debug mode..."
             cleanexit
         fi
@@ -1209,27 +1214,27 @@ echo ""
             echo "|                  Disks present on the device                  |"
             echo "+---------------------------------------------------------------+"
             echo ""
-            lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "part" | awk '{print $1"        "$2}' | tr -s "       "
+            lsblk -po NAME,SIZE,TYPE | grep "[smn][dmv]" | grep -Ev "part" | awk '{print $1"        "$2}' | tr -s "       "
             echo ""
             echo "Please select which of these disks you would like to install to."
             echo "This will erase all contents of that disk!"
             echo "Selected disk must have at least 14GB of free space."
             echo ""
-            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "part" | awk '{print $1}')
+            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[smn][dmv]" | grep -Ev "part" | awk '{print $1}')
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo ""
             echo "+---------------------------------------------------------------+"
             echo "|               Partitions present on the device                |"
             echo "+---------------------------------------------------------------+"
             echo ""
-            lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]" | grep -Ev "disk"  | awk '{print $1"        "$2}' | tr -d "\`├─|-"
+            lsblk -po NAME,SIZE,TYPE | grep "[smn][dmv]" | grep -Ev "disk"  | awk '{print $1"        "$2}' | tr -d "\`├─|-"
             echo ""
             echo "Please select the partition you would like to install to."
             echo "Selected partition must have at least 14GB of free space."
             echo "If you do not have a partition prepared, please make one and try again."
             echo "NTFS and EXT4 formats are supported, EXT4 is suggested."
             echo ""
-            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[sm][dm]"  | grep -Ev "disk" | awk '{print $1}' | tr -d "\`├─|-")
+            POSSIBLEOUTS=$(lsblk -po NAME,SIZE,TYPE | grep "[smn][dmv]"  | grep -Ev "disk" | awk '{print $1}' | tr -d "\`├─|-")
         fi
         select DESTINATION in ${POSSIBLEOUTS} Quit; do
         if [ -z "$DESTINATION" ] ; then
@@ -1262,7 +1267,7 @@ echo ""
         echo "It must be greater than 14, but smaller than the destination."
         echo ""
         SIZEP1=$(df -h "$DESTINATION" | awk 'NR==2 {print $4}')
-        SIZEP2=$(lsblk -po NAME,SIZE "$DESTINATION" | grep "[sm][dm]" | grep -Ev "disk" | awk '{print $1"            "$2}')
+        SIZEP2=$(lsblk -po NAME,SIZE "$DESTINATION" | grep "[smn][dmv]" | grep -Ev "disk" | awk '{print $1"            "$2}')
         echo "Destination:    Total Size:    Avaliable:"
         echo "$SIZEP2            $SIZEP1"
         echo ""
@@ -1299,11 +1304,11 @@ echo ""
     trueinstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst $DESTINATION
+            sudo bash chromeos-install.sh -dst $DESTINATION
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
+            sudo bash chromeos-install.sh -dst ~/tmpmount/chromeos.img -s $SIZE
             echo "Copy the boot entry from the above text and save it someplace safe!"
             echo "Please enter that boot entry into your prefered grub installation."
             cleanexit
@@ -1330,11 +1335,11 @@ echo ""
     NBtrueinstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst $DESTINATION
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$CHROME -dst $DESTINATION
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$RECOVERY -dst ~/tmpmount/chromeos.img -s $SIZE
+            sudo bash $DOWNLOADS/brunch-toolkit-workspace/chromeos-install.sh -src $DOWNLOADS/$CHROME -dst ~/tmpmount/chromeos.img -s $SIZE
             echo "Copy the boot entry from the above text and save it someplace safe"
             echo "Please enter that boot entry into your prefered grub installation."
             cleanexit
@@ -1404,14 +1409,14 @@ echo ""
         echo""
         cleanexit
     }
-    
+
     gruboptions(){
         GRUBORIGINAL=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=" | sed "s/.*options=//")
         GRUBOPTIONS=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=" | sed "s/.*options=//")
         #GRUBHYPER=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "enforce=hyperthreading=1")
     grubsub
     }
-    
+
     grubsub(){
         echo ""
         #if [[ -n "$GRUBHYPER" ]] ; then
@@ -1528,7 +1533,7 @@ echo ""
         fi
         done
     }
-    
+
     manualaddition(){
             echo ""
             echo "You can type a valid framework option in manually."
@@ -1541,7 +1546,7 @@ echo ""
             * ) manaddsub;;
             esac
     }
-    
+
     manaddsub(){
         if [[ -z "$ADGRUB" ]] ; then
             echo "[ERROR] Invalid option"
@@ -1572,12 +1577,12 @@ echo ""
             addfwo
         fi
     }
-    
+
     getfolist(){
         echo "$FRAMEWORKOPTIONSFULL"
         addfwo
     }
-    
+
     removefwo(){
     if [[ -z "$GRUBOPTIONS" ]] ; then
         NOOP="true"
@@ -1607,7 +1612,7 @@ echo ""
         fi
         done
     }
-    
+
     gruboptremoval(){
     GRUBOPTIONS=${GRUBOPTIONS//$RMGRUB,/}
     GRUBOPTIONS=${GRUBOPTIONS//$RMGRUB/}
@@ -1633,7 +1638,7 @@ echo ""
             removegrub
         fi
         }
-        
+
     updategrubsub(){
         if [[ -z "$FINDOPTIONS" ]] ; then
             # if options= is not there, find cros_debug and add options directly after.
@@ -1648,7 +1653,7 @@ echo ""
         sudo umount /root/tmpgrub
         cleanexit
     }
-    
+
     removegrub(){
         if [[ -z "$FINDOPTIONS" ]] ; then
             echo "No change!"
@@ -1689,7 +1694,7 @@ echo ""
         fi
         done
     }
-    
+
     grubbackup(){
         ALREADYBACKUP=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
         if [[ -z "$ALREADYBACKUP" ]] ; then
@@ -1727,7 +1732,7 @@ echo ""
         done
         fi
     }
-    
+
     grubrestore(){
         ALREADYBACKUP=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
         if [[ -z "$ALREADYBACKUP" ]] ; then
@@ -1735,13 +1740,13 @@ echo ""
             echo "There is no backup!"
             echo "Returning to menu..."
             editgrubconfig
-        else 
+        else
             sudo cp /usr/local/bin/brunch-toolkit-assets/grub.btgc /root/tmpgrub/efi/boot/grub.cfg 2> /dev/null
             echo ""
             echo "Grub.cfg has been restored from a backup!"
             echo "Returning to menu..."
             editgrubconfig
-        fi  
+        fi
     }
 
 
@@ -1753,16 +1758,16 @@ echo ""
     legacychangelog() {
         echo "
         Legacy Changelog:
-    
+
         v0.1:
         Initial release
         -It updated Brunch! That was all
-    
+
         v0.2:
         Add Brunch downloading funtions
         Add sanity checks before updating
         Overall organization improvements
-    
+
         v0.3:
         Add DEBUG changelog function
         Add DEBUG version function
@@ -1772,7 +1777,7 @@ echo ""
         Add code comments
         Changed script name to Brunch Toolkit
         Overall organization improvements
-    
+
         v0.4:
         Improvements to Brunch update downloader
         - Now checks against files and current version
@@ -1786,7 +1791,7 @@ echo ""
         - Allows the user to update without any prompts
         - Uses default mode if there are multiple files
         Set placeholders for other planned functions
-        
+
         v0.5:
         Add DEBUG flag to prevent accidental installs while testing
         - File operations are still permitted
@@ -1795,21 +1800,21 @@ echo ""
         - Added file unzip
         - Cleaned up scripts
         Started work on seperate toolkit installer program
-        
+
         v0.6
         Cleaned up code
         - Fixed typo in update function preventing updates
         - switched instances of 'ls' to 'find'
         - updated 'egrep ...' calls to 'grep -E ...'
         Added section to Version for supported recoveries by Sebanc
-        
+
         v0.6
         Cleaned up code
         - Fixed typo in update function preventing updates
         - switched instances of 'ls' to 'find'
         - updated 'egrep ...' calls to 'grep -E ...'
         Added section to Version for supported recoveries by Sebanc
-        
+
         v0.7
         Added DEBUG compatibility check function
         Added preliminary Linux Mode for non-brunch devices
@@ -1824,7 +1829,7 @@ echo ""
         Update functions and brunch install functions are considered DONE
         New TODO list: Linux & WSL compatibility.
         Added easter egg :)
-        
+
         v0.9
         Added boot animation changing function.
         - Only works on Brunch devices.
@@ -1839,10 +1844,10 @@ echo ""
 
         v1.0.1b
         Fixed bug with downloading boot_splash files
-        
+
         v1.0.2b
         Added new DOWNLOADS variable to allow pro users to have more control
-        
+
         v1.0.3b
         Added new feature to Version and Cros Recovery downloading in Brunch Mode
         - Now reminds user of which recovery they're currently using
@@ -1852,28 +1857,38 @@ echo ""
         Added new check to boot animation changing function for previous installs
         - Now includes a method to quickly reinstall previous animations on resets
         - Added --quickbootsplash (-qb) to do this near instantly without input
-        
+
         v1.0.4b
         Add --shell (-s) to allow adding and modifying the crosh shell tools
         - This feature is intended to work alongside an extention to modify crosh
         - Get it here: https://github.com/WesBosch/chrome-secure-shell/releases/latest
-        
+
         v1.0.5b
         Add --grub (-g) to allow adding and modifying framework options.
         - This feature is not expected to work perfectly and is not listed in the menu
         Add --updatetoolkit (-u) to allow the user to download and install the newest brunch toolkit release.
+
+        v1.0.6b
+        Fixed typo preventing Linux Mode installations
+
+        v1.0.7b
+        Allow NVME partitions and disks as destinations
+        Add Check for Ryzen CPUs (Needs tested)
+        Add beta grub editor to menu (Use with caution)
+        Attempt to fix Brunch Mode installation bug
         "
         cleanexit
     }
-    
+
     changelog(){
         echo "
         Recent Changelog
-        
-        v1.0.5b
-        Add --grub (-g) to allow adding and modifying framework options.
-        - This feature is not expected to work perfectly and is not listed in the menu
-        Add --updatetoolkit (-u) to allow the user to download and install the newest brunch toolkit release.
+
+        v1.0.7b
+        Allow NVME partitions and disks as destinations
+        Add Check for Ryzen CPUs (Needs tested)
+        Add beta grub editor to menu (Use with caution)
+        Attempt to fix Brunch Mode installation bug
         "
         cleanexit
     }
@@ -1960,15 +1975,15 @@ echo ""
 
     --debug (-d)
         Tests the script without allowing updates or installs.
-        
+
     --grub (-g)
         Allows the user to install and modify framework options in grub
-        This is a potentially dangerous hidden option and must be called manually
+        This is a potentially dangerous option
 
     --help (-h)
         Displays this page.
         Run the program without command line arguments for normal usage.
-        
+
     --legacychangelog (-lc)
         Displays the entire changlog of this script.
 
@@ -1989,11 +2004,11 @@ echo ""
         If there are no brunch files it auto-downloads the latest.
         If there are multiple files it will exit quick mode.
         This is only meant to be used with one update file present.
-    
+
     --quickbootsplash (-qb)
         Checks for a previously installed boot animation, and resets the current one.
         This is useful for when an update returns the animation to the default.
-    
+
     --quickignore (-qi)
         Same as --quick but ignores the current version check,
         allows users to update into the release they are already on.
@@ -2001,10 +2016,10 @@ echo ""
 
     --shell (-s)
         Allows the user to install and modify crosh shell tools for brunch.
-        
+
     --updatetoolkit (-u)
         Allows the user to download and install the newest brunch toolkit release.
-        
+
     --version (-v)
         Displays useful system information including:
         The version of the toolkit you're using
@@ -2045,7 +2060,7 @@ echo ""
 
     --legacychangelog (-lc)
         Displays the entire changlog of this script.
-        
+
     --install (-n)
         Skips the main menu and starts the Brunch install function.
 
@@ -2119,7 +2134,13 @@ echo ""
 
     amdcpu(){
         AMDTYPE=$(cat /proc/cpuinfo | grep "[a|e][0-9]-9" | head -1 | awk -F '[:]' '{print $2}')
-        if [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
+        if [[ "$CPUTYPE" =~ .*"yzen".* ]] ; then
+            echo "[!] Brunch may be compatible with this CPU!"
+            echo "AMD support is limited, Zork is recommended."
+            SUGGESTED="zork"
+            STONEYRIDGE=true
+            asktoinstall
+        elif [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
             echo "[!] Brunch may be compatible with this CPU!"
             echo "AMD support is limited, Grunt is recommended."
             SUGGESTED="grunt"
@@ -2127,7 +2148,9 @@ echo ""
             asktoinstall
         elif [[ -z "$AMDTYPE" ]] ; then
             echo "[X] Brunch may not be compatible with this CPU."
-            echo "AMD support is limited to Stoney Ridge processors, Grunt is recommended."
+            echo "AMD support is limited to Stoney Ridge and Ryzen processors"
+            echo "Grunt is recommended for Stoney Ridge."
+            echo "Zork is recommended for Ryzen."
             echo "Please look up your processor and use your best judgement."
             SUGGESTED="grunt"
             STONEYRIDGE=false
@@ -2141,7 +2164,7 @@ echo ""
     }
 
     intelcpu(){
-        NEWCPU=$(grep -Ewo 'movbe|avx|vaes' /proc/cpuinfo  | sort | uniq | sed -e 's/movbe/Rammus is recommended./g' -e 's/avx/Eve, Nami, and Hatch are supported./g' -e 's/vaes/This CPU may require a special build to boot!/g')
+        NEWCPU=$(grep -Ewo 'movbe|avx|vaes' /proc/cpuinfo  | sort | uniq | sed -e 's/movbe/Rammus is recommended./g' -e 's/avx/Eve, Nami, and Hatch are supported./g' -e 's/vaes/Please use Brunch 87 or higher!/g')
         OLDCPU=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Samus is recommended./g')
         if [ -z "$OLDCPU" ] ; then
             echo "[X] Brunch may not be compatible with this CPU.\e[0m"
@@ -2202,7 +2225,7 @@ echo ""
                 [Nn]* ) cleanexit;;
                     * ) echo "[ERROR] Invalid option, Please type yes or no.";;
             esac
-    }
+}
 
      quietcompatibilitycheck(){
         CPUTYPE=$(cat /proc/cpuinfo | grep "model name" | head -1 | awk -F '[:]' '{print $2}')
@@ -2219,7 +2242,10 @@ echo ""
 
     quietamdcpu(){
         AMDTYPE=$(cat /proc/cpuinfo | grep "[a|e][0-9]-9" | head -1 | awk -F '[:]' '{print $2}')
-        if [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
+        if [[ "$CPUTYPE" =~ .*"yzen".* ]] ; then
+                SUGGESTED="zork"
+                STONEYRIDGE=true
+        elif [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
             SUGGESTED="grunt"
             STONEYRIDGE=true
         elif [[ -z "$AMDTYPE" ]] ; then
@@ -2249,7 +2275,7 @@ echo ""
             SUGGESTED="unknown"
         fi
     }
-    
+
 # Setup /usr/local/bin/brioche-tools with a variety of commands for accesibility
     brunchshellsetup(){
         if [[ -z "$FINDSHELL" ]] ; then
@@ -2261,7 +2287,7 @@ echo ""
         SHELLFOUND="true"
         fi
         echo ""
-        if [ "$SHELLFOUND" == "true" ] ; then 
+        if [ "$SHELLFOUND" == "true" ] ; then
         CURRENTTOOLS=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst | sed 's/,/\n/g')
         TOOLSVAR=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst)
         echo "Your current shell tools are:"
@@ -2285,7 +2311,7 @@ echo ""
             echo "[ERROR] Invalid option"
         fi
         done
-        elif [ "$SHELLFOUND" == "false" ] ; then 
+        elif [ "$SHELLFOUND" == "false" ] ; then
             echo "The default shell tools are:"
             echo "$SHELLTOOLS"  | sed 's/,/\n/g'
         CURRENTTOOLS=$(echo "$SHELLTOOLS"  | sed 's/,/\n/g')
@@ -2309,7 +2335,7 @@ echo ""
         done
         fi
     }
-    
+
     addshelltools(){
     echo ""
     echo "You can add your own commands here for easy access to scripts or chroots"
@@ -2319,7 +2345,7 @@ echo ""
     echo ""
     addshelltoolssub
     }
-    
+
     addshelltoolssub(){
     echo "Current tools:"
     echo "$TOOLSVAR"
@@ -2380,25 +2406,25 @@ echo ""
         fi
         done
     }
-    
+
     shelltoolremoval(){
         TOOLSVAR=${TOOLSVAR//$RMOPT,/}
         CURRENTTOOLS=$(echo "$TOOLSVAR"  | sed 's/,/\n/g')
         removeshelltools
     }
-        
-    
+
+
     installshelltools(){
         echo "$TOOLSVAR" > $DOWNLOADS/shell-tools.btst
         mv -f $DOWNLOADS/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
-        if [ "$SHELLFOUND" = "true" ] ; then 
+        if [ "$SHELLFOUND" = "true" ] ; then
             echo "Shell tools have been updated!"
         else
             echo "Shell tools have been installed!"
         fi
         cleanexit
     }
-    
+
     uninstallshelltools(){
         echo ""
         rm -f $DOWNLOADS/shell-tools.btst
@@ -2545,7 +2571,17 @@ rtl8723de: enable this option if you have a rtl8723de wireless card,
 
 rtl8821ce: enable this option if you have a rtl8821ce wireless card,
 
+rtl8821cu: enable this option if you have a rtl8821cu wireless card,
+
+rtl88x2bu: enable this option if you have a rtl88x2bu wireless card,
+
+rtl8812au: enable this option if you have a rtl8812au wireless card,
+
 rtbth: enable this option if you have a RT3290/RT3298LE bluetooth device,
+
+mbp2018: add T2-based macbook bridge and spi drivers,
+
+ipts: required for Surface Pro/Book/Laptop ipts touchscreens in Brunch 87 and higher,
 
 acpi_power_button: try this option if long pressing the power button does not display the power menu,
 
