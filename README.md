@@ -52,13 +52,13 @@ Now all your files have been returned and should be usable without reinstalling.
 
 ## How to Use
 If you're using Brunch already, please read the above section. The script will not work correctly on Brunch systems without chromebrew or the brunch-toolchain installed!
-- Download the brunch-toolkit-*version*.sh file from the releases tab https://github.com/WesBosch/brunch-toolkit/releases/latest
 - Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
-- Type: `cd ~/Downloads` 
-- Type: `bash brunch-toolkit-version.sh`  (Hint: replace brunch-toolkit-version.sh with it's actual filename)
+- Type: `curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/brunch-toolkit -o ~/Downloads/brunch-toolkit` 
+- Type: `sudo install -Dt /usr/local/bin -m 755 ~/Downloads/brunch-toolkit` 
+- The toolkit can now be lunched with `brunch-toolkit` and updated using the steps above or through it's own menu.
 - Follow the on screen prompts. If something requires that you download a file, the script will probably offer to do it for you.
 
-Note: The toolkit relies on ~/Downloads being avaliable (except in WSL) if you use an alternate download location, the toolkit may not work properly. In most cases the script will correct itself, but I strongly suggest running the script from the ~/Downloads folder whenever you use it (Unless you choose to install it to your Brunch system)
+Note: The toolkit relies on ~/Downloads being avaliable (except in WSL) if you use an alternate download location, the toolkit may not work properly. In most cases the script will correct itself, but I strongly suggest running the script from the ~/Downloads folder whenever you use it (Unless you install it to your Brunch system)
 
 ## Usage
 This script is designed to make installing and updating brunch easy for users that are not comfortable with the command line. If you already know what you're doing, some tasks may be faster to so manually. The toolkit will provide easy to follow prompts and present options whenever necessary for the user to select from. Some features require update files, recoveries or bootsplash archives to be in the ~/Downloads folder. It is not required to unzip anything, the toolkit will do that. If no usable files are found, the user will be able to download them. (if there is a suitable internet connection)
