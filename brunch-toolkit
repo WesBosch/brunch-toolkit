@@ -605,7 +605,7 @@ echo "Version: $TOOLVER"
     # Unzip selection
         echo "Unzipping archive, please wait..."
         BSDIR=$(echo "$BOOTSPLASH" | sed -e s/.zip//)
-        unzip "$BOOTSPLASH" -d $DOWNLOADS/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
+        bdstar -xf "$BOOTSPLASH" -C $DOWNLOADS/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
         mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
@@ -902,7 +902,7 @@ echo "Version: $TOOLVER"
     checkunzip(){
     if [[ "$CHROME" =~ .*"zip".* ]] ; then
     echo "Unzipping selected file, please wait..."
-            unzip "$CHROME" || { echo "[ERROR] Unzip failed!" ; echo "Try another file." ; echo "If this keeps happening, please try to unzip the file manually." ; getcros ; }
+            bdstar -xf "$CHROME" || { echo "[ERROR] Unzip failed!" ; echo "Try another file." ; echo "If this keeps happening, please try to unzip the file manually." ; getcros ; }
             TMPNZIP=$CHROME
             rm "$CHROME"
             CHROME=${TMPNZIP%.zip}
@@ -1027,7 +1027,7 @@ echo "Version: $TOOLVER"
         echo "Chrome OS recovery downloaded! Unzipping, please wait..."
         echo ""
         CHROME="$(find *$RECOVERYTODOWNLOAD*.bin.zip 2> /dev/null | sort -r | head -1)"
-        unzip "$CHROME"
+        bsdtar -xf "$CHROME"
         CROS="$(find *$RECOVERYTODOWNLOAD*.bin 2> /dev/null | sort -r | head -1)"
         rm "$CHROME"
         selectcrosoffline
@@ -1882,7 +1882,7 @@ fi
         Attempt to fix Brunch Mode installation bug
         
         v1.0.8b
-        Remove wget and perl dependencies
+        Remove wget, unzip and perl dependencies
         (Thanks Sebanc for the help!)
         "
         cleanexit
@@ -1893,7 +1893,7 @@ fi
         Recent Changelog
 
         v1.0.8b
-        Remove wget and perl dependencies
+        Remove wget, unzip and perl dependencies
         (Thanks Sebanc for the help!)
         "
         cleanexit
