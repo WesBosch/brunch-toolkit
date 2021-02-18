@@ -473,6 +473,9 @@ echo "Version: $TOOLVER"
 #####################################################################
 
     getanim(){
+    if [ ! -d /usr/local/bin/brunch-toolkit-assets ] ; then
+         mkdir -p /usr/local/bin/brunch-toolkit-assets
+    fi
     CURRENTLYSET=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
     PREVIOUSSET=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
     if [ -n "$PREVIOUSSET" ] && [ -z "$CURRENTLYSET" ] ; then
