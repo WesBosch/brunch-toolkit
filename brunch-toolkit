@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.7b"
+TOOLVER="v1.0.8b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -51,7 +51,7 @@ cat << "EOF"
 EOF
 printf "              \e]8;;$DISCORD\e\\ >> $DISCORD << \e]8;;\e\\"
 echo ""
-echo ""
+echo "Version: $TOOLVER"
 }
 #####################################################################
 # Main Toolkit Functions
@@ -313,7 +313,7 @@ echo ""
         if [ -z  "$FILES" ] && [ "$OFFLINE" == "false" ] ; then
             echo "[ERROR] No Brunch files found!"
             echo "Now downloading latest release $LATESTBRUNCH, please wait..."
-            wget -q --show-progress "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
+            curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
             echo "Brunch update downloaded! Updating, please wait..."
             echo ""
             FILES="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
@@ -336,7 +336,7 @@ echo ""
         elif [ "$FILECOUNT" == "1" ] && [[ ! $FILES =~ .*"$LATESTBRUNCH".* ]] ; then
             echo "[!] Brunch file may not be recent or has an unexpected filename!"
             echo "Now downloading latest release $LATESTBRUNCH, please wait..."
-            wget -q --show-progress "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
+            curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
             echo "Brunch update downloaded! Updating, please wait..."
             echo ""
             BRUNCH=$LATESTBRUNCH
@@ -458,7 +458,7 @@ echo ""
 
     tbupdate(){
         echo "Downloading latest Brunch Toolkit, please wait..."
-        wget -q --show-progress "$TKLAURL"
+        curl -L -O --progress-bar  "$TKLAURL"
         echo "Downloaded successfully!"
     }
 
@@ -593,7 +593,7 @@ echo ""
 
     getnewanim() {
         echo "Now downloading animation from github, please wait..."
-        wget -q --show-progress $WEBANIMSPREFIX$WEBSPLASH/$WEBSPLASH.zip
+        curl -L -O --progress-bar $WEBANIMSPREFIX$WEBSPLASH/$WEBSPLASH.zip
         echo "Boot animation downloaded! Refreshing, please wait..."
         echo ""
         ANIMS="$(find boot_splash*.zip 2> /dev/null)"
@@ -952,7 +952,7 @@ echo ""
 # Returns the user to the beginning of the brunch updater to use the downloaded file immediately
     getbrunch() {
         echo "Now downloading latest release $LATESTBRUNCH, please wait..."
-        wget -q --show-progress "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
+        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
         echo "Brunch release downloaded! Refreshing, please wait..."
         echo ""
         FILES="$(ls -ArR *runch*tar.gz 2> /dev/null)"
@@ -1034,11 +1034,11 @@ echo ""
     }
 
     getchromeurl(){
-        CHROMEURL=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | perl -nle'print $& while m{href="https://[^"]+\.zip"}g' | perl -nle'print $& while m{https://[^"]+}g' | tail -1)
-        CHROMEURLVERS=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | perl -nle'print $& while m{>[0-9][0-9]*<}g' | perl -nle'print $& while m{[0-9][0-9]*}g' | tail -1)
+        CHROMEURL=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | tr ' ' '\n' | tr '>' '\n' | grep href= | sed 's/"//g' | sed 's/href=//g' | tail -1)
+        CHROMEURLVERS=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | tr ' ' '\n' | tr '>' '\n' | sed 's/"//g' | sed 's/href=//g' | grep '</span' | sed 's/<\/span//g' | tail -1)
 # Possible to create case where user can select version, but I'm not going to rn
         echo "Downloading $RECOVERYTODOWNLOAD r$CHROMEURLVERS, please wait..."
-        wget -q --show-progress $CHROMEURL
+        curl -L -O --progress-bar $CHROMEURL
         }
 
 
@@ -1382,7 +1382,7 @@ echo ""
     ETCHER=$(find $BOOKMARK/balenaEtcher*ortable*.exe 2> /dev/null | head -1 )
     ETCHERLINK=$(curl -s https://api.github.com/repos/balena-io/etcher/releases/latest | grep 'browser_' | cut -d\" -f4 | grep 'Portable')
     if [ -z "$ETCHER" ] ; then
-        wget -q --show-progress $ETCHERLINK
+        curl -L -O --progress-bar $ETCHERLINK
     fi
     echo "The Etcher window should open shortly, please select your chromeos.img and your USB to write the img."
     $ETCHER
@@ -1876,6 +1876,10 @@ echo ""
         Add Check for Ryzen CPUs (Needs tested)
         Add beta grub editor to menu (Use with caution)
         Attempt to fix Brunch Mode installation bug
+        
+        v1.0.8b
+        Remove wget and perl dependencies
+        (Thanks Sebanc for the help!)
         "
         cleanexit
     }
@@ -1884,11 +1888,9 @@ echo ""
         echo "
         Recent Changelog
 
-        v1.0.7b
-        Allow NVME partitions and disks as destinations
-        Add Check for Ryzen CPUs (Needs tested)
-        Add beta grub editor to menu (Use with caution)
-        Attempt to fix Brunch Mode installation bug
+        v1.0.8b
+        Remove wget and perl dependencies
+        (Thanks Sebanc for the help!)
         "
         cleanexit
     }
