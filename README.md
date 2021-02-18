@@ -16,42 +16,7 @@ Please do not use or showcase my script in videos, and do not use this script in
 ## What is Brunch?
 Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at it's official source: https://github.com/sebanc/brunch
 
-## Before you start
-The Brunch Toolkit has a few dependencies. In Linux, the toolkit will usually install these itself, however Brunch users are currently required to install chromebrew or Sebanc's brunch-toolchain *before* they can use the toolkit. If you are using linux, or have already installed chromebrew or the brunch-toolchain before, you do *not* need to do this. You must only use ONE, you cannot use both. 
-
-Check out the Chromebrew project here: https://github.com/skycocker/chromebrew
-To install chromebrew: 
-- Open a crosh shell with ctrl + alt + t and type "shell" at the prompt
-- type: `curl -Ls git.io/vddgY | bash`
-- Wait for it to install. 
-This may take a few minutes, so take a moment to read over the rest of this ReadMe. When it's finished, you can begin using the Brunch Toolkit.
-
-If you'd prefer to use the brunch-toolchain, check it out here: https://github.com/sebanc/brunch-toolchain
-
-To install the brunch-toolchain:
-- Downloads the lastest release: https://github.com/sebanc/brunch-toolchain/releases/latest
-- Open a crosh shell with ctrl + alt + t and type "shell" at the prompt
-- Type: `sudo rm -r /usr/local/*`   (This step removes ALL data in /usr/local! Backup custom scripts if you have any!)
-- Type: `sudo chown -R 1000:1000 /usr/local`
-- Type: `tar zxf ~/Downloads/brunch_toolchain_version.tar.gz -C /usr/local`  (Hint: replace brunch_toolchain_version.tar.gz with it's actual filename)
-- Type: `start-toolchain`
-This may take a few minutes, so take a moment to read over the rest of this ReadMe. When it's finished, you can begin using the Brunch Toolkit.
-
-Note: If you're using Brunch, you must be in Dev Mode to use this script. That *shouldn't* be an issue as Dev Mode is enabled by default, but if you've disabled dev mode, be aware that you will not be able to use this script until Dev Mode is enabled again.
-
-## Important notes about the brunch-toolchain - Please Read
-*Switching dependencies may erase backups!* This means that switching from Chromebrew to the brunch-toolchain *will* erase any custom installed scripts and brunch-toolkit backup files. If you have any toolkit backup files (grub, bootsplash, shell tools, etc) you may want to backup your files before installing the brunch-toolchain
-If you want to switch from chromebrew to Sebanc's brunch-toolchain:
-- Open a crosh shell with ctrl + alt + t and type "shell" at the prompt
-- Type: `mkdir ~/tmp`
-- Type: `mv -f /usr/local/bin/brunch* ~/tmp`
-- At this point, you can follow the steps to install the brunch-toolchain. *Wait until the installation is done before continuing!*
-- Type: `mv -f ~/tmp/* /usr/local/bin`
-- Type: `rmdir ~/tmp`
-Now all your files have been returned and should be usable without reinstalling.
-
 ## How to Use
-If you're using Brunch already, please read the above section. The script will not work correctly on Brunch systems without chromebrew or the brunch-toolchain installed!
 - Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
 - Type: `curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/brunch-toolkit -o ~/Downloads/brunch-toolkit` 
 - Type: `sudo install -Dt /usr/local/bin -m 755 ~/Downloads/brunch-toolkit` 
@@ -108,7 +73,7 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
     --grub (-g)
         Brunch Exclusive
         Allows the user to install and modify framework options in grub
-        This is a potentially dangerous hidden option and must be called manually
+        This is a potentially dangerous option, use with care
 
     --help (-h)
         Displays this page.
