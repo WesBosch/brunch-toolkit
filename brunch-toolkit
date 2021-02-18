@@ -605,6 +605,7 @@ echo "Version: $TOOLVER"
     # Unzip selection
         echo "Unzipping archive, please wait..."
         BSDIR=$(echo "$BOOTSPLASH" | sed -e s/.zip//)
+        mkdir $DOWNLOADS/$BSDIR
         bsdtar -xf "$BOOTSPLASH" -C $DOWNLOADS/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
