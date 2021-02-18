@@ -474,7 +474,7 @@ echo "Version: $TOOLVER"
 
     getanim(){
     if [ ! -d /usr/local/bin/brunch-toolkit-assets ] ; then
-         mkdir -p /usr/local/bin/brunch-toolkit-assets
+         sudo mkdir -p /usr/local/bin/brunch-toolkit-assets
     fi
     CURRENTLYSET=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
     PREVIOUSSET=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
@@ -612,7 +612,6 @@ echo "Version: $TOOLVER"
         bsdtar -xf "$BOOTSPLASH" -C $DOWNLOADS/"$BSDIR" || { echo "[ERROR] Unable to unzip animation archive" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { echo "[ERROR] Unable to apply boot animation" ; cleanexit ; }
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
-        mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
         sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
         rm /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
