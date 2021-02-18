@@ -1036,6 +1036,10 @@ echo "Version: $TOOLVER"
     getchromeurl(){
         CHROMEURL=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | tr ' ' '\n' | tr '>' '\n' | grep href= | sed 's/"//g' | sed 's/href=//g' | tail -1)
         CHROMEURLVERS=$(curl https://cros.tech/device/$RECOVERYTODOWNLOAD | tr ' ' '\n' | tr '>' '\n' | sed 's/"//g' | sed 's/href=//g' | grep '</span' | sed 's/<\/span//g' | tail -1)
+if (echo "$CHROMEURL" | grep -Eq '^href=https://(.*\.zip)'); then
+        echo "[ERROR] Unable to download recovery, please get one manually from cros.tech"
+        cleanexit
+fi
 # Possible to create case where user can select version, but I'm not going to rn
         echo "Downloading $RECOVERYTODOWNLOAD r$CHROMEURLVERS, please wait..."
         curl -L -O --progress-bar $CHROMEURL
