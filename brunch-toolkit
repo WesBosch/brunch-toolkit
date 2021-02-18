@@ -1308,11 +1308,11 @@ fi
     trueinstall() {
         if [[ "$INSTALLTYPE" =~ .*"Single".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash chromeos-install.sh -dst $DESTINATION
+            sudo bash chromeos-install -dst $DESTINATION
             cleanexit
         elif [[ "$INSTALLTYPE" =~ .*"Dual".* ]] ; then
             echo "Launching Brunch install script, please wait..."
-            sudo bash chromeos-install.sh -dst ~/tmpmount/chromeos.img -s $SIZE
+            sudo bash chromeos-install -dst ~/tmpmount/chromeos.img -s $SIZE
             echo "Copy the boot entry from the above text and save it someplace safe!"
             echo "Please enter that boot entry into your prefered grub installation."
             cleanexit
