@@ -7,6 +7,14 @@
 
 # Environmental variables
 PS3=" >> "
+
+# Toolkit uses the ~/Downloads location unless a global variable specifies otherwise
+if [ -z $DOWNLOADS ] ; then
+    downloads="$HOME/Downloads"
+else
+    downloads="$DOWNLOADS"
+fi
+
 # LANG='en' # revisit this later for possible multilingual options
 
 # These variables never need to change in the script
@@ -50,14 +58,20 @@ vanity(){
 if [ -z "$plate" ] ; then
   plate="startup"
 fi
+# Divider for easily reading through debug logs
+echo "
+█████████████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
+"
+clear
+if [ "$plate" == "mainmenu" ] ; then
+header
+fi
 displayvanity
 }
 
-# This section intentionally breaks formatting for a specific look
-displayvanity(){
-    if [ "$plate" == "startup" ] ; then
-cat << "EOF"
-
+header(){
+echo "
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 █╔═════════════════════════════════════════════════════════════╗█
 █║    ___                  _      _____         _ _   _ _      ║█
@@ -69,8 +83,34 @@ cat << "EOF"
 █║   Need help? Found a bug?                                   ║█
 █║   Find me in the Brunch Discord!               --Wisteria   ║█
 █║                                                             ║█
-EOF
-echo "█║              >> $discordinvite <<               ║█
+█║              >> $discordinvite <<               ║█
+█║                                                             ║█
+█╚═════════════════════════════════════════════════════════════╝█
+█┌─────────────────────────────────────────────────────────────┐█
+█│   Tip: Hold the Ctrl key while clicking links to open them! │█
+█│Debug Key: [o] Ok! [!] Notice! [x] Warning! [ERROR] Critical!│█
+█└─────────────────────────────────────────────────────────────┘█
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+Version $toolkitversion...
+"
+}
+
+# This section intentionally breaks formatting for a specific look
+displayvanity(){
+    if [ "$plate" == "startup" ] ; then
+echo "
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+█╔═════════════════════════════════════════════════════════════╗█
+█║    ___                  _      _____         _ _   _ _      ║█
+█║   | _ )_ _ _  _ _ _  __| |_   |_   _|__  ___| | |_(_) |_    ║█
+█║   | _ \ '_| || | ' \/ _|  _ \   | |/ _ \/ _ \ | / / |  _|   ║█
+█║   |___/_|  \_,_|_||_\__|_||_|   |_|\___/\___/_|_\_\_|\__|   ║█
+█║  _________________________________________________________  ║█
+█║                                                             ║█
+█║   Need help? Found a bug?                                   ║█
+█║   Find me in the Brunch Discord!               --Wisteria   ║█
+█║                                                             ║█
+█║              >> $discordinvite <<               ║█
 █║                                                             ║█
 █╚═════════════════════════════════════════════════════════════╝█
 █┌─────────────────────────────────────────────────────────────┐█
@@ -236,9 +276,8 @@ fi
 
 # Perform a series of checks while starting up the toolkit before giving control to user
 prestart(){
-    checkforroot
-    checkfordownloads
     vanity
+    checkforroot
     checkforsystemtype
     checkforquickstartoptions
     startmenu
@@ -249,15 +288,6 @@ checkforroot(){
     if [ $userid -eq 0 ] ; then
         exitcode="1"
         cleanexit
-    fi
-}
-
-# Toolkit uses the ~/Downloads location unless a global variable specifies otherwise
-checkfordownloads(){
-    if [ -z $DOWNLOADS ] ; then
-        downloads="$HOME/Downloads"
-    else
-        downloads="$DOWNLOADS"
     fi
 }
 
@@ -345,15 +375,55 @@ setvars() {
 
 # Linux systems may need certain dependencies. Use this to get them. Arch support is untested
 getdependencies(){
-    echo "Checking for dependencies, please wait..."
-    if [ "$scriptmode" != "arch" ] && [ "$dependencies" != "archwsl" ] ; then
+    echo "[!] Checking for dependencies, please wait..."
+    if [ "$scriptmode" == "linux" ] || [ "$scriptmode" == "wsl" ] ; then
+        dependencysearch
         sudo apt-get update >> /dev/null
-        sudo apt-get -y install pv cgpt unzip tar
-    elif [ "$scriptmode" != "linux" ] && [ "$scriptmode" != "wsl" ] ; then
-        sudo dnf update >> /dev/null
-        sudo dnf install pv cgpt unzip tar
+        sudo apt-get -y install $neededprograms
+    elif [ "$scriptmode" == "arch" ] || [ "$scriptmode" == "archwsl" ] ; then
+      echo "
+┌───────────────────────────────────────────────────────────────┐
+│                   ~ Arch Linux Detected ~                     │
+│                                                               │
+│     This script requires the following packages to work:      │
+│            pv unzip tar and vboot-utils (for cgpt)            │
+│                                                               │
+│    Currently this script is not able to automate this step,   │
+│    Please make sure you have everything before continuing!    │
+│                                                               │
+│                  Are you ready to continue?                   │
+└───────────────────────────────────────────────────────────────┘
+"
+      read -rp "(y/n): " yn
+      case $yn in
+          [Yy]* ) echo "[o] Continuing to main menu..." ;;
+          [Nn]* ) exitcode="16"; cleanexit;;
+      esac
     fi
     }
+# If I ever figure out arch support, this is all I have so far
+#        sudo sudo pacman -Syu
+#        sudo pacman -S pv unzip tar vboot-utils
+
+lookforprogram(){
+    if command -v "$program" 2>/dev/null ; then
+    :
+    else
+    neededprograms="$neededprograms $program"
+    fi
+    }
+
+dependencysearch(){
+    program="pv"
+    lookforprogram
+    program="cgpt"
+    lookforprogram
+    program="unzip"
+    lookforprogram
+    program="tar"
+    lookforprogram
+    }
+
 
 # Checks for an internet connection and disables unnecessary options when no connection is present
 checkonlinestatus() {
@@ -1565,7 +1635,16 @@ returntomenu(){
     esac
 }
 
+menuheader(){
+  echo "
+█████████████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
+"
+  clear
+}
+
 startmenuhelp(){
+menuheader
     previousmenu="startmenu"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1637,6 +1716,7 @@ startmenuhelp(){
 }
 
 linuxmenuhelp(){
+menuheader
     previousmenu="startmenu"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1680,6 +1760,7 @@ linuxmenuhelp(){
 }
 
 selectanimhelp(){
+menuheader
     previousmenu="selectanim"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1718,6 +1799,7 @@ selectanimhelp(){
 }
 
 selectanimofflinehelp(){
+menuheader
     previousmenu="selectanimoffline"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1750,6 +1832,7 @@ selectanimofflinehelp(){
 }
 
 webanimacheckhelp(){
+menuheader
     previousmenu="webanimcheck"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1781,6 +1864,7 @@ webanimacheckhelp(){
 }
 
 toolkitchoicehelp(){
+menuheader
     previousmenu="toolkitchoice"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1823,6 +1907,7 @@ toolkitchoicehelp(){
 }
 
 toolkitchoiceofflinehelp(){
+menuheader
     previousmenu="toolkitchoiceoffline"
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1872,7 +1957,12 @@ cleanexit() {
     if [ -n "$exitmsg" ] ; then
         echo "$exitmsg"
     fi
-    echo "[!] Exiting..."
+    echo "[!] Exiting... debug log written to $downloads/toolkit.log"
+    # Divider for easily reading through debug logs
+    echo "
+█████████████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
+    "
     cd "$previousdir" || exit
     exit
 }
@@ -1905,6 +1995,7 @@ decodeexitcodes(){
         14) exitmsg="[ERROR] Unable to mount '$partsource'12." ;;
         15) exitmsg="[ERROR] Unable to unmount /root/tmpgrub.
         Grub operations may not work properly until the error is resolved." ;;
+        16) exitmsg="[ERROR] Arch dependencies not ready, User selected exit."
     esac
 }
 
@@ -1912,5 +2003,9 @@ decodeexitcodes(){
 #|  End of script definitions                                    |
 #+===============================================================+
 
-prestart
-cleanexit
+if [ -f $downloads/toolkit.log ] ; then
+  rm -rf  $downloads/toolkit.log
+fi
+touch $downloads/toolkit.log
+prestart | tee -a $downloads/toolkit.log
+clear
