@@ -47,6 +47,78 @@ prestartcomplete=false
 installing=false
 includechrome=false
 
+# https://unix.stackexchange.com/questions/146570/arrow-key-enter-menu/415155#415155
+# Renders a text based list of options that can be selected by the
+# user using up, down and enter keys and returns the chosen option.
+#
+#   Arguments   : list of options, maximum of 256
+#                 "opt1" "opt2" ...
+#   Return value: selected index (0 for opt1, 1 for opt2 ...)
+function select_option {
+
+    # little helpers for terminal print control and key input
+    ESC=$( printf "\033")
+    cursor_blink_on()  { printf "$ESC[?25h"; }
+    cursor_blink_off() { printf "$ESC[?25l"; }
+    cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
+    print_option()     { printf "   $1 "; }
+    print_selected()   { printf "  $ESC[7m $1 $ESC[27m"; }
+    get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+    key_input()        { read -s -n3 key 2>/dev/null >&2
+                         if [[ $key = $ESC[A ]]; then echo up;    fi
+                         if [[ $key = $ESC[B ]]; then echo down;  fi
+                         if [[ $key = ""     ]]; then echo enter; fi; }
+
+    # initially print empty new lines (scroll down if at bottom of screen)
+    for opt; do printf "\n"; done
+
+    # determine current screen position for overwriting the options
+    local lastrow=`get_cursor_row`
+    local startrow=$(($lastrow - $#))
+
+    # ensure cursor and input echoing back on upon a ctrl+c during read -s
+    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
+    cursor_blink_off
+
+    local selected=0
+    while true; do
+        # print options by overwriting the last lines
+        local idx=0
+        for opt; do
+            cursor_to $(($startrow + $idx))
+            if [ $idx -eq $selected ]; then
+                print_selected "$opt"
+            else
+                print_option "$opt"
+            fi
+            ((idx++))
+        done
+
+        # user key control
+        case `key_input` in
+            enter) break;;
+            up)    ((selected--));
+                   if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;
+            down)  ((selected++));
+                   if [ $selected -ge $# ]; then selected=0; fi;;
+        esac
+    done
+
+    # cursor position back to normal
+    cursor_to $lastrow
+    printf "\n"
+    cursor_blink_on
+
+    return $selected
+}
+
+function select_opt {
+    select_option "$@" 1>&2
+    local result=$?
+    echo $result
+    return $result
+}
+
 #+===============================================================+
 #|  Vanity plates                                                 |
 #|  Display something pretty when a user opens a menu             |
@@ -125,8 +197,9 @@ echo "
 ┌───────────────────────────────────────────────────────────────┐
 │                         ~ Main Menu ~                         │
 │                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
     elif [ "$plate" == "bootsplash" ] ; then
 cat << "EOF"
@@ -155,8 +228,9 @@ else
 echo "│            Easily change ChromeOS boot animations!            │"
 fi
 echo "│                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 elif [ "$plate" == "bootsplashwebmenu" ] ; then
 echo "
@@ -165,8 +239,9 @@ echo "
 │                                                               │
 │      These are the avaliable animations from the github.      │
 │                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 elif [ "$plate" == "toolkitoptions" ] ; then
 cat << "EOF"
@@ -196,8 +271,9 @@ echo "
 │                                                               │
 │        Update the toolkit or install for easy access          │
 │                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 elif [ "$plate" == "editgrubconfig" ] ; then
 cat << "EOF"
@@ -233,8 +309,9 @@ else
 echo "│                   No framework options found                  │"
 fi
 echo "│                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 elif [ "$plate" == "kerneloptions" ] ; then
 echo "
@@ -250,8 +327,9 @@ echo "
 │            Before switching to a different kernel,            │
 │         make sure there is a backup of all user data!         │
 │                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 elif [ "$plate" == "bbsmain" ] ; then
 echo "
@@ -263,8 +341,9 @@ echo "
 │    from the one ChromeOS uses. To edit that, please see the   │
 │        ChromeOS Boot Animation tool from the main menu.       │
 │                                                               │
-│  Please select one of the following options (type the number) │
+│           Please select one of the following options          │
 └───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
 fi
 }
@@ -279,9 +358,25 @@ prestart(){
     vanity
     checkforroot
     checkforsystemtype
+    checkfordualboot
     checkforquickstartoptions
     startmenu
 }
+
+checkfordualboot(){
+    source="$(rootdev -d)"
+    if (expr match "$source" ".*[0-9]$" >/dev/null); then
+        partsource="$source"p
+    else
+        partsource="$source"
+    fi
+    if [[ "$source" =~ .*"loop".* ]] ; then
+      dualboot="true"
+    else
+      dualboot="false"
+    fi
+}
+
 
 # Toolkit behaves badly if ran as root, check to avoid that
 checkforroot(){
@@ -381,6 +476,7 @@ getdependencies(){
         sudo apt-get update >> /dev/null
         sudo apt-get -y install $neededprograms
     elif [ "$scriptmode" == "arch" ] || [ "$scriptmode" == "archwsl" ] ; then
+      clear
       echo "
 ┌───────────────────────────────────────────────────────────────┐
 │                   ~ Arch Linux Detected ~                     │
@@ -529,51 +625,84 @@ validop() {
 #|  Functions that display and control the menu                  |
 #+===============================================================+
 
-startmenu() {
-    plate="mainmenu" ; vanity
+startmenu(){
+plate="mainmenu" ; vanity
     if [ "$scriptmode" != "brunch" ] ; then
         linuxmenu
-    else
-        select mainmenuchoice in "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" Quit; do
-            if [[ -n "$mainmenuchoice" ]] ; then
-                echo "[o] User selected: $mainmenuchoice"
-            fi
-            if [[ -z "$mainmenuchoice" ]] ; then
-                echo "[x] Invalid option"
-            elif [[ "$mainmenuchoice" == "Update Brunch" ]] ; then
-                updatebrunchmain
-            elif [[ "$mainmenuchoice" == "Update Chrome OS & Brunch" ]] ; then
-                updatebrunchandchrome
-            elif [[ "$mainmenuchoice" == "Install Brunch" ]] ; then
-                installbrunchmain
-            elif [[ "$mainmenuchoice" == "Compatibility Check" ]] ; then
-                compatibilitycheckmain
-            elif [[ "$mainmenuchoice" == "Changelog" ]] ; then
-                displaychangelog
-            elif [[ "$mainmenuchoice" == "System Specs" ]] ; then
-                displayversion
-            elif [[ "$mainmenuchoice" == "Help" ]] ; then
-                startmenuhelp
-            elif [[ "$mainmenuchoice" == "Change ChromeOS Boot Animation" ]] ; then
-                updatebootsplashmain
-            elif [[ "$mainmenuchoice" == "Install/Update Toolkit" ]] ; then
-                toolkitoptionsmain
-            elif [[ "$mainmenuchoice" == "Shell Shortcuts" ]] ; then
-                brunchshellsetupmain
-            elif [[ "$mainmenuchoice" == "Grub Options" ]] ; then
-                editgrubconfigmain
-            elif [[ "$mainmenuchoice" == "Quit" ]] ; then
-                cleanexit
-            else
-                :
-            fi
-        done
+    elif [ "$dualboot" == "false" ] ; then
+    case `select_opt "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit"` in
+        0) mainmenuchoice="Update Brunch" ;;
+        1) mainmenuchoice="Update ChromeOS & Brunch" ;;
+        2) mainmenuchoice="Install Brunch" ;;
+        3) mainmenuchoice="Compatibility Check" ;;
+        4) mainmenuchoice="Change ChromeOS Boot Animation" ;;
+        5) mainmenuchoice="Install/Update Toolkit" ;;
+        6) mainmenuchoice="Shell Shortcuts" ;;
+        7) mainmenuchoice="Grub Options" ;;
+        8) mainmenuchoice="Changelog" ;;
+        9) mainmenuchoice="System Specs" ;;
+        10) mainmenuchoice="Help" ;;
+        11) mainmenuchoice="Quit" ;;
+      esac
+    elif [ "$dualboot" == "true" ] ; then
+    case `select_opt "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit"` in
+        0) mainmenuchoice="Update Brunch" ;;
+        1) mainmenuchoice="Update ChromeOS & Brunch" ;;
+        2) mainmenuchoice="Install Brunch" ;;
+        3) mainmenuchoice="Compatibility Check" ;;
+        4) mainmenuchoice="Change ChromeOS Boot Animation" ;;
+        5) mainmenuchoice="Install/Update Toolkit" ;;
+        6) mainmenuchoice="Shell Shortcuts" ;;
+        7) mainmenuchoice="Changelog" ;;
+        8) mainmenuchoice="System Specs" ;;
+        9) mainmenuchoice="Help" ;;
+        10) mainmenuchoice="Quit" ;;
+      esac
     fi
+if [[ -n "$mainmenuchoice" ]] ; then
+    echo "[o] User selected: $mainmenuchoice"
+fi
+if [[ -z "$mainmenuchoice" ]] ; then
+    echo "[x] Invalid option"
+elif [[ "$mainmenuchoice" == "Update Brunch" ]] ; then
+    updatebrunchmain
+elif [[ "$mainmenuchoice" == "Update ChromeOS & Brunch" ]] ; then
+    updatebrunchandchrome
+elif [[ "$mainmenuchoice" == "Install Brunch" ]] ; then
+    installbrunchmain
+elif [[ "$mainmenuchoice" == "Compatibility Check" ]] ; then
+    compatibilitycheckmain
+elif [[ "$mainmenuchoice" == "Changelog" ]] ; then
+    displaychangelog
+elif [[ "$mainmenuchoice" == "System Specs" ]] ; then
+    displayversion
+elif [[ "$mainmenuchoice" == "Help" ]] ; then
+    startmenuhelp
+elif [[ "$mainmenuchoice" == "Change ChromeOS Boot Animation" ]] ; then
+    updatebootsplashmain
+elif [[ "$mainmenuchoice" == "Install/Update Toolkit" ]] ; then
+    toolkitoptionsmain
+elif [[ "$mainmenuchoice" == "Shell Shortcuts" ]] ; then
+    brunchshellsetupmain
+elif [[ "$mainmenuchoice" == "Grub Options" ]] ; then
+    editgrubconfigmain
+elif [[ "$mainmenuchoice" == "Quit" ]] ; then
+    cleanexit
+else
+    :
+fi
 }
 
 # A limited menu presented to non-brunch users
 linuxmenu() {
-    select mainmenuchoice in "Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" Quit; do
+      case `select_opt "Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit"` in
+          0) mainmenuchoice="Install Brunch" ;;
+          1) mainmenuchoice="Compatibility Check" ;;
+          2) mainmenuchoice="Changelog" ;;
+          3) mainmenuchoice="System Specs" ;;
+          4) mainmenuchoice="Help" ;;
+          5) mainmenuchoice="Quit" ;;
+        esac
         if [[ -n "$mainmenuchoice" ]] ; then
             echo "[o] User selected: $mainmenuchoice"
         fi
@@ -594,7 +723,6 @@ linuxmenu() {
         else
         :
         fi
-    done
 }
 
 
@@ -1061,10 +1189,22 @@ grubstartup(){
         partsource="$source"
     fi
     if [[ "$source" =~ .*"loop".* ]] ; then
-        echo "[x] Dualboot installation detected.
-    You can continue, but these features probably won't work.
-    You will need to edit your framework options manually
-    "
+    clear
+    echo "
+┌───────────────────────────────────────────────────────────────┐
+│             ~ Dualboot installation Detected ~                │
+│                                                               │
+│      This tool is not compatible with the dualboot img.       │
+│    You will need to edit grub manually from your other OS.    │
+│                                                               │
+│                   Return to the main menu?                    │
+└───────────────────────────────────────────────────────────────┘
+"
+    read -rp "(y/n): " yn
+    case $yn in
+        [Yy]* ) echo "[o] Continuing to main menu..." ; startmenu;;
+        [Nn]* ) exitcode="17"; cleanexit;;
+    esac
     else
         echo "[o] Singleboot installation detected."
     fi
@@ -1628,7 +1768,7 @@ bbsoptsreplacer(){
 # Return to the previous menu when finished
 returntomenu(){
 # Intentionally break formatting here for the ~ a e s t h e t i c ~
-    read -rp "           Press enter to return to the previous menu.
+    read -rp "           Press Enter (⏎) to return to the previous menu.
 " return
     case $return in
         * ) $previousmenu ;;
@@ -1708,7 +1848,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1752,7 +1892,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1791,7 +1931,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1824,7 +1964,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1856,7 +1996,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1899,7 +2039,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1932,7 +2072,7 @@ menuheader
 │       always the same page, so check it when help is needed!  │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
-│   Tip: Use Shift + Up Arrow or Shift + Down Arrow to scroll!  │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
 │                                                               │
 └───────────────────────────────────────────────────────────────┘
 "
@@ -1995,7 +2135,8 @@ decodeexitcodes(){
         14) exitmsg="[ERROR] Unable to mount '$partsource'12." ;;
         15) exitmsg="[ERROR] Unable to unmount /root/tmpgrub.
         Grub operations may not work properly until the error is resolved." ;;
-        16) exitmsg="[ERROR] Arch dependencies not ready, User selected exit."
+        16) exitmsg="[!] Arch dependencies not ready, User selected exit." ;;
+        17) exitmsg="[!] Dualboot not compatible with Grub Editor, User selected exit." ;;
     esac
 }
 
