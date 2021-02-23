@@ -18,7 +18,7 @@ fi
 # LANG='en' # revisit this later for possible multilingual options
 
 # These variables never need to change in the script
-readonly toolkitversion="v2"  #TOOLVER
+readonly toolkitversion="v2.0.0b"  #TOOLVER
 readonly quickstart="$1" #OPTS
 readonly defaultshelltools='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,' #shelltools
 readonly discordinvite="https://discord.gg/x2EgK2M"
@@ -37,12 +37,14 @@ readonly defaultrecoveries="eve grunt hatch lulu nami rammus samus zork" #RECOVE
 # All currently known Chrome OS recoveries. Update this list as necessary (any order)
 readonly allrecoveries="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork" #VALIDRECOVERIES
 # Currently avaliable Brunch Bootsplash OPTIONS
-readonly bbsopts="blank debug default"
+readonly bbsopts="blank debug default default_notext croissant croissant_notext neon neon_notext"
 
 # These variables are expected to have a "false" state unless otherwise set
 onlineallowed=true
+notifyonline=
 ignoreversioncheck=false
 debugmode=false
+notifydebug=
 prestartcomplete=false
 installing=false
 includechrome=false
@@ -127,44 +129,18 @@ function select_opt {
 
 # all vanity calls pass through here and are rerouted to the correct plates
 vanity(){
-if [ -z "$plate" ] ; then
-  plate="startup"
-fi
 # Divider for easily reading through debug logs
 echo "
 █████████████████████████████████████████████████████████████████
 █████████████████████████████████████████████████████████████████
 "
 clear
-if [ "$plate" == "mainmenu" ] ; then
-header
+if [ "$notify" == "true" ] ; then
+notifications
+elif [ "$widget" == "true" ] ; then
+HWwidget
 fi
 displayvanity
-}
-
-header(){
-echo "
-▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-█╔═════════════════════════════════════════════════════════════╗█
-█║    ___                  _      _____         _ _   _ _      ║█
-█║   | _ )_ _ _  _ _ _  __| |_   |_   _|__  ___| | |_(_) |_    ║█
-█║   | _ \ '_| || | ' \/ _|  _ \   | |/ _ \/ _ \ | / / |  _|   ║█
-█║   |___/_|  \_,_|_||_\__|_||_|   |_|\___/\___/_|_\_\_|\__|   ║█
-█║  _________________________________________________________  ║█
-█║                                                             ║█
-█║   Need help? Found a bug?                                   ║█
-█║   Find me in the Brunch Discord!               --Wisteria   ║█
-█║                                                             ║█
-█║              >> $discordinvite <<               ║█
-█║                                                             ║█
-█╚═════════════════════════════════════════════════════════════╝█
-█┌─────────────────────────────────────────────────────────────┐█
-█│   Tip: Hold the Ctrl key while clicking links to open them! │█
-█│Debug Key: [o] Ok! [!] Notice! [x] Warning! [ERROR] Critical!│█
-█└─────────────────────────────────────────────────────────────┘█
-▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-Version $toolkitversion...
-"
 }
 
 # This section intentionally breaks formatting for a specific look
@@ -192,57 +168,24 @@ echo "
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 Loading toolkit $toolkitversion...
 "
-    elif [ "$plate" == "mainmenu" ] ; then
-echo "
-┌───────────────────────────────────────────────────────────────┐
-│                         ~ Main Menu ~                         │
-│                                                               │
-│           Please select one of the following options          │
-└───────────────────────────────────────────────────────────────┘
-       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-"
     elif [ "$plate" == "bootsplash" ] ; then
 cat << "EOF"
 
 ╔═══════════════════════════════════════════════════════════════╗
-║           ___           _           _         _               ║
-║          | _ ) ___  ___| |_ ____ __| |__ _ __| |_             ║
-║          | _ \/ _ \/ _ \  _(_-< '_ \ / _` (_-< ' \            ║
-║          |___/\___/\___/\__/__/ .__/_\__,_/__/_||_|           ║
-║                     _____     |_| _                           ║
-║                    |_   _|__  ___| |___                       ║
-║                      | |/ _ \/ _ \ (_-<                       ║
-║                      |_|\___/\___/_/__/                       ║
+║              _        _            _   _                      ║
+║             /_\  _ _ (_)_ __  __ _| |_(_)___ _ _              ║
+║            / _ \| ' \| | '  \/ _` |  _| / _ \ ' \             ║
+║           /_/_\_\_||_|_|_|_|_\__,_|\__|_\___/_||_|            ║
+║                  ___       _   _                              ║
+║                 / _ \ _ __| |_(_)___ _ _  ___                 ║
+║                | (_) | '_ \  _| / _ \ ' \(_-<                 ║
+║                 \___/| .__/\__|_\___/_||_/__/                 ║
+║                      |_|                                      ║
 ║                                                               ║
 ╚═══════════════════════════════════════════════════════════════╝
 
 EOF
-    elif [ "$plate" == "bootsplashmenu" ] ; then
-echo "
-┌───────────────────────────────────────────────────────────────┐
-│                   ~ Boot Splash Main Menu ~                   │
-│                                                               │"
-if [ "$onlineallowed" = "true" ] ; then
-echo "│      Easily download or change ChromeOS boot animations!      │"
-else
-echo "│            Easily change ChromeOS boot animations!            │"
-fi
-echo "│                                                               │
-│           Please select one of the following options          │
-└───────────────────────────────────────────────────────────────┘
-       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-"
-elif [ "$plate" == "bootsplashwebmenu" ] ; then
-echo "
-┌───────────────────────────────────────────────────────────────┐
-│                ~ Boot Splash Online Downloader ~              │
-│                                                               │
-│      These are the avaliable animations from the github.      │
-│                                                               │
-│           Please select one of the following options          │
-└───────────────────────────────────────────────────────────────┘
-       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-"
+
 elif [ "$plate" == "toolkitoptions" ] ; then
 cat << "EOF"
 
@@ -250,7 +193,8 @@ cat << "EOF"
 ║                   _____         _ _   _ _                     ║
 ║                  |_   _|__  ___| | |_(_) |_                   ║
 ║                    | |/ _ \/ _ \ | / / |  _|                  ║
-║                   _|_|\___/\___/_|_\_\_|\__|                  ║
+║                    |_|\___/\___/_|_\_\_|\__|                  ║
+║                   ___       _   _                             ║
 ║                  / _ \ _ __| |_(_)___ _ _  ___                ║
 ║                 | (_) | '_ \  _| / _ \ ' \(_-<                ║
 ║                  \___/| .__/\__|_\___/_||_/__/                ║
@@ -345,6 +289,8 @@ echo "
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 "
+else
+echo "$plate"
 fi
 }
 
@@ -355,16 +301,18 @@ fi
 
 # Perform a series of checks while starting up the toolkit before giving control to user
 prestart(){
-    vanity
+    plate="startup" ; vanity
     checkforroot
     checkforsystemtype
+    if [ "$scriptmode" == "brunch" ] ; then
     checkfordualboot
+    fi
     checkforquickstartoptions
     startmenu
 }
 
 checkfordualboot(){
-    source="$(rootdev -d)"
+    source=$(rootdev -d)
     if (expr match "$source" ".*[0-9]$" >/dev/null); then
         partsource="$source"p
     else
@@ -422,17 +370,20 @@ setvars() {
         prestartcomplete=true
         checkonlinestatus
     if [ "$debugmode" == "true" ] ; then
-        echo "[!] DEBUG Mode enabled!
-[!] File operations will still happen, but installs are blocked."
+        echo "[!] DEBUG Mode enabled!"
     fi
-    # Get the brunch version in two formats for readability
-        currentbrunchversion=$(awk '{print $4}' 2> /dev/null < /etc/brunch_version)
-        if [ -z "$currentbrunchversion" ] ; then
-        currentbrunchversion=false
-        fi
-        chromeosreleaseboard=$(printenv | grep CHROMEOS_RELEASE_BOARD | cut -d"=" -f2 | cut -d"-" -f1)
     # Save a user's current working directory no matter where this script is called from
         previousdir=$(pwd)
+    # Get the brunch version in two formats for readability
+        currentbrunchversion=$(awk '{print $3}' 2> /dev/null < /etc/brunch_version)
+        if [ -z "$currentbrunchversion" ] ; then
+        currentbrunchversion=false
+        else
+        chromeosreleaseboard=$(printenv | grep CHROMEOS_RELEASE_BOARD | cut -d"=" -f2 | cut -d"-" -f1)
+        # Check the bootsplash status, only look if using brunch
+        currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+        previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+        fi
     # Get kernel info and line it up
         kernel1=$(uname -r 2>/dev/null | awk -F'[_.]' '{print $1}')
         kernel2=$(uname -r 2>/dev/null | awk -F'[_.]' '{print $2}')
@@ -446,21 +397,32 @@ setvars() {
         elif [ "$previousdir" != $downloads ] && [ "$scriptmode" == "wsl" ] ; then
             :
         fi
+    # Get height and width of the user's screen for setting boot animation SIZE
+        width=$(dmesg | grep -i drm_get_panel | tail -1 | cut -d" " -f8 | sed "s#width=##g")
+        height=$(dmesg | grep -i drm_get_panel | tail -1 | cut -d" " -f9 | sed "s#height=##g")
     # Find and count all expected files
+        IFS=$'\n'
         shelltools=$(ls /usr/local/bin/brunch-toolkit-assets/shell-tools.btst 2> /dev/null)
-        brunchfiles="$(find *runch_r*tar.gz 2> /dev/null | sort -r)"
+        brunchfiles=($(find *runch_r*tar.gz 2> /dev/null | sort -r))
+        brunchfiles+=("Help" "Back" "Quit")
         onebrunchfile=$(find *runch_r*.tar.gz 2> /dev/null | sort -r | wc -l)
-        otherarchives="$(find *.tar.gz 2> /dev/null | sort -r)"
-        chromerecoveries="$(find *hrome*.bin* 2> /dev/null | sort -r)"
-        bootsplashzip="$(find boot_splash*.zip 2> /dev/null | sort -r)"
+        otherarchives=($(find *.tar.gz 2> /dev/null | sort -r))
+        otherarchives+=("Help" "Back" "Quit")
+        chromerecoveries=($(find *hrome*.bin* 2> /dev/null | sort -r))
+        chromerecoveries+=("Help" "Back" "Quit")
+        bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
+        bootsplashzip+=("Download from github" "Help" "Back" "Quit")
         bootsplashurl="https://github.com/WesBosch/brunch-bootsplash/releases/download/"
     # Get some online data, skip this if running in offline mode
         if [[ $onlineallowed == true ]] ; then
-            onlinebootsplashzip="$(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip' | sed -e s/.zip//)"
+            onlinebootsplashzip=($(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip' | sed -e s/.zip//))
+            onlinebootsplashzip+=("Help" "Back" "Quit")
             latestbrunch=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' )
+            latestbrunchversion=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | cut -d'_' -f4 | cut -d'.' -f1)
             latesttoolkit=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
             latesttoolkiturl=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'browser_' | cut -d\" -f4 | grep '.sh')
         fi
+        unset IFS
         if [ "$scriptmode" != "brunch" ] ; then
             getdependencies
         fi
@@ -489,8 +451,9 @@ getdependencies(){
 │                                                               │
 │                  Are you ready to continue?                   │
 └───────────────────────────────────────────────────────────────┘
-"
-      read -rp "(y/n): " yn
+            Please type Yes or No (y/n) to continue."
+
+      read -rp " >> " yn
       case $yn in
           [Yy]* ) echo "[o] Continuing to main menu..." ;;
           [Nn]* ) exitcode="16"; cleanexit;;
@@ -526,8 +489,10 @@ checkonlinestatus() {
     if [[ $onlineallowed == true ]] ; then
         case "$(curl -s --max-time 2 -I http://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')" in
             [23]) echo "[o] Toolkit Online, internet features enabled.";;
-               5) echo "[x] Check your firewall settings, running in Offline Mode."; onlineallowed=false;;
-               *) echo "[x] The network is down or very slow, running in Offline Mode."; onlineallowed=false;;
+               5) notifyonline="
+│    Check your firewall settings, running in Offline Mode.     │"; onlineallowed=false;;
+               *) notifyonline="
+│  The network is down or very slow, running in Offline Mode.   │"; onlineallowed=false;;
         esac
     else
         echo "[!] Running in Offline Mode."
@@ -601,6 +566,10 @@ checkforquickstartoptions() {
         brunchexclusive
         setvars
         updateandinstalltoolkit
+    elif [ "$quickstart" == "--pwa-auto-update" ] || [ "$quickstart" == "-pwa-au" ]; then
+            pwa-autoupdate
+    elif [ "$quickstart" == "--pwa-unstable-update" ] || [ "$quickstart" == "-pwa-uu" ]; then
+            pwa-autoupdate
     else
         validop "$quickstart"  && "$quickstart" || exitcode="3"
         cleanexit
@@ -625,40 +594,93 @@ validop() {
 #|  Functions that display and control the menu                  |
 #+===============================================================+
 
+# Display notifications above the main menu if there are any
+notifications(){
+  notifytoolkit=""
+  notifybrunch=""
+  notifychromeos=""
+  notifybootsplash=""
+# Check if toolkit is outdated
+currentsemversion=$(echo "$toolkitversion" | sed -e "s/^v//" -e "s/b$//")
+csvint1=$(echo "$currentsemversion" | cut -d'.' -f1)
+csvint2=$(echo "$currentsemversion" | cut -d'.' -f2)
+csvint3=$(echo "$currentsemversion" | cut -d'.' -f3)
+latestsemversion=$(echo "$latesttoolkit" | sed -e "s/^v//" -e "s/b$//")
+lsvint1=$(echo "$latestsemversion" | cut -d'.' -f1)
+lsvint2=$(echo "$latestsemversion" | cut -d'.' -f2)
+lsvint3=$(echo "$latestsemversion" | cut -d'.' -f3)
+if [ -z "$latesttoolkit" ] ; then
+:
+elif (( "$csvint1" < "$lsvint1" )) ; then
+  notifytoolkit="
+│  The current version of the Brunch Toolkit may be outdated!   │"
+elif [ "$csvint1" == "$lsvint1" ] && (( "$csvint2" < "$lsvint2" )) ; then
+  notifytoolkit="
+│  The current version of the Brunch Toolkit may be outdated!   │"
+elif [ "$csvint1" == "$lsvint1" ] && [ "$csvint2" == "$lsvint2" ] && (( "$csvint3" < "$lsvint3" )) ; then
+  notifytoolkit="
+│  The current version of the Brunch Toolkit may be outdated!   │"
+else
+  : # Toolkit version is greater or equal in all aspects, don't notify
+fi
+# Check if Brunch is outdated
+if [ -z "$latestbrunchversion" ] ; then
+:
+elif [ "$currentbrunchver" != "false" ] && (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
+notifybrunch="
+│         The current version of Brunch may be outdated!        │"
+fi
+# Check if ChromeOS is outdated
+
+# Check if Bootsplash needs fixed
+if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
+animneedsset="true"
+notifybootsplash="
+│  The boot animation may have been reset by a system update!   │"
+fi
+# Check if github's API limit has been reached or if Github is down
+if [[ $onlineallowed == true ]] && [ -z "$latesttoolkit" ] || [[ $onlineallowed == true ]] && [ -z "$latestbrunchversion" ] ; then
+notifygithub="
+│     The toolkit is online, but Github cannot be reached!      │"
+onlineallowed="false"
+fi
+# If any notifications are avaliable, display them
+if [ -n "$notifytoolkit" ] || [ -n "$notifybrunch" ] || [ -n "$notifychromeos" ] || [ -n "$notifybootsplash" ] || [ -n "$notifygithub" ] || [ -n "$notifyonline" ] ; then
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░░ Notifications ░░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │$notifytoolkit$notifybrunch$notifychromeos$notifybootsplash$notifygithub$notifyonline
+│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+fi
+}
+
+# Actual main menu functions
 startmenu(){
-plate="mainmenu" ; vanity
-    if [ "$scriptmode" != "brunch" ] ; then
-        linuxmenu
-    elif [ "$dualboot" == "false" ] ; then
-    case `select_opt "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit"` in
-        0) mainmenuchoice="Update Brunch" ;;
-        1) mainmenuchoice="Update ChromeOS & Brunch" ;;
-        2) mainmenuchoice="Install Brunch" ;;
-        3) mainmenuchoice="Compatibility Check" ;;
-        4) mainmenuchoice="Change ChromeOS Boot Animation" ;;
-        5) mainmenuchoice="Install/Update Toolkit" ;;
-        6) mainmenuchoice="Shell Shortcuts" ;;
-        7) mainmenuchoice="Grub Options" ;;
-        8) mainmenuchoice="Changelog" ;;
-        9) mainmenuchoice="System Specs" ;;
-        10) mainmenuchoice="Help" ;;
-        11) mainmenuchoice="Quit" ;;
-      esac
-    elif [ "$dualboot" == "true" ] ; then
-    case `select_opt "Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "Change ChromeOS Boot Animation" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit"` in
-        0) mainmenuchoice="Update Brunch" ;;
-        1) mainmenuchoice="Update ChromeOS & Brunch" ;;
-        2) mainmenuchoice="Install Brunch" ;;
-        3) mainmenuchoice="Compatibility Check" ;;
-        4) mainmenuchoice="Change ChromeOS Boot Animation" ;;
-        5) mainmenuchoice="Install/Update Toolkit" ;;
-        6) mainmenuchoice="Shell Shortcuts" ;;
-        7) mainmenuchoice="Changelog" ;;
-        8) mainmenuchoice="System Specs" ;;
-        9) mainmenuchoice="Help" ;;
-        10) mainmenuchoice="Quit" ;;
-      esac
-    fi
+notify="true"
+plate="
+┌───────────────────────────────────────────────────────────────┐
+│                         ~ Main Menu ~                         │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+" ; vanity
+notify="false"
+# Context aware menu Options, these are for aesthetics only, the functions themselves will handle the context
+if [ "$animneedsset" == "true" ] ; then
+  bootanimationmenu="Fix ChromeOS Boot Animation"
+else
+  bootanimationmenu="Change ChromeOS Boot Animation"
+fi
+if [ "$scriptmode" != "brunch" ] ; then
+    startmenuopts=("Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit")
+elif [ "$dualboot" == "false" ] ; then
+    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit")
+elif [ "$dualboot" == "true" ] ; then
+    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit")
+fi
+    case `select_opt "${startmenuopts[@]}"` in
+        *) mainmenuchoice="${startmenuopts[$?]}" ;;
+    esac
 if [[ -n "$mainmenuchoice" ]] ; then
     echo "[o] User selected: $mainmenuchoice"
 fi
@@ -678,7 +700,7 @@ elif [[ "$mainmenuchoice" == "System Specs" ]] ; then
     displayversion
 elif [[ "$mainmenuchoice" == "Help" ]] ; then
     startmenuhelp
-elif [[ "$mainmenuchoice" == "Change ChromeOS Boot Animation" ]] ; then
+elif [[ "$mainmenuchoice" == "Change ChromeOS Boot Animation" ]] || [[ "$mainmenuchoice" == "Fix ChromeOS Boot Animation" ]] ; then
     updatebootsplashmain
 elif [[ "$mainmenuchoice" == "Install/Update Toolkit" ]] ; then
     toolkitoptionsmain
@@ -693,38 +715,115 @@ else
 fi
 }
 
-# A limited menu presented to non-brunch users
-linuxmenu() {
-      case `select_opt "Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit"` in
-          0) mainmenuchoice="Install Brunch" ;;
-          1) mainmenuchoice="Compatibility Check" ;;
-          2) mainmenuchoice="Changelog" ;;
-          3) mainmenuchoice="System Specs" ;;
-          4) mainmenuchoice="Help" ;;
-          5) mainmenuchoice="Quit" ;;
-        esac
-        if [[ -n "$mainmenuchoice" ]] ; then
-            echo "[o] User selected: $mainmenuchoice"
-        fi
-        if [[ -z "$mainmenuchoice" ]] ; then
-           echo "[x] Invalid option"
-        elif [[ "$mainmenuchoice" == "Install Brunch" ]] ; then
-            installbrunchmain
-        elif [[ "$mainmenuchoice" == "Compatibility Check" ]] ; then
-            compatibilitycheckmain
-        elif [[ "$mainmenuchoice" == "Changelog" ]] ; then
-            displaychangelog
-        elif [[ "$mainmenuchoice" == "System Specs" ]] ; then
-            displayversion
-        elif [[ "$mainmenuchoice" == "Help" ]] ; then
-            linuxmenuhelp
-        elif [[ "$mainmenuchoice" == "Quit" ]] ; then
-            cleanexit
-        else
-        :
-        fi
+startmenuhelp(){
+if [[ "$scriptmode" == "brunch" ]] ; then
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               |
+│                         Main Menu Help                        │
+│                                                               │
+│   This is the main menu, from here you can access most of     │
+│   the toolkit. Here's what all of the main menu options do:   │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   Update Brunch                                               │
+│       Allows Brunch users to update their Brunch framework    │
+│       with the toolkit. It can download the files for you.    │
+│                                                               │
+│   Update Chrome OS & Brunch                                   │
+│       Allows Brunch users to update their Brunch framework    │
+│       and Chrome OS version together at the same time.        │
+│                                                               │
+│   Install Brunch                                              │
+│       Walks the user through most of the Brunch installation  │
+│       process. Then it will help select a disk or partition   │
+│       and filesize if necessary, then install to the selected │
+│       destination.                                            │
+│                                                               │
+│   Compatibility Check                                         │
+│       The toolkit will check the user's system and tell them  │
+│       if their CPU is compatible, and which recovery file(s)  │
+│       they should use to install Brunch. This does NOT check  │
+│       for graphics card compatibility, so keep that in mind!  │
+│                                                               │
+│   Change/Fix ChromeOS Boot Animation                          │
+│       Allows Brunch users to modify their boot animations.    │
+│       The script will also allow them to download one from    │
+│       a repo if they don't have any prepared. There is an     │
+│       option to restore boot animations lost after updating.  │
+│                                                               │
+│   Install/Update Toolkit                                      │
+│       Allows Brunch users to install this toolkit for easier  │
+│       access. The toolkit can also be updated from this menu. │
+│                                                               │
+│   Shell Options                                               │
+│       This is a menu for advanced users. It will allow users  │
+│       to add and remove options from the toolbar if they use  │
+│       the chrome-secure-shell extention modified for Brunch.  │
+│                                                               │
+│   Framework Options                                           │
+│       This is a menu for advanced users. It will allow users  │
+│       to add and remove Brunch framework options directly     │
+│       through the user's grub. Does NOT work in Dualboot!     │
+│                                                               │
+│   Changelog                                                   │
+│       Displays a recent changelog for the toolkit.            │
+│                                                               │
+│   System Specs                                                │
+│       Displays some info about the user's system.             │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+else
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                         Main Menu Help                        │
+│                                                               │
+│   This is the main menu, from here you can access most of     │
+│   the toolkit. Here's what all of the main menu options do:   │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   Install Brunch                                              │
+│       Walks the user through most of the Brunch installation  │
+│       process. It will help them select a Brunch release and  │
+│       a Chrome OS recovery. Then it will help select a disk   │
+│       or partition and filesize if necessary, then install to │
+│       the destination they selected.                          │
+│                                                               │
+│   Compatibility Check                                         │
+│       The toolkit will check the user's system and tell them  │
+│       if their CPU is compatible, and which recovery file(s)  │
+│       they should use to install Brunch. This does NOT check  │
+│       for graphics card compatibility, so keep that in mind!  │
+│                                                               │
+│   Changelog                                                   │
+│       Displays a recent changelog for the toolkit.            │
+│                                                               │
+│   System Specs                                                │
+│       Displays some info about the user's system.             │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+fi
+helpmenu
 }
-
 
 #+===============================================================+
 #|  Update Brunch Functions                                      |
@@ -759,133 +858,34 @@ universalversioncheck(){
 #|  Everything related to boot animations goes here              |
 #+===============================================================+
 
+# A neat little widget to show the user's screen size
+HWwidget(){
+if [ -n "$width" ] && [ -n "$height" ] ; then
+heightandwidth=$(echo "Monitor dimensions: $width x $height" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░░ Hardware Info ░░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$heightandwidth|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+fi
+}
+
+# The actual boot animation menu starts here
 updatebootsplashmain(){
+    previousmenu="startmenu"
     plate="bootsplash" ; vanity
     checkforpreviousbootsplash
     getbootsplashfiles
 }
 
-getbootsplashfiles(){
-    echo "[o] Searching for local bootsplash files, please wait..."
-    if [ -z  "$bootsplashzip" ] && [ "$onlineallowed" == "true" ] ; then
-        echo "[x] No local bootsplash files found!"
-        webanimcheck
-    elif [ -z  "$bootsplashzip" ] && [ "$onlineallowed" == "false" ] ; then
-        echo "[x] No local bootsplash files found!"
-        exitcode="7"
-        cleanexit
-    elif [ "$onlineallowed" == "false" ] ; then
-        echo "[o] Local bootsplash files found!"
-        selectanimoffline
-    else [ "$onlineallowed" == "true" ]
-        echo "[o] Local bootsplash files found!"
-        selectanim
-    fi
-}
-
-selectanim() {
-    plate="bootsplashmenu" ; vanity
-    select bootsplashchoice in "Download bootsplash from github" ${bootsplashzip} Help Quit; do
-    if [[ -n "$bootsplashchoice" ]] ; then
-        echo "[o] User selected: $bootsplashchoice"
-    fi
-    if [ -z "$bootsplashchoice" ] ; then
-       echo "[x] Invalid option"
-   elif [[ "$bootsplashchoice" == "Download bootsplash from github" ]] ; then
-        webanimcheck
-    elif [ "$bootsplashchoice" == "Help" ] ; then
-        selectanimhelp
-    elif [ "$bootsplashchoice" == "Quit" ] ; then
-        cleanexit
-    else
-        changebootsplash
-    fi
-    done
-}
-
-selectanimoffline() {
-    plate="bootsplashmenu" ; vanity
-    select bootsplashchoice in ${bootsplashzip} Help Quit; do
-    if [[ -n "$bootsplashchoice" ]] ; then
-        echo "[o] User selected: $bootsplashchoice"
-    fi
-    if [ -z "$bootsplashchoice" ] ; then
-       echo "[x] Invalid option"
-    elif [ "$bootsplashchoice" == "Help" ] ; then
-        selectanimofflinehelp
-    elif [ "$bootsplashchoice" == "Quit" ] ; then
-        cleanexit
-    else
-        changebootsplash
-    fi
-    done
-}
-
-webanimcheck(){
-    plate="bootsplashwebmenu" ; vanity
-    select websplash in ${onlinebootsplashzip} Help Quit ; do
-    if [[ -n "$websplash" ]] ; then
-        echo "[o] User selected: $websplash"
-    fi
-    if [ -z "$websplash" ] ; then
-       echo "[x] Invalid option"
-   elif [ "$websplash" == "Help" ] ; then
-        webanimacheckhelp
-    elif [ "$websplash" == "Quit" ] ; then
-        cleanexit
-    else
-        getnewanim
-    fi
-    done
-}
-
-getnewanim() {
-    echo "[o] Now downloading animation from github, please wait..."
-    wget -q --show-progress $bootsplashurl$websplash/$websplash.zip
-    echo "[o] Boot animation downloaded! Refreshing, please wait..."
-    bootsplashzip="$(find boot_splash*.zip 2> /dev/null)"
-    selectanim
-}
-
-changebootsplash(){
-# Unzip selection
-    echo "[!] Unzipping archive, please wait..."
-    bsdir=$(echo "$bootsplashchoice" | sed -e s/.zip//)
-    unzip "$bootsplashchoice" -d $downloads/"$bsdir" || { exitcode="8" ; cleanexit ; }
-    sudo cp $downloads/$bsdir/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { exitcode="9" ; cleanexit ; }
-    sudo cp $downloads/$bsdir/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
-    mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
-    sudo cp $downloads/$bsdir/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
-    sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
-    rm /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
-    sudo touch /usr/share/chromeos-assets/images_100_percent/$bsdir.btbs 2> /dev/null
-    sudo touch /usr/local/bin/brunch-toolkit-assets/$bsdir.btbs 2> /dev/null
-    rm -rf $downloads/$bsdir
-    # Insert resize command here
-    #  height=$(dmesg | grep -i drm_get_panel | tail -1 | cut -d" " -f8 | sed "s#width=##g")
-    #  width=$(dmesg | grep -i drm_get_panel | tail -1 | cut -d" " -f9 | sed "s#height=##g")
-    #  convert *.png -resize "$width"x"$height"^ -set filename:f "%t" ./"%[filename:f].png"
-# Cleanup
-# Prompt to reboot
-    echo "[o] Bootsplash applied, please reboot to see results.
-[!] Custom bootsplash animations will only last until a
-    framework or system update. Updating Brunch, ChromeOS
-    or your framework options may remove the animation.
-"
-    cleanexit
-}
-
 checkforpreviousbootsplash(){
-    currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-    previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
     if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
-        echo "[!] The bootsplash animation was reset to the default,
-    this is normal after an update. Restoring..."
-        previousmenu="checkforpreviousbootsplash"
+        echo "[!] The boot animation was reset to the default,
+    this is normal after an update."
         resetbootsplashmain
     fi
     if [ -n "$currentlyset" ] ; then
-    echo "[!] Your currently set bootsplash is:
+    echo "[!] Your currently set boot animation is:
     $currentlyset"
     fi
 }
@@ -896,21 +896,253 @@ resetbootsplashmain(){
         exitcode="5"
         cleanexit
     fi
-    echo "[o] Quickly resetting your bootsplash, please wait..."
+    echo "Currently Set: $currentlyset"
+    echo "Previously Set: $previouslyset"
+    echo "[o] Quickly resetting your boot animation, please wait..."
     sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { exitcode="6" ; cleanexit ; } 2> /dev/null
     sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent
     sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
     sudo touch /usr/share/chromeos-assets/images_100_percent/$previouslyset.btbs 2> /dev/null
-    echo "[o] Bootsplash restored, please reboot to see results.
-[!] Custom bootsplash animations will only last until a
-    framework or system update. Updating Brunch, ChromeOS
-    or your framework options may remove the animation.
-"
-    if [ "$previousmenu" == "checkforpreviousbootsplash" ] ; then
-        returntomenu
-    else
+    animneedsset="false"
+    # Check the bootsplash status again
+    currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+    previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+    clear
+    echo "
+┌───────────────────────────────────────────────────────────────┐
+│     Boot animation restored, please reboot to see results.    │
+│                                                               │
+│         Custom boot animations will only last until a         │
+│     framework or system update. Updating Brunch, ChromeOS     │
+│      or your framework options may remove the animation.      │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+read -rp "
+       Press Enter (⏎) to return to the previous menu.
+" return
+case $return in
+    * ) $previousmenu ;;
+esac
+}
+
+getbootsplashfiles(){
+    echo "[o] Searching for local bootsplash files, please wait..."
+    if [ -z  "$bootsplashzip" ] && [ "$onlineallowed" == "false" ] ; then
+        echo "[x] No boot animation files are avaliable!"
+        exitcode="7"
         cleanexit
+    else
+        echo "[o] Boot animation files are avaliable!"
+        selectanim
     fi
+}
+
+selectanim(){
+    previousmenu="startmenu"
+    widget="true"
+    if [ "$onlineallowed" = "true" ] ; then
+    platesub="│      Easily download or change ChromeOS boot animations!      │"
+    else
+    platesub="│            Easily change ChromeOS boot animations!            │"
+    fi
+    plate="
+    ┌───────────────────────────────────────────────────────────────┐
+    │                  ~ Boot Animation Main Menu ~                 │
+    │                                                               │
+$platesub
+    │                                                               │
+    │           Please select one of the following options          │
+    └───────────────────────────────────────────────────────────────┘
+           Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+    " ; vanity
+    widget="false"
+if [ "$onlineallowed" == "false" ] ; then
+# remake array without github option if it's OFFLINE
+bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
+bootsplashzip+=("Help" "Back" "Quit")
+fi
+    case `select_opt "${bootsplashzip[@]}"` in
+        *) bootsplashchoice=${bootsplashzip[$?]} ; echo "[o] User selected: $bootsplashchoice";;
+    esac
+    if [ "$bootsplashchoice" == "Download from github" ] ; then
+        webanimcheck
+    elif [ "$bootsplashchoice" == "Help" ] ; then
+        previousmenu="selectanim"
+        selectanimhelp
+    elif [ "$bootsplashchoice" == "Back" ] ; then
+        $previousmenu
+    elif [ "$bootsplashchoice" == "Quit" ] ; then
+        cleanexit
+    else
+        changebootsplash
+    fi
+}
+
+webanimcheck(){
+    previousmenu="selectanim"
+    widget="true"
+    plate="
+    ┌───────────────────────────────────────────────────────────────┐
+    │               ~ Boot Animation Online Downloader ~            │
+    │                                                               │
+    │      These are the avaliable animations from the github.      │
+    │                                                               │
+    │           Please select one of the following options          │
+    └───────────────────────────────────────────────────────────────┘
+           Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+    " ; vanity
+    widget="false"
+    case `select_opt ${onlinebootsplashzip[@]}` in
+    *) webzip=${onlinebootsplashzip[$?]} ; echo "[o] User selected: $webzip";;
+    esac
+    if [ "$webzip" == "Help" ] ; then
+        previousmenu="webanimcheckhelp"
+        webanimhelp
+    elif [ "$webzip" == "Back" ] ; then
+        $previousmenu
+    elif [ "$webzip" == "Quit" ] ; then
+        cleanexit
+    else
+        getnewanim
+    fi
+}
+
+getnewanim() {
+    echo "[o] Now downloading animation from github, please wait..."
+    wget -q --show-progress $bootsplashurl$webzip/$webzip.zip
+    echo "[o] Boot animation downloaded! Refreshing, please wait..."
+    IFS=$'\n'
+    bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
+    bootsplashzip+=("Help" "Back" "Quit")
+    unset IFS
+    selectanim
+}
+
+changebootsplash(){
+# Unzip selection
+    echo "[!] Unzipping archive, please wait..."
+    bsdir=$(echo "$bootsplashchoice" | sed -e s/.zip//)
+    mkdir $downloads/$bsdir
+    mv $bootsplashchoice $downloads/$bsdir
+    temppwd=$(pwd)
+    cd $downloads/$bsdir
+    bsdtar -xvf "$bootsplashchoice" --exclude "*_MACOSX*" | pv -s $(du -sb $downloads/$bsdir | awk '{print $1}')
+    # Insert resize command here
+    if [ -n "$width" ] && [ -n "$height" ] ; then
+        echo "Converting boot animation to fit your screen, please wait..."
+    convert *.png -resize "$width"x"$height" -set filename:f "%t" ./"%[filename:f].png"
+    fi
+    cd $temppwd
+    # Put them where they belong
+    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { exitcode="9" ; cleanexit ; }
+    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
+    mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
+    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
+    sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
+    rm -rf /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
+    sudo touch /usr/share/chromeos-assets/images_100_percent/$bsdir.btbs 2> /dev/null
+    sudo touch /usr/local/bin/brunch-toolkit-assets/$bsdir.btbs 2> /dev/null
+    rm -rf $downloads/$bsdir 2> /dev/null
+    # Check the bootsplash status again
+    animneedsset="false"
+    currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+    previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+# Cleanup
+# Prompt to reboot
+    clear
+echo "
+┌───────────────────────────────────────────────────────────────┐
+│     Boot animation applied, please reboot to see results.     │
+│                                                               │
+│         Custom boot animations will only last until a         │
+│     framework or system update. Updating Brunch, ChromeOS     │
+│      or your framework options may remove the animation.      │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+read -rp "
+           Press Enter (⏎) to return to the main menu.
+" return
+case $return in
+* ) $previousmenu ;;
+esac
+}
+
+selectanimhelp(){
+if [ "$onlineallowed" = "true" ] ; then
+helpsub="
+│                                                               │
+│   Download from github                                        │
+│       This option allows the toolkit to connect to github,    │
+│       the avaliable animation files will be listed in a       │
+│       new menu for the user to select from.                   │"
+fi
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                  Boot Animation Menu Help                     │
+│                                                               │
+│   This is the animation menu, from here users can select      │
+│   from the locally downloaded animation files on the system   │
+│   or download them through the toolkit from a github repo.    │
+│   Users should select one with the same resolution they use.  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │$helpsub
+│   [Listed bootsplash files]                                   │
+│       The files listed here are the local animation files     │
+│       already on the system. The toolkit looks for these in   │
+│       the pc's downloads directory (default: ~/Downloads)     │
+│       If a user's files aren't listed, make sure they are     │
+│       zip files starting with boot_splash for the filename.   │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Brunch Toolkit's main menu.             │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
+webanimhelp(){
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                Animation Downloader Menu Help                 │
+│                                                               │
+│   This is the animation downloader menu, from here users      │
+│   can select from animation archives avaliable online.        │
+│   The script will download what the user selects and return   │
+│   to the Boot Animation menu where they can apply them.       │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   [Listed bootsplash files]                                   │
+│       The files listed here are the online animation files    │
+│       avaliable on the github. The script will handle both    │
+│       downloading and unzipping of these files as needed.     │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the ChromeOS Boot Animation main menu.      │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
 }
 
 #+===============================================================+
@@ -1169,7 +1401,6 @@ brunchshellsetup(){
 #|  Framework Options                                            |
 #|  Everything related to framework options goes here            |
 #+===============================================================+
-## TO DO:  Add option for detecting and toggling hyperthreading
 
 editgrubconfigmain(){
     plate="editgrubconfig" ; vanity
@@ -1417,7 +1648,6 @@ select removegruboptions in "Use these options" "Add an option" ${gruboptionsspl
     elif [[ $removegruboptions == "Use these options" ]]; then
         updategrub
     elif [ "$removegruboptions" == "Quit" ] ; then
-        sudo umount /root/tmpgrub
         cleanexit
     else
         gruboptremoval
@@ -1463,7 +1693,6 @@ updategrubsub(){
         sudo sed -i "s/options=$gruboriginal/$gruboptions/g" /root/tmpgrub/efi/boot/grub.cfg
     fi
     echo ""
-    sudo umount /root/tmpgrub
     cleanexit
 }
 
@@ -1475,7 +1704,6 @@ removegrub(){
         sudo sed -i "s/options=$gruboriginal//g" /root/tmpgrub/efi/boot/grub.cfg
     fi
     echo ""
-    sudo umount /root/tmpgrub
     cleanexit
 }
 
@@ -1493,7 +1721,6 @@ grubbackupcheck(){
         backupgrub=false
         $returnto
     elif [ "$grubbak" == "Quit" ] ; then
-        sudo umount /root/tmpgrub
         cleanexit
     else
         echo "[x] Invalid option"
@@ -1530,7 +1757,6 @@ grubbackup(){
         backupgrub=false
         $returnto
     elif [ "$grubbak" == "Quit" ] ; then
-        sudo umount /root/tmpgrub
         cleanexit
     else
         echo "[x] Invalid option"
@@ -1601,7 +1827,6 @@ kernelmenu(){
         if [[ -z "$kerneloptions" ]]; then
             echo "[x] Invalid option"
         elif [ "$kerneloptions" == "Quit" ] ; then
-            sudo umount /root/tmpgrub
             cleanexit
         else
             kerneloptchange
@@ -1621,7 +1846,6 @@ kerneloptchange(){
         sudo sed -i "s/$grubkerneloriginal/kernel-$kerneloptions/" /root/tmpgrub/efi/boot/grub.cfg
     fi
     echo "[o] Kernel changed succesfully! Please reboot to test changes."
-    sudo umount /root/tmpgrub
     cleanexit
 }
 
@@ -1659,7 +1883,6 @@ bbsmain(){
         if [[ -z "$bbsoptions" ]]; then
             echo "[x] Invalid option"
         elif [ "$bbsoptions" == "Quit" ] ; then
-            sudo umount /root/tmpgrub
             cleanexit
         else
             bbsoptchange
@@ -1691,7 +1914,7 @@ else
 fi
 bbsoptsreplacer
 echo "[o] Brunch Bootsplash changed succesfully! Please reboot to test changes."
-sudo umount /root/tmpgrub
+
 cleanexit
 }
 
@@ -1732,7 +1955,7 @@ bbsoptsreplacer(){
             :
         else
             #replace $bbsexists with $bbsoptions
-            sudo sed -i "s/$bbexists/$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
+            sudo sed -i "s/$bbsexists/$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
         fi
     elif [[ -z "$bbsexists" ]] && [[ "$bbs" = "false" ]] ; then
     #do nothing
@@ -1759,16 +1982,23 @@ bbsoptsreplacer(){
 #+===============================================================+
 
 
-
 #+===============================================================+
 #|  Help glossary                                                |
-#|  All help menu options should be collected here               |
+#|  All $helpentries should be stored with their functions       |
 #+===============================================================+
+
+# One function to rule them all. Define $helpentry as needed
+helpmenu(){
+    menuheader
+    echo "$helpentry"
+    returntomenu
+}
 
 # Return to the previous menu when finished
 returntomenu(){
 # Intentionally break formatting here for the ~ a e s t h e t i c ~
-    read -rp "           Press Enter (⏎) to return to the previous menu.
+    read -rp "
+           Press Enter (⏎) to return to the previous menu.
 " return
     case $return in
         * ) $previousmenu ;;
@@ -1781,226 +2011,6 @@ menuheader(){
 █████████████████████████████████████████████████████████████████
 "
   clear
-}
-
-startmenuhelp(){
-menuheader
-    previousmenu="startmenu"
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│                                                               |
-│                         Main Menu Help                        │
-│                                                               │
-│   This is the main menu, from here you can access most of     │
-│   the toolkit. Here's what all of the main menu options do:   │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   Update Brunch                                               │
-│       Allows Brunch users to update their Brunch framework    │
-│       with the toolkit. It can download the files for you.    │
-│                                                               │
-│   Update Chrome OS & Brunch                                   │
-│       Allows Brunch users to update their Brunch framework    │
-│       and Chrome OS version together at the same time.        │
-│                                                               │
-│   Install Brunch                                              │
-│       Walks the user through most of the Brunch installation  │
-│       process. It will help them select a Brunch release and  │
-│       a Chrome OS recovery. Then it will help select a disk   │
-│       or partition and filesize if necessary, then install to │
-│       the destination they selected.                          │
-│                                                               │
-│   Compatibility Check                                         │
-│       The toolkit will check the user's system and tell them  │
-│       if their CPU is compatible, and which recovery file(s)  │
-│       they should use to install Brunch. This does NOT check  │
-│       for graphics card compatibility, so keep that in mind!  │
-│                                                               │
-│   Change Boot Animation                                       │
-│       Allows Brunch users to modify their boot animations.    │
-│       The script will also allow them to download one from    │
-│       a repo if they don't have any prepared. There is an     │
-│       option to restore boot animations lost after updating.  │
-│                                                               │
-│   Install/Update Toolkit                                      │
-│       Allows Brunch users to install this toolkit for easier  │
-│       access. The toolkit can also be updated from this menu. │
-│                                                               │
-│   Shell Options                                               │
-│       This is a menu for advanced users. It will allow users  │
-│       to add and remove options from the toolbar if they use  │
-│       the chrome-secure-shell extention modified for Brunch.  │
-│                                                               │
-│   Framework Options                                           │
-│       This is a menu for advanced users. It will allow users  │
-│       to add and remove Brunch framework options directly     │
-│       through the user's grub. Does NOT work in Dualboot!     │
-│                                                               │
-│   Changelog                                                   │
-│       Displays a recent changelog for the toolkit and exits.  │
-│                                                               │
-│   System Specs                                                │
-│       Displays some info about the user's system and exits.   │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-    returntomenu
-}
-
-linuxmenuhelp(){
-menuheader
-    previousmenu="startmenu"
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│                         Main Menu Help                        │
-│                                                               │
-│   This is the main menu, from here you can access most of     │
-│   the toolkit. Here's what all of the main menu options do:   │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   Install Brunch                                              │
-│       Walks the user through most of the Brunch installation  │
-│       process. It will help them select a Brunch release and  │
-│       a Chrome OS recovery. Then it will help select a disk   │
-│       or partition and filesize if necessary, then install to │
-│       the destination they selected.                          │
-│                                                               │
-│   Compatibility Check                                         │
-│       The toolkit will check the user's system and tell them  │
-│       if their CPU is compatible, and which recovery file(s)  │
-│       they should use to install Brunch. This does NOT check  │
-│       for graphics card compatibility, so keep that in mind!  │
-│                                                               │
-│   Changelog                                                   │
-│       Displays a recent changelog for the toolkit and exits.  │
-│                                                               │
-│   System Specs                                                │
-│       Displays some info about the user's system and exits.   │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-    returntomenu
-}
-
-selectanimhelp(){
-menuheader
-    previousmenu="selectanim"
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│                    Bootsplash Menu Help                       │
-│                                                               │
-│   This is the bootsplash menu, from here users can select     │
-│   from the locally downloaded bootsplash files on the system  │
-│   or download them through the toolkit from a github repo.    │
-│   Users should select one with the same resolution they use.  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   Download bootsplash from github                             │
-│       This option allows the toolkit to connect to github,    │
-│       the avaliable bootsplash files will be listed in a      │
-│       new menu for the user to select from.                   │
-│                                                               │
-│   [Listed bootsplash files]                                   │
-│       The files listed here are the local bootsplash files    │
-│       already on the system. The toolkit looks for these in   │
-│       the pc's downloads directory (default: ~/Downloads)     │
-│       If a user's files aren't listed, make sure they are     │
-│       zip files starting with boot_splash for the filename.   │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-    returntomenu
-}
-
-selectanimofflinehelp(){
-menuheader
-    previousmenu="selectanimoffline"
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│                Offline Bootsplash Menu Help                   │
-│                                                               │
-│   This is the bootsplash menu, from here users can select     │
-│   from the locally downloaded bootsplash files on the system. │
-│   Users should select one with the same resolution they use.  │
-│   [!]  This menu has more options when a user is online!      │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   [Listed bootsplash files]                                   │
-│       The files listed here are the local bootsplash files    │
-│       already on the system. The toolkit looks for these in   │
-│       the pc's downloads directory (default: ~/Downloads)     │
-│       If a user's files aren't listed, make sure they are     │
-│       zip files starting with boot_splash for the filename.   │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-    returntomenu
-}
-
-webanimacheckhelp(){
-menuheader
-    previousmenu="webanimcheck"
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│               Bootsplash Downloader Menu Help                 │
-│                                                               │
-│   This is the bootsplash downloader menu, from here users     │
-│   can select from bootsplash archives avaliable online.       │
-│   The script will download what the user selects and return   │
-│   to the Bootsplash menu where they can apply the animation.  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   [Listed bootsplash files]                                   │
-│       The files listed here are the online bootsplash files   │
-│       avaliable on the github. The script will handle both    │
-│       downloading and unzipping of these files as needed.     │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-    returntomenu
 }
 
 toolkitchoicehelp(){
@@ -2087,6 +2097,11 @@ menuheader
 # Returns the user's terminal to the directory they were in before the script was launched
 # Also returns an error message if applicable.
 cleanexit() {
+echo "
+█████████████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
+  "
+clear
     if [ "$grubmounted" == "true" ] ; then
         echo "[!] Unmounting partition12, please wait..."
         sudo umount /root/tmpgrub || { grubmounted="false" ; exitcode="15" ; cleanexit ; }
@@ -2099,10 +2114,6 @@ cleanexit() {
     fi
     echo "[!] Exiting... debug log written to $downloads/toolkit.log"
     # Divider for easily reading through debug logs
-    echo "
-█████████████████████████████████████████████████████████████████
-█████████████████████████████████████████████████████████████████
-    "
     cd "$previousdir" || exit
     exit
 }
@@ -2141,6 +2152,77 @@ decodeexitcodes(){
 }
 
 #+===============================================================+
+#|  PWA exclusive scripts                                        |
+#+===============================================================+
+
+pwa-autoupdate(){
+# $OPTS is defined when called, ie: brunch-toolkit $OPTS
+# Do this before pwa-sharedvars
+    if [ "$quickstart" == "--pwa-auto-update" ] || [ "$quickstart" == "-pwa-au" ]; then
+        channel="brunch"
+    elif [ "$quickstart" == "--pwa-unstable-update" ] || [ "$quickstart" == "-pwa-uu" ]; then
+        channel="brunch-unstable"
+    fi
+# Special variable handler
+    pwa-sharedvars
+# Check for existing update process
+    if [ "$updateinprogress" == "true" ] ; then
+        echo "[Error] Update already in progress!"
+        updateinprogress="false"
+        exit
+    fi
+    updateinprogress="true"
+    if (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
+# Make a working directory to keep toolkit out of sight
+        mkdir -p  ~/tmp/brunch-toolkit
+        curdir=$(pwd)
+        cd ~/tmp/brunch-toolkit
+# Download latest release from $channel
+        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/$channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
+        updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
+# Call built in update command
+        sudo chromeos-update -f ~/tmp/brunch-toolkit/"$updatefile"
+        cd $curdir
+# Clean up
+        rm -rf ~/tmp/brunch-toolkit/*
+        rmdir ~/tmp/brunch-toolkit
+        updateinprogress="false"
+        exit
+    else
+# Error if no need to update
+        echo "[ERROR!] You already have the latest version of Brunch. ($currentbrunchversion)"
+        updateinprogress="false"
+        exit
+    fi
+}
+
+pwa-sharedvars(){
+    # Check for a stable internet connection #
+        case "$(curl -s --max-time 2 -I http://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')" in
+    # If connection is good, do nothing and proceed quietly
+            [23]) : ;;
+    # Error on weak or empty connection
+            *) echo "[!] The network is down or very slow, unable to continue."; exit ;;
+        esac
+        currentbrunchversion=$(awk '{print $3}' 2> /dev/null < /etc/brunch_version)
+    # Error if called on a non-brunch device
+        if [ -z "$currentbrunchversion" ] ; then
+                echo "[ERROR] This function only works on Brunch systems!"
+                exit
+        fi
+    # Get latest brunch version from $channel
+    if [ -z "$channel" ] ; then
+        channel="brunch"
+    fi
+        lbv0=$(curl -s "https://api.github.com/repos/sebanc/$channel/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
+    # Strip all of the unnecessary bits off, integers only
+        lbv1=${lbv0/stable_}
+        lbv2=${lbv1/unstable_}
+        lbv3=${lbv2/testing_}
+        latestbrunchversion=$(echo "$lbv3" | cut -d'_' -f3 | cut -d'.' -f1)
+}
+
+#+===============================================================+
 #|  End of script definitions                                    |
 #+===============================================================+
 
@@ -2149,4 +2231,3 @@ if [ -f $downloads/toolkit.log ] ; then
 fi
 touch $downloads/toolkit.log
 prestart | tee -a $downloads/toolkit.log
-clear
