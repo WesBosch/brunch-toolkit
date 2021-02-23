@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.8b"
+TOOLVER="v1.0.9b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -134,7 +134,10 @@ echo "Version: $TOOLVER"
     checkcurrentos() {
             # check if script is run as root
         uid=`id -u $USERNAME`
-        if [ $uid -eq 0 ]; then
+        if [[ "$OPTS" =~ .*"pwa".* ]] ; then
+            # skip all extras, PWA functions define their own vars
+            debug
+        elif [ $uid -eq 0 ] ; then
             echo "$0 must NOT be run as root."
             cleanexit
         fi
@@ -1891,10 +1894,13 @@ fi
         Add Check for Ryzen CPUs (Needs tested)
         Add beta grub editor to menu (Use with caution)
         Attempt to fix Brunch Mode installation bug
-        
+
         v1.0.8b
         Remove wget, unzip and perl dependencies
         (Thanks Sebanc for the help!)
+
+        v1.0.9b
+        Add PWA specific functions for quick/auto updating.
         "
         cleanexit
     }
@@ -1903,9 +1909,8 @@ fi
         echo "
         Recent Changelog
 
-        v1.0.8b
-        Remove wget, unzip and perl dependencies
-        (Thanks Sebanc for the help!)
+        v1.0.9b
+        Add PWA specific functions for quick/auto updating.
         "
         cleanexit
     }
@@ -2507,6 +2512,10 @@ fi
         elif [ "$OPTS" == "--updatetoolkit" ] || [ "$OPTS" == "-u" ]; then
             setvars
             tbupandin
+        elif [ "$OPTS" == "--pwa-unstable-update" ] || [ "$OPTS" == "-pwa-uu" ]; then
+            pwa-autoupdate
+        elif [ "$OPTS" == "--pwa-auto-update" ] || [ "$OPTS" == "-pwa-au" ]; then
+            pwa-autoupdate
         elif [ "$OPTS" == "" ]; then
             setvars
         elif [ "$OPTS" != "" ] ; then
@@ -2622,6 +2631,77 @@ suspend_s3: disable suspend to idle (S0ix) and use S3 suspend instead,
 
 advanced_als: default ChromeOS auto-brightness is very basic (https://chromium.googlesource.com/chromiumos/platform2/+/master/power_manager/docs/screen_brightness.md). This option activates more auto-brightness levels (based on the Google Pixel Slate implementation).
 "
+
+#####################################################################
+# PWA exclusive scripts
+#####################################################################
+
+pwa-autoupdate(){
+# $OPTS is defined when called, ie: brunch-toolkit $OPTS
+# Do this before pwa-sharedvars
+    if [ "$OPTS" == "--pwa-auto-update" ] || [ "$OPTS" == "-pwa-au" ]; then
+        channel="brunch"
+    elif [ "$OPTS" == "--pwa-unstable-update" ] || [ "$OPTS" == "-pwa-uu" ]; then
+        channel="brunch-unstable"
+    fi
+# Special variable handler
+    pwa-sharedvars
+# Check for existing update process
+    if [ "$updateinprogress" == "true" ] ; then
+        echo "[Error] Update already in progress!"
+        updateinprogress="false"
+        exit
+    fi
+    updateinprogress="false"
+    if (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
+# Make a working directory to keep toolkit out of sight
+        mkdir -p  ~/tmp/brunch-toolkit
+        curdir=$(pwd)
+        cd ~/tmp/brunch-toolkit
+# Download latest release from $channel
+        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/$channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
+        updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
+# Call built in update command
+        sudo chromeos-update -f ~/tmp/brunch-toolkit/"$updatefile"
+        cd $curdir
+# Clean up
+        rm -rf ~/tmp/brunch-toolkit/*
+        rmdir ~/tmp/brunch-toolkit
+        updateinprogress="false"
+        exit
+    else
+# Error if no need to update
+        echo "[ERROR!] You already have the latest version of Brunch. ($currentbrunchversion)"
+        updateinprogress="false"
+        exit
+    fi
+}
+
+pwa-sharedvars(){
+    # Check for a stable internet connection #
+        case "$(curl -s --max-time 2 -I http://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')" in
+    # If connection is good, do nothing and proceed quietly
+            [23]) : ;;
+    # Error on weak or empty connection
+            *) echo "[!] The network is down or very slow, unable to continue."; exit ;;
+        esac
+        currentbrunchversion=$(awk '{print $3}' 2> /dev/null < /etc/brunch_version)
+    # Error if called on a non-brunch device
+        if [ -z "$currentbrunchversion" ] ; then
+                echo "[ERROR] This function only works on Brunch systems!"
+                exit
+        fi
+    # Get latest brunch version from $channel
+    if [ -z "$channel" ] ; then
+        channel="brunch"
+    fi
+        lbv0=$(curl -s "https://api.github.com/repos/sebanc/$channel/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
+    # Strip all of the unnecessary bits off, integers only
+        lbv1=${lbv0/stable_}
+        lbv2=${lbv1/unstable_}
+        lbv3=${lbv2/testing_}
+        latestbrunchversion=$(echo "$lbv3" | cut -d'_' -f3 | cut -d'.' -f1)
+}
 
 #####################################################################
 # Script Execution
