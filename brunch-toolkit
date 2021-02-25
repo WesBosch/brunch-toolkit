@@ -141,6 +141,7 @@ echo "Version: $TOOLVER"
             echo "$0 must NOT be run as root."
             cleanexit
         fi
+            echo "Getting toolkit ready, please wait..."
             vanity
             RELEASE=$(cat /etc/brunch_version 2>/dev/null)
         if [ -z "$RELEASE" ] && [[ $(grep icrosoft /proc/version 2> /dev/null) ]] ; then
@@ -2457,7 +2458,6 @@ fi
 
 # DEBUG option handler. Silently proceeds to set variables if no options are present.
     debug() {
-        echo "Getting toolkit ready, please wait..."
         if [ "$LINUX" == "true" ] ; then
           linuxdebug
         fi
@@ -2516,6 +2516,12 @@ fi
             pwa-autoupdate
         elif [ "$OPTS" == "--pwa-auto-update" ] || [ "$OPTS" == "-pwa-au" ]; then
             pwa-autoupdate
+        elif [ "$OPTS" == "--pwa-sharedvars" ] || [ "$OPTS" == "-pwa-sv" ]; then
+            pwa-sharedvars
+        elif [ "$OPTS" == "--pwa-verbose" ] || [ "$OPTS" == "-pwa-v" ]; then
+            pwa-sharedvars
+        elif [ "$OPTS" == "--pwa-autotoolkit" ] || [ "$OPTS" == "-pwa-at" ]; then
+            pwa-autotoolkit
         elif [ "$OPTS" == "" ]; then
             setvars
         elif [ "$OPTS" != "" ] ; then
@@ -2636,71 +2642,159 @@ advanced_als: default ChromeOS auto-brightness is very basic (https://chromium.g
 # PWA exclusive scripts
 #####################################################################
 
-pwa-autoupdate(){
-# $OPTS is defined when called, ie: brunch-toolkit $OPTS
-# Do this before pwa-sharedvars
-    if [ "$OPTS" == "--pwa-auto-update" ] || [ "$OPTS" == "-pwa-au" ]; then
-        channel="brunch"
-    elif [ "$OPTS" == "--pwa-unstable-update" ] || [ "$OPTS" == "-pwa-uu" ]; then
-        channel="brunch-unstable"
-    fi
+pwa-autotoolkit(){
 # Special variable handler
     pwa-sharedvars
-# Check for existing update process
-    if [ "$updateinprogress" == "true" ] ; then
-        echo "[Error] Update already in progress!"
-        updateinprogress="false"
+# If updating is not possible, exit with error.
+    if [ "$toolkitoutdated" == false ] ; then
+        pwaerror="[ERROR] An update is not possible"
         exit
     fi
-    updateinprogress="false"
-    if (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
 # Make a working directory to keep toolkit out of sight
-        mkdir -p  ~/tmp/brunch-toolkit
-        curdir=$(pwd)
-        cd ~/tmp/brunch-toolkit
-# Download latest release from $channel
-        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/$channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
-        updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
-# Call built in update command
-        sudo chromeos-update -f ~/tmp/brunch-toolkit/"$updatefile"
-        cd $curdir
+    mkdir -p  ~/tmp/brunch-toolkit
+    curdir=$(pwd)
+    cd ~/tmp/brunch-toolkit
+# Download latest toolkit release
+    curl -l -O --progress-bar "$latesttoolkiturl"
+    updatefile="$(find *runch-toolkit*.sh 2> /dev/null | sort -r | head -1 )"
+    mv -f ~/tmp/brunch-toolkit/"$updatefile" /usr/local/bin/brunch-toolkit
+    chmod +x /usr/local/bin/brunch-toolkit
+    mkdir /usr/local/bin/brunch-toolkit-assets
 # Clean up
-        rm -rf ~/tmp/brunch-toolkit/*
-        rmdir ~/tmp/brunch-toolkit
-        updateinprogress="false"
-        exit
-    else
-# Error if no need to update
-        echo "[ERROR!] You already have the latest version of Brunch. ($currentbrunchversion)"
-        updateinprogress="false"
+    cd $curdir
+    rm -rf ~/tmp/brunch-toolkit/*
+    rmdir ~/tmp/brunch-toolkit
+    updateinprogress="false"
+    exit
+}
+
+pwa-autoupdate(){
+# Special variable handler
+    pwa-sharedvars
+# $OPTS is defined when called, ie: brunch-toolkit $OPTS
+    if [ "$OPTS" == "--pwa-auto-update" ] || [ "$OPTS" == "-pwa-au" ]; then
+        channel="brunch"
+        possible="$stableoutdated"
+    elif [ "$OPTS" == "--pwa-unstable-update" ] || [ "$OPTS" == "-pwa-uu" ]; then
+        channel="brunch-unstable"
+        possible="$unstableoutdated"
+    fi
+# If updating is not possible, exit with error.
+    if [ "$possible" == false ] ; then
+        pwaerror="[ERROR] An update is not possible"
         exit
     fi
+# Make a working directory to keep toolkit out of sight
+    mkdir -p  ~/tmp/brunch-toolkit
+    curdir=$(pwd)
+    cd ~/tmp/brunch-toolkit
+# Download latest release from $channel
+    curl -L -O "$(curl -s https://api.github.com/repos/sebanc/$channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
+    updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
+# Call built in update command
+    sudo chromeos-update -f ~/tmp/brunch-toolkit/"$updatefile"
+# Clean up
+    cd $curdir
+    rm -rf ~/tmp/brunch-toolkit/*
+    rmdir ~/tmp/brunch-toolkit
+    updateinprogress="false"
+    exit
 }
 
 pwa-sharedvars(){
-    # Check for a stable internet connection #
+    # Check for existing update process
+        if [ "$updateinprogress" == "true" ] ; then
+            pwaerror="[Error] Update already in progress!"
+            updateinprogress="false"
+            exit
+        fi
+        updateinprogress="true"
+    # Check for a stable internet connection
         case "$(curl -s --max-time 2 -I http://google.com | sed 's/^[^ ]*  *\([0-9]\).*/\1/; 1q')" in
     # If connection is good, do nothing and proceed quietly
-            [23]) : ;;
+            [23]) onlineallowed="true" ;;
     # Error on weak or empty connection
-            *) echo "[!] The network is down or very slow, unable to continue."; exit ;;
+            *) onlineallowed="false" ; pwaerror="[ERROR] The network is down or very slow, unable to continue."; exit ;;
         esac
-        currentbrunchversion=$(awk '{print $3}' 2> /dev/null < /etc/brunch_version)
+    # Get current Brunch version from file
+        currentbrunchversion=$(cat /etc/brunch_version | sed -e 's/stable //g' -e 's/unstable //g' -e 's/testing //g' | cut -d' ' -f3)
     # Error if called on a non-brunch device
         if [ -z "$currentbrunchversion" ] ; then
-                echo "[ERROR] This function only works on Brunch systems!"
-                exit
+            pwaerror="[ERROR] This function only works on Brunch systems!"
+            exit
         fi
-    # Get latest brunch version from $channel
-    if [ -z "$channel" ] ; then
-        channel="brunch"
+    # Get latest brunch version from both channels
+        latestbrunchstableversion=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | sed -e 's/stable_//g' -e 's/unstable_//g' -e 's/testing_//g' | cut -d'_' -f3 | cut -d'.' -f1)
+        latestbrunchunstableversion=$(curl -s "https://api.github.com/repos/sebanc/brunch-unstable/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | sed -e 's/stable_//g' -e 's/unstable_//g' -e 's/testing_//g' | cut -d'_' -f3 | cut -d'.' -f1)
+    # Get latest toolkit version from Github
+    latesttoolkit=$(curl -s "https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest" | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
+    # Check if Github api is acting up, use brunch stable as a test
+    if [ -z "$latestbrunchstableversion" ] ; then
+        pwaerror="[ERROR] Github API has hit the request limit, try again later."
+        exit
     fi
-        lbv0=$(curl -s "https://api.github.com/repos/sebanc/$channel/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
-    # Strip all of the unnecessary bits off, integers only
-        lbv1=${lbv0/stable_}
-        lbv2=${lbv1/unstable_}
-        lbv3=${lbv2/testing_}
-        latestbrunchversion=$(echo "$lbv3" | cut -d'_' -f3 | cut -d'.' -f1)
+    # Check if Brunch is outdated, compare both channels
+        if (( "$currentbrunchversion" < "$latestbrunchstableversion" )) ; then
+            stableoutdated="true"
+        else
+            stableoutdated="false"
+        fi
+        if (( "$currentbrunchversion" < "$latestbrunchunstableversion" )) ; then
+            unstableoutdated="true"
+        else
+            unstableoutdated="false"
+        fi
+    # Set up forward compatibility for the next toolkit version's variables
+        toolkitversion="$TOOLVER"
+        TOOLVER="$toolkitversion"
+    # Check if toolkit is outdated
+        currentsemversion=$(echo "$toolkitversion" | sed -e "s/^v//" -e "s/b$//")
+        csvint1=$(echo "$currentsemversion" | cut -d'.' -f1)
+        csvint2=$(echo "$currentsemversion" | cut -d'.' -f2)
+        csvint3=$(echo "$currentsemversion" | cut -d'.' -f3)
+        latestsemversion=$(echo "$latesttoolkit" | sed -e "s/^v//" -e "s/b$//")
+        lsvint1=$(echo "$latestsemversion" | cut -d'.' -f1)
+        lsvint2=$(echo "$latestsemversion" | cut -d'.' -f2)
+        lsvint3=$(echo "$latestsemversion" | cut -d'.' -f3)
+        if [ -z "$latesttoolkit" ] ; then
+        :
+        elif (( "$csvint1" < "$lsvint1" )) ; then
+          toolkitoutdated="true"
+        elif [ "$csvint1" == "$lsvint1" ] && (( "$csvint2" < "$lsvint2" )) ; then
+          toolkitoutdated="true"
+        elif [ "$csvint1" == "$lsvint1" ] && [ "$csvint2" == "$lsvint2" ] && (( "$csvint3" < "$lsvint3" )) ; then
+          toolkitoutdated="true"
+        else
+          toolkitoutdated="false"
+        fi
+        latesttoolkiturl=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'browser_' | cut -d\" -f4 | grep '.sh')
+    # Report no errors if there are no errors
+        if [ -z "$pwaerror" ] ; then
+            pwaerror="No error."
+        fi
+    # Echo all important variables if calling verbose function
+        if [ "$OPTS" == "--pwa-verbose" ] || [ "$OPTS" == "-pwa-v" ]; then
+        updateinprogress="false"
+        echo "┌───────────────────────────────┬──────── -"
+        echo "├ pwaerror: ────────────────────┤ $pwaerror"
+        echo "├ onlineallowed: ───────────────┤ $onlineallowed"
+        echo "├ currentbrunchversion: ────────┤ $currentbrunchversion"
+        echo "├ latestbrunchstableversion: ───┤ $latestbrunchstableversion"
+        echo "├ stableoutdated: ──────────────┤ $stableoutdated"
+        echo "├ latestbrunchunstableversion: ─┤ $latestbrunchunstableversion"
+        echo "├ unstableoutdated: ────────────┤ $unstableoutdated"
+        echo "├ toolkitversion: ──────────────┤ $toolkitversion"
+        echo "├ latesttoolkit: ───────────────┤ $latesttoolkit"
+        echo "├ toolkitoutdated: ─────────────┤ $toolkitoutdated"
+        echo "├ updateinprogress: ────────────┤ $updateinprogress"
+        echo "└───────────────────────────────┴──────── -"
+        exit
+        fi
+    # Unset updating status if only checking for variables
+        if [ "$OPTS" == "--pwa-sharedvars" ] || [ "$OPTS" == "-pwa-sv" ]; then
+            updateinprogress="false"
+            exit
+        fi
 }
 
 #####################################################################
