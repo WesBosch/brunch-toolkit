@@ -1474,7 +1474,7 @@ if [ "${bootsplashchoice##*.}" == "gif" ] ; then
     pngh=$(( $height - $pngh ))
     fi
 # assume black for now, set up selector later
-    if [ -z "$usercolor" ] ; then
+    if [ -z "$usercolor" ] || [ "$usercolor" == "srgba(0,0,0,0)" ] ; then
     usercolor="black"
     fi
     echo "Converting boot animation to fit your screen, please wait..."
@@ -1514,7 +1514,7 @@ elif [ "${bootsplashchoice##*.}" == "png" ] ; then
     pngh=$(( $height - $pngh ))
     fi
 # assume black for now, set up selector later
-    if [ -z "$usercolor" ] ; then
+    if [ -z "$usercolor" ] || [ "$usercolor" == "srgba(0,0,0,0)" ] ; then
     usercolor="black"
     fi
     echo "Converting image to fit your screen, please wait..."
