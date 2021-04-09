@@ -17,27 +17,56 @@ fi
 
 # LANG='en' # revisit this later for possible multilingual options
 
-# These variables never need to change in the script
+# These variables never need to change in the script. Preserve some old vars for backwards compatibility
 readonly toolkitversion="v2.0.0b"  #TOOLVER
+readonly TOOLVER="$toolkitversion"
 readonly quickstart="$1" #OPTS
-readonly defaultshelltools='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,' #shelltools
+readonly OPTS="$quickstart"
+readonly defaultshelltools='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,'
 readonly discordinvite="https://discord.gg/x2EgK2M"
 readonly userid=`id -u $USERNAME`
 # Incorrect formatting is intentional here
 PS3="
  >> "
 
-# Some of the most common framework options for a user to choose from (ordered A->Z)
-readonly defaultframeworkoptions='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives' #FRAMEWORKOPTIONS
 # All currently known framework options. Update this list as necessary (any order)
-readonly allframeworkoptions='acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8812au rtl8821ce rtl88x2bu rtbth ipts disable_intel_hda asus_c302 sysfs_tablet_mode force_tablet_mode suspend_s3 advanced_als' #FARMEWORKOPTIONSALL
-
+readonly defaultframeworkoptions=(acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8812au rtl8821ce rtl88x2bu rtbth ipts oled_display disable_intel_hda asus_c302 sysfs_tablet_mode suspend_s3 advanced_als)
+# All currently known descriptions. Mind string length
+readonly fwodesc=(
+"Patches in better support for Power Button hardware"
+"Alternative configuration to fix touchpad issues"
+"Alternative configuration to fix touchpad issues"
+"Alternative init for Android services, may fail"
+"Applies audio fixes specific to Baytrail devices"
+"Enables native ChromeOS updating from the settings"
+"Enables tablet mode on boot using sysfs control"
+"Patches to force mic to work on some devices"
+"Mounts internal drives at boot, visible in files app"
+"Patches in support for some Broadcom wireless cards"
+"Patches in support for some Intel wireless cards"
+"Patches in support for rtl8188eu wireless cards"
+"Patches in support for rtl8723bu wireless cards"
+"Patches in support for rtl8723de wireless cards"
+"Patches in support for rtl8812au wireless cards"
+"Patches in support for rtl8821ce wireless cards"
+"Patches in support for rtl88x2bu wireless cards"
+"Patches in support for rt3290 & rt3298le bluetooth"
+"Patches in support for Surface touchscreens"
+"Patches in support for oled display in Kernel 5.10"
+"Blacklists the snd_hda_intel module"
+"Applies fixes specific to Asus c302 devices"
+"Allows users to force tablet mode from the shell (See github)"
+"Disables suspend to idle (S0ix) and uses S3 instead"
+"Enables more auto-brightness levels on supported hardware"
+)
+# Currently avaliable kernels
+readonly avaliablekernels=(kernel-4.19 kernel-5.4 kernel-5.10)
 # Some of the most common Chome OS recoveries for a user to choose from (ordered A->Z)
 readonly defaultrecoveries="eve grunt hatch lulu nami rammus samus zork" #RECOVERYOPTIONS
 # All currently known Chrome OS recoveries. Update this list as necessary (any order)
 readonly allrecoveries="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork" #VALIDRECOVERIES
 # Currently avaliable Brunch Bootsplash OPTIONS
-readonly bbsopts="blank debug default default_notext croissant croissant_notext neon neon_notext"
+readonly bbsopts="blank default default_notext croissant croissant_notext neon neon_notext colorful colorful_dark brunchbook"
 
 # These variables are expected to have a "false" state unless otherwise set
 onlineallowed=true
@@ -64,12 +93,12 @@ function select_option {
     cursor_blink_off() { printf "$ESC[?25l"; }
     cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
     print_option()     { printf "   $1 "; }
-    print_selected()   { printf "  $ESC[7m $1 $ESC[27m"; }
+    print_selected()   { printf "  $ESC[7m $1 $ESC[27m" ; }
     get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
-                         if [[ $key = $ESC[A ]]; then echo up;    fi
-                         if [[ $key = $ESC[B ]]; then echo down;  fi
-                         if [[ $key = ""     ]]; then echo enter; fi; }
+                         if [[ $key = $ESC[A ]]; then echo up;     fi
+                         if [[ $key = $ESC[B ]]; then echo down;   fi
+                         if [[ $key = ""     ]]; then echo enter;  fi; }
 
     # initially print empty new lines (scroll down if at bottom of screen)
     for opt; do printf "\n"; done
@@ -121,6 +150,7 @@ function select_opt {
     return $result
 }
 
+
 #+===============================================================+
 #|  Vanity plates                                                 |
 #|  Display something pretty when a user opens a menu             |
@@ -135,10 +165,9 @@ echo "
 █████████████████████████████████████████████████████████████████
 "
 clear
-if [ "$notify" == "true" ] ; then
-notifications
-elif [ "$widget" == "true" ] ; then
-HWwidget
+if [ -n "$widget" ] ; then
+$widget
+widget=
 fi
 displayvanity
 }
@@ -236,27 +265,6 @@ cat << "EOF"
 ╚═══════════════════════════════════════════════════════════════╝
 
 EOF
-elif [ "$plate" == "editgrubconfigmenu" ] ; then
-echo "
-┌───────────────────────────────────────────────────────────────┐
-│                     ~ Grub Options Menu ~                     │
-│                                                               │
-│       This menu allows users to modify their grub entry.      │
-│      Misuse of the tools here can result in a non-booting     │
-│      system, please be responsible & keep backups of data.    │
-│                                                               │"
-if [[ "$nooptions" == "true" ]] ; then
-echo "│            No framework options currently selected            │"
-elif [[ -n "$gruboptions" ]] ; then
-echo "│                    Framework options found                    │"
-else
-echo "│                   No framework options found                  │"
-fi
-echo "│                                                               │
-│           Please select one of the following options          │
-└───────────────────────────────────────────────────────────────┘
-       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-"
 elif [ "$plate" == "kerneloptions" ] ; then
 echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -380,9 +388,9 @@ setvars() {
         currentbrunchversion=false
         else
         chromeosreleaseboard=$(printenv | grep CHROMEOS_RELEASE_BOARD | cut -d"=" -f2 | cut -d"-" -f1)
-        # Check the bootsplash status, only look if using brunch
-        currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-        previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+        # Check the bootsplash status, only look if using brunch (Dont use anymore!)
+        #currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
+        #previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
         fi
     # Get kernel info and line it up
         kernel1=$(uname -r 2>/dev/null | awk -F'[_.]' '{print $1}')
@@ -410,17 +418,34 @@ setvars() {
         otherarchives+=("Help" "Back" "Quit")
         chromerecoveries=($(find *hrome*.bin* 2> /dev/null | sort -r))
         chromerecoveries+=("Help" "Back" "Quit")
-        bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
-        bootsplashzip+=("Download from github" "Help" "Back" "Quit")
+        bootsplashzip=($(find -maxdepth 1 -type f \( -iname \boot_splash*.zip -o -iname \*.gif -o -iname \*.png \) 2> /dev/null | sort -r | cut -c3- ))
         bootsplashurl="https://github.com/WesBosch/brunch-bootsplash/releases/download/"
+        if [ "$onlineallowed" == "false" ] ; then
+    # remake array without github option if it's OFFLINE
+        bootsplashzip+=("Help" "Back" "Quit")
+        else
+        bootsplashzip+=("Download from github" "Help" "Back" "Quit")
+        fi
     # Get some online data, skip this if running in offline mode
         if [[ $onlineallowed == true ]] ; then
             onlinebootsplashzip=($(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip' | sed -e s/.zip//))
             onlinebootsplashzip+=("Help" "Back" "Quit")
             latestbrunch=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' )
-            latestbrunchversion=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | cut -d'_' -f4 | cut -d'.' -f1)
+            #latestbrunchversion=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | cut -d'_' -f4 | cut -d'.' -f1)
             latesttoolkit=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
             latesttoolkiturl=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'browser_' | cut -d\" -f4 | grep '.sh')
+            lbuv0=$(curl -s "https://api.github.com/repos/sebanc/brunch-unstable/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
+            # Strip all of the unnecessary bits off, integers only
+            lbuv1=${lbuv0/stable_}
+            lbuv2=${lbuv1/unstable_}
+            lbuv3=${lbuv2/testing_}
+            latestbrunchunstableversion=$(echo "$lbuv3" | cut -d'_' -f3 | cut -d'.' -f1)
+            lbv0=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
+            # Strip all of the unnecessary bits off, integers only
+            lbv1=${lbuv0/stable_}
+            lbv2=${lbuv1/unstable_}
+            lbv3=${lbuv2/testing_}
+            latestbrunchversion=$(echo "$lbuv3" | cut -d'_' -f3 | cut -d'.' -f1)
         fi
         unset IFS
         if [ "$scriptmode" != "brunch" ] ; then
@@ -628,16 +653,22 @@ if [ -z "$latestbrunchversion" ] ; then
 :
 elif [ "$currentbrunchver" != "false" ] && (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
 notifybrunch="
-│         The current version of Brunch may be outdated!        │"
+│         There's a new Brunch Stable release!        │"
+fi
+if [ -z "$latestbrunchversion" ] ; then
+:
+elif [ "$currentbrunchver" != "false" ] && (( "$currentbrunchversion" < "$latestbrunchunstableversion" )) ; then
+notifybrunch="
+│        There's a new Brunch Unstable release!       │"
 fi
 # Check if ChromeOS is outdated
 
 # Check if Bootsplash needs fixed
-if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
-animneedsset="true"
-notifybootsplash="
-│  The boot animation may have been reset by a system update!   │"
-fi
+#if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
+#animneedsset="true"
+#notifybootsplash="
+#│  The boot animation may have been reset by a system update!   │"
+#fi
 # Check if github's API limit has been reached or if Github is down
 if [[ $onlineallowed == true ]] && [ -z "$latesttoolkit" ] || [[ $onlineallowed == true ]] && [ -z "$latestbrunchversion" ] ; then
 notifygithub="
@@ -655,7 +686,7 @@ fi
 
 # Actual main menu functions
 startmenu(){
-notify="true"
+widget="notifications"
 plate="
 ┌───────────────────────────────────────────────────────────────┐
 │                         ~ Main Menu ~                         │
@@ -664,18 +695,20 @@ plate="
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 " ; vanity
-notify="false"
 # Context aware menu Options, these are for aesthetics only, the functions themselves will handle the context
-if [ "$animneedsset" == "true" ] ; then
-  bootanimationmenu="Fix ChromeOS Boot Animation"
-else
-  bootanimationmenu="Change ChromeOS Boot Animation"
-fi
+#if [ "$animneedsset" == "true" ] ; then
+#  bootanimationmenu="Fix ChromeOS Boot Animation"
+#else
+#  bootanimationmenu="Change ChromeOS Boot Animation"
+#fi
 if [ "$scriptmode" != "brunch" ] ; then
-    startmenuopts=("Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit")
+#    startmenuopts=("Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit")
+    startmenuopts=("Help" "Quit")
 elif [ "$dualboot" == "false" ] ; then
-    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit")
+#    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit")
+    startmenuopts=("Grub Options" "Help" "Quit")
 elif [ "$dualboot" == "true" ] ; then
+#    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit")
     startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit")
 fi
     case `select_opt "${startmenuopts[@]}"` in
@@ -716,13 +749,14 @@ fi
 }
 
 startmenuhelp(){
+previousmenu="startmenu"
 if [[ "$scriptmode" == "brunch" ]] ; then
 helpentry="
 ┌───────────────────────────────────────────────────────────────┐
 │                                                               |
 │                         Main Menu Help                        │
 │                                                               │
-│   This is the main menu, from here you can access most of     │
+│   This is the main menu, from here users can access most of   │
 │   the toolkit. Here's what all of the main menu options do:   │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
@@ -788,7 +822,7 @@ helpentry="
 │                                                               │
 │                         Main Menu Help                        │
 │                                                               │
-│   This is the main menu, from here you can access most of     │
+│   This is the main menu, from here users can access most of   │
 │   the toolkit. Here's what all of the main menu options do:   │
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
@@ -852,298 +886,6 @@ universalversioncheck(){
     fi
 }
 
-
-#+===============================================================+
-#|  Bootsplash Functions                                         |
-#|  Everything related to boot animations goes here              |
-#+===============================================================+
-
-# A neat little widget to show the user's screen size
-HWwidget(){
-if [ -n "$width" ] && [ -n "$height" ] ; then
-heightandwidth=$(echo "Monitor dimensions: $width x $height" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
-printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░░ Hardware Info ░░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
-echo "│                                                               │
-|$heightandwidth|"
-echo "│                                                               │
-└───────────────────────────────────────────────────────────────┘"
-fi
-}
-
-# The actual boot animation menu starts here
-updatebootsplashmain(){
-    previousmenu="startmenu"
-    plate="bootsplash" ; vanity
-    checkforpreviousbootsplash
-    getbootsplashfiles
-}
-
-checkforpreviousbootsplash(){
-    if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
-        echo "[!] The boot animation was reset to the default,
-    this is normal after an update."
-        resetbootsplashmain
-    fi
-    if [ -n "$currentlyset" ] ; then
-    echo "[!] Your currently set boot animation is:
-    $currentlyset"
-    fi
-}
-
-resetbootsplashmain(){
-    echo ""
-    if [ -z "$previouslyset" ] ; then
-        exitcode="5"
-        cleanexit
-    fi
-    echo "Currently Set: $currentlyset"
-    echo "Previously Set: $previouslyset"
-    echo "[o] Quickly resetting your boot animation, please wait..."
-    sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { exitcode="6" ; cleanexit ; } 2> /dev/null
-    sudo cp /usr/local/bin/brunch-toolkit-assets/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent
-    sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
-    sudo touch /usr/share/chromeos-assets/images_100_percent/$previouslyset.btbs 2> /dev/null
-    animneedsset="false"
-    # Check the bootsplash status again
-    currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-    previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-    clear
-    echo "
-┌───────────────────────────────────────────────────────────────┐
-│     Boot animation restored, please reboot to see results.    │
-│                                                               │
-│         Custom boot animations will only last until a         │
-│     framework or system update. Updating Brunch, ChromeOS     │
-│      or your framework options may remove the animation.      │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘"
-read -rp "
-       Press Enter (⏎) to return to the previous menu.
-" return
-case $return in
-    * ) $previousmenu ;;
-esac
-}
-
-getbootsplashfiles(){
-    echo "[o] Searching for local bootsplash files, please wait..."
-    if [ -z  "$bootsplashzip" ] && [ "$onlineallowed" == "false" ] ; then
-        echo "[x] No boot animation files are avaliable!"
-        exitcode="7"
-        cleanexit
-    else
-        echo "[o] Boot animation files are avaliable!"
-        selectanim
-    fi
-}
-
-selectanim(){
-    previousmenu="startmenu"
-    widget="true"
-    if [ "$onlineallowed" = "true" ] ; then
-    platesub="│      Easily download or change ChromeOS boot animations!      │"
-    else
-    platesub="│            Easily change ChromeOS boot animations!            │"
-    fi
-    plate="
-    ┌───────────────────────────────────────────────────────────────┐
-    │                  ~ Boot Animation Main Menu ~                 │
-    │                                                               │
-$platesub
-    │                                                               │
-    │           Please select one of the following options          │
-    └───────────────────────────────────────────────────────────────┘
-           Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-    " ; vanity
-    widget="false"
-if [ "$onlineallowed" == "false" ] ; then
-# remake array without github option if it's OFFLINE
-bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
-bootsplashzip+=("Help" "Back" "Quit")
-fi
-    case `select_opt "${bootsplashzip[@]}"` in
-        *) bootsplashchoice=${bootsplashzip[$?]} ; echo "[o] User selected: $bootsplashchoice";;
-    esac
-    if [ "$bootsplashchoice" == "Download from github" ] ; then
-        webanimcheck
-    elif [ "$bootsplashchoice" == "Help" ] ; then
-        previousmenu="selectanim"
-        selectanimhelp
-    elif [ "$bootsplashchoice" == "Back" ] ; then
-        $previousmenu
-    elif [ "$bootsplashchoice" == "Quit" ] ; then
-        cleanexit
-    else
-        changebootsplash
-    fi
-}
-
-webanimcheck(){
-    previousmenu="selectanim"
-    widget="true"
-    plate="
-    ┌───────────────────────────────────────────────────────────────┐
-    │               ~ Boot Animation Online Downloader ~            │
-    │                                                               │
-    │      These are the avaliable animations from the github.      │
-    │                                                               │
-    │           Please select one of the following options          │
-    └───────────────────────────────────────────────────────────────┘
-           Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-    " ; vanity
-    widget="false"
-    case `select_opt ${onlinebootsplashzip[@]}` in
-    *) webzip=${onlinebootsplashzip[$?]} ; echo "[o] User selected: $webzip";;
-    esac
-    if [ "$webzip" == "Help" ] ; then
-        previousmenu="webanimcheckhelp"
-        webanimhelp
-    elif [ "$webzip" == "Back" ] ; then
-        $previousmenu
-    elif [ "$webzip" == "Quit" ] ; then
-        cleanexit
-    else
-        getnewanim
-    fi
-}
-
-getnewanim() {
-    echo "[o] Now downloading animation from github, please wait..."
-    wget -q --show-progress $bootsplashurl$webzip/$webzip.zip
-    echo "[o] Boot animation downloaded! Refreshing, please wait..."
-    IFS=$'\n'
-    bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
-    bootsplashzip+=("Help" "Back" "Quit")
-    unset IFS
-    selectanim
-}
-
-changebootsplash(){
-# Unzip selection
-    echo "[!] Unzipping archive, please wait..."
-    bsdir=$(echo "$bootsplashchoice" | sed -e s/.zip//)
-    mkdir $downloads/$bsdir
-    mv $bootsplashchoice $downloads/$bsdir
-    temppwd=$(pwd)
-    cd $downloads/$bsdir
-    bsdtar -xvf "$bootsplashchoice" --exclude "*_MACOSX*" | pv -s $(du -sb $downloads/$bsdir | awk '{print $1}')
-    # Insert resize command here
-    if [ -n "$width" ] && [ -n "$height" ] ; then
-        echo "Converting boot animation to fit your screen, please wait..."
-    convert *.png -resize "$width"x"$height" -set filename:f "%t" ./"%[filename:f].png"
-    fi
-    cd $temppwd
-    # Put them where they belong
-    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/share/chromeos-assets/images_100_percent || { exitcode="9" ; cleanexit ; }
-    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
-    mkdir /usr/local/bin/brunch-toolkit-assets 2> /dev/null
-    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
-    sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
-    rm -rf /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
-    sudo touch /usr/share/chromeos-assets/images_100_percent/$bsdir.btbs 2> /dev/null
-    sudo touch /usr/local/bin/brunch-toolkit-assets/$bsdir.btbs 2> /dev/null
-    rm -rf $downloads/$bsdir 2> /dev/null
-    # Check the bootsplash status again
-    animneedsset="false"
-    currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-    previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-# Cleanup
-# Prompt to reboot
-    clear
-echo "
-┌───────────────────────────────────────────────────────────────┐
-│     Boot animation applied, please reboot to see results.     │
-│                                                               │
-│         Custom boot animations will only last until a         │
-│     framework or system update. Updating Brunch, ChromeOS     │
-│      or your framework options may remove the animation.      │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘"
-read -rp "
-           Press Enter (⏎) to return to the main menu.
-" return
-case $return in
-* ) $previousmenu ;;
-esac
-}
-
-selectanimhelp(){
-if [ "$onlineallowed" = "true" ] ; then
-helpsub="
-│                                                               │
-│   Download from github                                        │
-│       This option allows the toolkit to connect to github,    │
-│       the avaliable animation files will be listed in a       │
-│       new menu for the user to select from.                   │"
-fi
-helpentry="
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│                  Boot Animation Menu Help                     │
-│                                                               │
-│   This is the animation menu, from here users can select      │
-│   from the locally downloaded animation files on the system   │
-│   or download them through the toolkit from a github repo.    │
-│   Users should select one with the same resolution they use.  │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │$helpsub
-│   [Listed bootsplash files]                                   │
-│       The files listed here are the local animation files     │
-│       already on the system. The toolkit looks for these in   │
-│       the pc's downloads directory (default: ~/Downloads)     │
-│       If a user's files aren't listed, make sure they are     │
-│       zip files starting with boot_splash for the filename.   │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-│                                                               │
-│   Back                                                        │
-│       Takes the user back to the previous menu. In this case  │
-│       it leads to the Brunch Toolkit's main menu.             │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-helpmenu
-}
-
-webanimhelp(){
-helpentry="
-┌───────────────────────────────────────────────────────────────┐
-│                                                               │
-│                Animation Downloader Menu Help                 │
-│                                                               │
-│   This is the animation downloader menu, from here users      │
-│   can select from animation archives avaliable online.        │
-│   The script will download what the user selects and return   │
-│   to the Boot Animation menu where they can apply them.       │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   [Listed bootsplash files]                                   │
-│       The files listed here are the online animation files    │
-│       avaliable on the github. The script will handle both    │
-│       downloading and unzipping of these files as needed.     │
-│                                                               │
-│   Help                                                        │
-│       Displays relevant help information about the current    │
-│       options available to the user at that time. It is not   │
-│       always the same page, so check it when help is needed!  │
-│                                                               │
-│   Back                                                        │
-│       Takes the user back to the previous menu. In this case  │
-│       it leads to the ChromeOS Boot Animation main menu.      │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
-│                                                               │
-└───────────────────────────────────────────────────────────────┘
-"
-helpmenu
-}
 
 #+===============================================================+
 #|  Install and Update Toolkit Functions                         |
@@ -1219,7 +961,7 @@ tbinstall(){
 
 tbupdate(){
     echo "[o] Downloading latest Brunch Toolkit, please wait..."
-    wget -q --show-progress "$latesttoolkiturl"
+    curl -l -O --progress-bar "$latesttoolkiturl"
     echo "[o] Downloaded successfully!"
 }
 
@@ -1398,28 +1140,22 @@ brunchshellsetup(){
 
 
 #+===============================================================+
-#|  Framework Options                                            |
-#|  Everything related to framework options goes here            |
+#|  grub options                                                 |
+#|  Everything related to grub goes here                         |
 #+===============================================================+
 
 editgrubconfigmain(){
     plate="editgrubconfig" ; vanity
     grubstartup
+    mountgrub
     gruboptions
-    plate="editgrubconfigmenu" ; vanity
+    unmountgrub
     grubmain
 }
 
 grubstartup(){
-    frommenu="false"
     echo "[o] Checking install configuration, please wait..."
-    source=$(rootdev -d)
-    if (expr match "$source" ".*[0-9]$" >/dev/null); then
-        partsource="$source"p
-    else
-        partsource="$source"
-    fi
-    if [[ "$source" =~ .*"loop".* ]] ; then
+    if [ "$dualboot" == "true" ] ; then
     clear
     echo "
 ┌───────────────────────────────────────────────────────────────┐
@@ -1433,12 +1169,15 @@ grubstartup(){
 "
     read -rp "(y/n): " yn
     case $yn in
-        [Yy]* ) echo "[o] Continuing to main menu..." ; startmenu;;
+        [Yy]* ) echo "[o] Returning to main menu..." ; startmenu;;
         [Nn]* ) exitcode="17"; cleanexit;;
     esac
     else
         echo "[o] Singleboot installation detected."
     fi
+}
+
+mountgrub(){
     sudo mkdir -p /root/tmpgrub || { exitcode="13" ; cleanexit ; }
     echo "[o] Mounting partition12, please wait..."
     sudo mount "$partsource"12 /root/tmpgrub || { exitcode="14" ; cleanexit ; }
@@ -1446,528 +1185,861 @@ grubstartup(){
     grubmounted="true"
 }
 
+unmountgrub(){
+    if [ "$grubmounted" == "true" ] ; then
+    echo "[!] Unmounting partition12, please wait..."
+    sudo umount /root/tmpgrub || { grubmounted="false" ; exitcode="15" ; cleanexit ; }
+    echo "[o] Unmounted successfully."
+    grubmounted="false"
+    fi
+}
+
 gruboptions(){
-    gruboriginal=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "options=" | sed "s/.*options=//")
-    gruboptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "options=" | sed "s/.*options=//")
-    #if [ -z "$gruboriginal" ] ; then
-    #    echo "[DEBUG] NO OPTIONS FOUND"
-    #fi
+    findoptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=")
+    originalfwoopts=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "options=" | sed "s/.*options=//g" | cut -d' ' -f1 | sed "s/,/ /g")
+    fwoopts=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "options=" | sed "s/.*options=//g" | cut -d' ' -f1 | sed "s/,/ /g")
+    originalkernelopts=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "kernel" | sed "s/.*kernel/kernel/g" | cut -d' ' -f1)
+    kerneloptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "kernel" | sed "s/.*kernel/kernel/g" | cut -d' ' -f1)
+    findbootsplash=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "brunch_bootsplash=")
+    originalbbsopts=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "brunch_bootsplash=" | sed "s/.*brunch_bootsplash=//g" | cut -d' ' -f1)
+    bbsoptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "brunch_bootsplash=" | sed "s/.*brunch_bootsplash=//g" | cut -d' ' -f1)
+    findchromeanim=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "chromeos_bootsplash=")
+    originalchromeanim=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "chromeos_bootsplash=" | sed "s/.*chromeos_bootsplash=//g" | cut -d' ' -f1)
+    userchromeanim=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "chromeos_bootsplash=" | sed "s/.*chromeos_bootsplash=//g" | cut -d' ' -f1)
+    cbaopts=$(ls /mnt/stateful_partition/unencrypted/bootsplash/)
 }
 
 grubmain(){
-    if [[ "$nooptions" == "true" ]] ; then
-    echo ""
-        select grubmenuoptions in "Add framework option" "Kernel Options" "Brunch Bootsplash" "Backup Grub" "Restore Grub" "Update Grub without options" Quit; do
-        if [[ -n "$grubmenuoptions" ]] ; then
-            echo "[o] User selected: $grubmenuoptions"
-        fi
-        if [[ $grubmenuoptions =~ .*"Add".* ]]; then
-            addfwo
-        elif [[ $grubmenuoptions =~ .*"Kernel".* ]]; then
-            kerneloptions
-        elif [[ $grubmenuoptions =~ .*"Brunch".* ]]; then
-            brunchbootsplash
-        elif [[ $grubmenuoptions =~ .*"Backup".* ]]; then
-            frommenu=true
-            grubbackup
-        elif [[ $grubmenuoptions =~ .*"Restore".* ]]; then
-            grubrestore
-        elif [ "$grubmenuoptions" == "Update Grub without options" ] ; then
-            updategrub
-        elif [ "$grubmenuoptions" == "Quit" ] ; then
-            cleanexit
-        else
-            echo "[x] Invalid option"
-        fi
-        done
-    elif [[ -n "$gruboptions" ]] ; then
-        echo ""
-    echo "[o] Current framework options:"
-    echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
-    echo ""
-    select grubmenuoptions in "Add framework option" "Remove framework option" "Kernel Options" "Brunch Bootsplash" "Backup Grub" "Restore Grub" Quit; do
+    clear
+    plate="
+┌───────────────────────────────────────────────────────────────┐
+│                     ~ Grub Options Menu ~                     │
+│                                                               │
+│       This menu allows users to modify their grub entry.      │
+│      Misuse of the tools here can result in a non-booting     │
+│      system, please be responsible & keep backups of data.    │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+" ; vanity
+    previousmenu="startmenu"
+    grubmenuopts=("Framework Options" "Kernels" "Brunch Bootsplash" "ChromeOS Boot Animation" "Edit Grub Manually" "Help" "Back" "Quit")
+    case `select_opt "${grubmenuopts[@]}"` in
+        *) grubmenuoptions="${grubmenuopts[$?]}" ;;
+    esac
     if [[ -n "$grubmenuoptions" ]] ; then
         echo "[o] User selected: $grubmenuoptions"
     fi
-    if [[ $grubmenuoptions =~ .*"Add".* ]]; then
-        addfwo
-    elif [[ $grubmenuoptions =~ .*"Kernel".* ]]; then
-        kerneloptions
-    elif [[ $grubmenuoptions =~ .*"Brunch".* ]]; then
-        brunchbootsplash
-    elif [[ $grubmenuoptions =~ .*"Backup".* ]]; then
-        frommenu=true
-        grubbackup
-    elif [[ $grubmenuoptions =~ .*"Restore".* ]]; then
-        grubrestore
-    elif [[ $grubmenuoptions =~ .*"Remove".* ]]; then
-        removefwo
+    if [ "$grubmenuoptions" == "Back" ] ; then
+        $previousmenu
     elif [ "$grubmenuoptions" == "Quit" ] ; then
         cleanexit
+    elif [ "$grubmenuoptions" == "Help" ] ; then
+        grubmenuhelp
+    elif [ "$grubmenuoptions" == "Framework Options" ] ; then
+        fwosub
+    elif [ "$grubmenuoptions" == "Kernels" ] ; then
+        kernelsub
+    elif [ "$grubmenuoptions" == "Brunch Bootsplash" ] ; then
+        bbssub
+    elif [ "$grubmenuoptions" == "ChromeOS Boot Animation" ] ; then
+        cbasub
+    elif [ "$grubmenuoptions" == "Edit Grub Manually" ] ; then
+        sudo edit-grub-config
+        editgrubconfigmain
     else
         echo "[x] Invalid option"
     fi
-    done
-    else
-    select grubmenuoptions in "Add framework option" "Kernel Options" "Brunch Bootsplash" "Backup Grub" "Restore Grub" Quit; do
-    if [[ -n "$grubmenuoptions" ]] ; then
-        echo "[o] User selected: $grubmenuoptions"
-    fi
-    if [[ $grubmenuoptions =~ .*"Add".* ]]; then
-        addfwo
-    elif [[ $grubmenuoptions =~ .*"Kernel".* ]]; then
-        kerneloptions
-    elif [[ $grubmenuoptions =~ .*"Brunch".* ]]; then
-        brunchbootsplash
-    elif [[ $grubmenuoptions =~ .*"Backup".* ]]; then
-        frommenu=true
-        grubbackup
-    elif [[ $grubmenuoptions =~ .*"Restore".* ]]; then
-        grubrestore
-    elif [ "$grubmenuoptions" == "Quit" ] ; then
-        cleanexit
-    else
-        echo "[x] Invalid option"
-    fi
-    done
-    fi
 }
 
-addfwo(){
-    echo ""
-    echo "[o] Current framework options:"
-    echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
-    echo ""
-    echo "Select 'Use these options' when you're ready to update grub.
-    "
-    select addgruboptions in "Use these options" "Add an option manually" "Get options list" "Remove an option" ${defaultframeworkoptions} Quit; do
-    if [[ -z $addgruboptions ]] ; then
-        echo "[x] Invalid option"
-    elif [[ "$addgruboptions" == "Add an option manually" ]] ; then
-        manualaddition
-    elif  [[ "$addgruboptions" == "Get options list" ]] ; then
-        getfolist
-    elif  [[ "$addgruboptions" == "Remove an option" ]] ; then
-        removefwo
-    elif  [[ "$addgruboptions" == "Use these options" ]] ; then
-        updategrub
-    elif  [[ "$addgruboptions" == "Quit" ]] ; then
-        cleanexit
-    else
-        if [[ "$gruboptions" =~ .*"$addgruboptions".* ]] ; then
-            echo "[x] This option is already added!"
-            echo ""
-            addgruboptions=
-            addfwo
-        elif [[ "$gruboptions" =~ .*"alt_touchpad".* ]] && [[ "$addgruboptions" =~ .*"alt_touchpad".* ]] ; then
-            echo "[x] You can only use one touchpad option at a time!"
-            echo ""
-            addgruboptions=
-            addfwo
-        else
-            gruboptions="$gruboptions,$addgruboptions"
-            echo "[o] $addgruboptions option added!"
-            echo ""
-            addgruboptions=
-            addfwo
-        fi
-    fi
-    done
-}
-
-manualaddition(){
-        echo ""
-        echo "You can type a valid framework option in manually."
-        echo "The script will check it against all known framework options."
-        echo "If it is not a recognized option, you will be warned (it will still be added)"
-        echo "(You do not need to include a trailing comma, this is added automatically)"
-        echo ""
-        read -rp "Please enter an option to add: " manualaddgruboptions
-        case $manualaddgruboptions in
-        * ) manaddsub;;
-        esac
-}
-
-manaddsub(){
-    if [[ -z "$manualaddgruboptions" ]] ; then
-        echo "[x] Invalid option"
-        manualaddition
-    elif [[ "$gruboptions" =~ .*"$manualaddgruboptions".* ]] ; then
-        echo "[x] This option is already added!"
-    elif [[ "$gruboptions" =~ .*"alt_touchpad".* ]] && [[ "$manualaddgruboptions" =~ .*"alt_touchpad".* ]] ; then
-        echo "[x] You can only use one touchpad option at a time!"
-    elif [[ ! "$allframeworkoptions" =~ .*"$manualaddgruboptions" ]] ; then
-        echo "[x] Not a recognized framework option!"
-        echo "    It will still be added, and you can remove it if you'd like."
-        gruboptions="$gruboptions,$manualaddgruboptions"
-        echo "[o] $manualaddgruboptions option added!"
-        echo ""
-        manualaddgruboptions=
-        addfwo
-    elif [[ -n $gruboptions ]] ; then
-        gruboptions="$gruboptions,$manualaddgruboptions"
-        echo "[o] $manualaddgruboptions option added!"
-        echo ""
-        manualaddgruboptions=
-        addfwo
-    elif [[ -z $gruboptions ]] ; then
-        gruboptions="$manualaddgruboptions"
-        echo "[o] $manualaddgruboptions option added!"
-        echo ""
-        manualaddgruboptions=
-        addfwo
-    fi
-}
-
-getfolist(){
-    echo "$allframeworkoptions"
-    addfwo
-}
-
-removefwo(){
-if [[ -z "$gruboptions" ]] ; then
-    nooptions="true"
-    grubsub
+CBAwidget(){
+if [ -n "$userchromeanim" ] ; then
+currentcba1=$(echo "Currently set boot animation:" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+currentcba2=$(echo "$userchromeanim" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░ Boot Animation Info ░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$currentcba1|
+|$currentcba2|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘"
 fi
-echo "$gruboptions"
-echo ""
-echo "Choose which framework option to remove."
-echo "You can add them back later."
-echo ""
-echo "Current framework options:"
-echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/\n/g'
-gruboptionssplit=$(echo "$gruboptions" | cut -d' ' -f1 | sed 's/,/ /g')
-echo ""
-echo "Select 'Use these options' when you're ready to update grub.
+}
+
+cbasub(){
+      clear
+      widget="CBAwidget"
+      plate="
+┌───────────────────────────────────────────────────────────────┐
+│               ~ ChromeOS Boot Animation Menu ~                │
+│                                                               │
+│   Quickly install or swap between installed boot animations   │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+      previousmenu="grubmain"
+      cbamenuoptions=(${cbaopts[@]})
+      cbamenuoptions+=("default" "Install New Animation" "Remove an Animation" "Help" "Back" "Quit")
+      case `select_opt "${cbamenuoptions[@]}"` in
+          *) cbamenuoptions="${cbamenuoptions[$?]}" ;;
+      esac
+      if [[ -n "$cbamenuoptions" ]] ; then
+          echo "[o] User selected: $cbamenuoptions"
+      fi
+      if [ "$cbamenuoptions" == "Back" ] ; then
+          $previousmenu
+      elif [ "$cbamenuoptions" == "Quit" ] ; then
+          cleanexit
+      elif [ "$cbamenuoptions" == "Help" ] ; then
+          cbamenuhelp
+      elif [ "$cbamenuoptions" == "Install New Animation" ] ; then
+          cbainstaller
+      elif [ "$cbamenuoptions" == "Remove an Animation" ] ; then
+          cbaremover
+      else
+          grubaction="changecba"
+          previousmenu="cbasub"
+          savegrub
+      fi
+}
+
+changecba(){
+      if [[ -z "$findchromeanim" ]] ; then
+        echo "chromeos_bootsplash not found, adding manually!"
+        sudo sed -i "s/cros_debug/cros_debug chromeos_bootsplash=$cbamenuoptions/" /root/tmpgrub/efi/boot/grub.cfg
+      else
+        sudo sed -i "s/chromeos_bootsplash=$userchromeanim/chromeos_bootsplash=$cbamenuoptions/" /root/tmpgrub/efi/boot/grub.cfg
+      fi
+      cbaopts=$(ls /mnt/stateful_partition/unencrypted/bootsplash/)
+      sudo rm -rf /usr/share/chromeos-assets/images_100_percent
+      sudo rm -rf /usr/share/chromeos-assets/images_200_percent
+}
+
+cbaremover(){
+  clear
+  previousmenu="cbasub"
+  widget="CBAwidget"
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│            ~ ChromeOS Boot Animation Remover Menu ~           │
+│                                                               │
+│             Easily remove unwanted boot animations            │
+│                                                               │
+│          Please select one of the following to remove         │
+└───────────────────────────────────────────────────────────────┘
+      Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+  cbaremoptions=(${cbaopts[@]})
+  cbaremoptions+=("Help" "Back" "Quit")
+  case `select_opt "${cbaremoptions[@]}"` in
+      *) cbaremchoice=${cbaremoptions[$?]} ; echo "[o] User selected: $cbaremchoice";;
+  esac
+  if [ "$cbaremchoice" == "Help" ] ; then
+      previousmenu="cbaremover"
+      cbaremhelp
+  elif [ "$cbaremchoice" == "Back" ] ; then
+      $previousmenu
+  elif [ "$cbaremchoice" == "Quit" ] ; then
+      cleanexit
+  else
+      rembootsplash
+  fi
+}
+
+cbainstaller(){
+  clear
+  previousmenu="cbasub"
+  widget="CBAwidget"
+  if [ "$onlineallowed" = "true" ] ; then
+  platesub="│      Easily download or change ChromeOS boot animations       │"
+  else
+  platesub="│            Easily change ChromeOS boot animations             │"
+  fi
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│           ~ ChromeOS Boot Animation Installer Menu ~          │
+│                                                               │
+$platesub
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+      Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+  case `select_opt "${bootsplashzip[@]}"` in
+      *) bootsplashchoice=${bootsplashzip[$?]} ; echo "[o] User selected: $bootsplashchoice";;
+  esac
+  if [ "$bootsplashchoice" == "Download from github" ] ; then
+      webanimcheck
+  elif [ "$bootsplashchoice" == "Help" ] ; then
+      previousmenu="cbainstaller"
+      cbainstallerhelp
+  elif [ "$bootsplashchoice" == "Back" ] ; then
+      $previousmenu
+  elif [ "$bootsplashchoice" == "Quit" ] ; then
+      cleanexit
+  else
+      changebootsplash
+  fi
+}
+
+webanimcheck(){
+    previousmenu="selectanim"
+    widget="CBAwidget"
+    plate="
+┌───────────────────────────────────────────────────────────────┐
+│               ~ Boot Animation Online Downloader ~            │
+│                                                               │
+│      These are the avaliable animations from the github.      │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+    " ; vanity
+    case `select_opt ${onlinebootsplashzip[@]}` in
+    *) webzip=${onlinebootsplashzip[$?]} ; echo "[o] User selected: $webzip";;
+    esac
+    if [ "$webzip" == "Help" ] ; then
+        previousmenu="webanimcheck"
+        webanimhelp
+    elif [ "$webzip" == "Back" ] ; then
+        $previousmenu
+    elif [ "$webzip" == "Quit" ] ; then
+        cleanexit
+    else
+        getnewanim
+    fi
+}
+
+getnewanim() {
+    echo "[o] Now downloading animation from github, please wait..."
+    wget -q --show-progress $bootsplashurl$webzip/$webzip.zip
+    echo "[o] Boot animation downloaded! Refreshing, please wait..."
+    IFS=$'\n'
+    bootsplashzip=($(find boot_splash*.zip 2> /dev/null | sort -r))
+    bootsplashzip+=("Help" "Back" "Quit")
+    unset IFS
+    bootsplashchoice="$webzip.zip"
+    changebootsplash
+}
+
+rembootsplash(){
+  sudo rm -rf /mnt/stateful_partition/unencrypted/bootsplash/"$cbaremchoice"
+  if [ "$cbaremchoice" == "$userchromeanim" ] ; then
+  grubaction="changecba"
+  previousmenu="cbasub"
+  cbamenuoptions="default"
+  savegrub
+  else
+  # Reset this so things dont go missing between menus
+      cbaopts=$(ls /mnt/stateful_partition/unencrypted/bootsplash/)
+  cbasub
+  fi
+}
+
+changebootsplash(){
+    bsdir=$(echo "$bootsplashchoice" | sed -e s/.${bootsplashchoice##*.}//)
+    rm -rf $downloads/$bsdir 2> /dev/null
+    mkdir -p $downloads/$bsdir
+    temppwd=$(pwd)
+    cd $downloads/$bsdir
+    
+#See what kind of file it is
+if [ "${bootsplashchoice##*.}" == "gif" ] ; then
+    cp $downloads/$bootsplashchoice $downloads/$bsdir
+#do this thing to get png from gif
+    echo "[!] Splitting GIF, please wait..."
+    for i in {1..13} ; do
+    convert -coalesce "$bootsplashchoice"[$i] boot_splash_frame%02d.png
+    done
+    #get primary color from first frame
+    #usercolor=$(convert boot_splash_frame01.png +dither -colors 5 -unique-colors txt: | grep "0,0" | xargs | cut -d' ' -f3)
+    usercolor=$(convert boot_splash_frame01.png -format "%[pixel:p{0,0}]" info:)
+# Do this thing to make pngs look nice
+    pngw=$(identify boot_splash_frame01.png | cut -f 3 -d " " | sed s/x.*//)
+    pngh=$(identify boot_splash_frame01.png | cut -f 3 -d " " | sed s/.*x//)
+# If images are the perfect size or larger, leave them be
+    if (( $pngw >= $width )) || (( $pngh >= $height )) ; then
+        if (( $pngh > $pngw )) ; then
+        padding=$(( $pngh - $pngw ))
+        pngw=$(( $pngw + $padding ))
+        pngh="0"
+        else
+        pngw="0"
+        pngh="0"
+        fi
+    else
+    pngw=$(( $width - $pngw ))
+    pngh=$(( $height - $pngh ))
+    fi
+# assume black for now, set up selector later
+    if [ -z "$usercolor" ] ; then
+    usercolor="black"
+    fi
+    echo "Converting boot animation to fit your screen, please wait..."
+    giflist=$(ls *png)
+    for img in $giflist ; do
+    convert $img -gravity center -background "$usercolor" -flatten -extent "$pngw"x"$pngh" -geometry "$width"x"$height"^ -crop "$width"x"$height"+0+0 -set filename:f "%t" ./"%[filename:f].png"
+    done
+
+elif [ "${bootsplashchoice##*.}" == "zip" ] ; then
+    mv $downloads/$bootsplashchoice $downloads/$bsdir
+    echo "[!] Unzipping archive, please wait..."
+    bsdtar -xvf "$bootsplashchoice" --exclude "*_MACOSX*" | pv -s $(du -sb $downloads/$bsdir | awk '{print $1}')
+    # Insert resize command here
+    if [ -n "$width" ] && [ -n "$height" ] ; then
+        echo "Converting boot animation to fit your screen, please wait..."
+    convert *.png -geometry "$width"x"$height"^ -gravity center -crop "$width"x"$height"+0+0 -set filename:f "%t" ./"%[filename:f].png"
+    fi
+
+elif [ "${bootsplashchoice##*.}" == "png" ] ; then
+    cp $downloads/$bootsplashchoice $downloads/$bsdir
+# Do this thing to make pngs look nice
+    #get primary color from first frame
+    #usercolor=$(convert $bootsplashchoice +dither -colors 5 -unique-colors txt: | grep "0,0" | xargs | cut -d' ' -f3)
+    usercolor=$(convert $bootsplashchoice -format "%[pixel:p{0,0}]" info:)
+# If images are the perfect size or larger, leave them be
+    if (( $pngw >= $width )) || (( $pngh >= $height )) ; then
+        if (( $pngh > $pngw )) ; then
+        padding=$(( $pngh - $pngw ))
+        pngw=$(( $pngw + $padding ))
+        pngh="0"
+        else
+        pngw="0"
+        pngh="0"
+        fi
+    else
+    pngw=$(( $width - $pngw ))
+    pngh=$(( $height - $pngh ))
+    fi
+# assume black for now, set up selector later
+    if [ -z "$usercolor" ] ; then
+    usercolor="black"
+    fi
+    echo "Converting image to fit your screen, please wait..."
+    convert $bootsplashchoice -gravity center -background "$usercolor" -flatten -extent "$pngw"x"$pngh" -geometry "$width"x"$height"^ -crop "$width"x"$height"+0+0 boot_splash_frame01.png
+fi
+
+    cd $temppwd
+    # Put them where they belong
+    sudo mkdir -p /mnt/stateful_partition/unencrypted/bootsplash/"$bsdir"/images_100_percent
+    sudo mkdir -p /mnt/stateful_partition/unencrypted/bootsplash/"$bsdir"/images_200_percent
+    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /mnt/stateful_partition/unencrypted/bootsplash/"$bsdir"/images_100_percent || { exitcode="9" ; cleanexit ; }
+    sudo cp $downloads/"$bsdir"/boot_splash_frame*.png /mnt/stateful_partition/unencrypted/bootsplash/"$bsdir"/images_200_percent 2> /dev/null
+    rm -rf $downloads/$bsdir 2> /dev/null
+    grubaction="changecba"
+    previousmenu="cbasub"
+    cbamenuoptions="$bsdir"
+    savegrub
+}
+
+BBSwidget(){
+  if [ -n "$bbsoptions" ] ; then
+bbsstatus=$(echo "Current Bootsplash: $bbsoptions" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░ Boostplash Info ░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$bbsstatus|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+fi
+}
+
+bbssub(){
+      clear
+      widget="BBSwidget"
+      plate="
+┌───────────────────────────────────────────────────────────────┐
+│                      ~ Bootsplash Menu ~                      │
+│                                                               │
+│       Quickly swap between avaliable bootsplash images        │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+      previousmenu="grubmain"
+      bbsmenuoptions=(${bbsopts[@]})
+      bbsmenuoptions+=("Help" "Back" "Quit")
+      case `select_opt "${bbsmenuoptions[@]}"` in
+          *) bbsmenuoptions="${bbsmenuoptions[$?]}" ;;
+      esac
+      if [[ -n "$bbsmenuoptions" ]] ; then
+          echo "[o] User selected: $bbsmenuoptions"
+      fi
+      if [ "$bbsmenuoptions" == "Back" ] ; then
+          $previousmenu
+      elif [ "$bbsmenuoptions" == "Quit" ] ; then
+          cleanexit
+      elif [ "$bbsmenuoptions" == "Help" ] ; then
+          bbsmenuhelp
+      else
+          grubaction="changebbs"
+          previousmenu="bbssub"
+          savegrub
+      fi
+}
+
+changebbs(){
+      if [[ -z "$findbootsplash" ]] ; then
+        if [[ -z "$findoptions" ]] ; then
+        echo "Options not found, adding manually!"
+        sudo sed -i "s/cros_debug/cros_debug options=/g" /root/tmpgrub/efi/boot/grub.cfg
+        fi
+        sudo sed -i "s/options=/options= console= vt.global_cursor_default=0 brunch_bootsplash=$bbsmenuoptions quiet/" /root/tmpgrub/efi/boot/grub.cfg
+      else
+        sudo sed -i "s/brunch_bootsplash=$bbsoptions/brunch_bootsplash=$bbsmenuoptions/g" /root/tmpgrub/efi/boot/grub.cfg
+      fi
+}
+
+KRNLwidget(){
+if [ "$originalkernelopts" == "kernel" ] ; then
+    originalkernelopts="kernel-5.4"
+  fi
+kernelstatus=$(echo "Current Kernel: $originalkernelopts" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░░░ Kernel Info ░░░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$kernelstatus|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+}
+
+kernelsub(){
+      clear
+      widget="KRNLwidget"
+      plate="
+┌───────────────────────────────────────────────────────────────┐
+│                    ~ Kernel Options Menu ~                    │
+│                                                               │
+│         Quickly swap between avaliable Brunch kernels         │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+      previousmenu="grubmain"
+      kernelmenuoptions=(${avaliablekernels[@]})
+      kernelmenuoptions+=("Help" "Back" "Quit")
+      case `select_opt "${kernelmenuoptions[@]}"` in
+          *) kernelmenuoptions="${kernelmenuoptions[$?]}" ;;
+      esac
+      if [[ -n "$kernelmenuoptions" ]] ; then
+          echo "[o] User selected: $kernelmenuoptions"
+      fi
+      if [ "$kernelmenuoptions" == "Back" ] ; then
+          $previousmenu
+      elif [ "$kernelmenuoptions" == "Quit" ] ; then
+          cleanexit
+      elif [ "$kernelmenuoptions" == "Help" ] ; then
+          kernelmenuhelp
+      else
+          grubaction="changekernel"
+          previousmenu="kernelsub"
+          savegrub
+      fi
+}
+
+changekernel(){
+    if [ "$kernelmenuoptions" == "kernel-5.4" ] ; then
+      kernelmenuoptions="kernel"
+    fi
+    sudo sed -i "s/$kerneloptions/$kernelmenuoptions/g" /root/tmpgrub/efi/boot/grub.cfg
+}
+
+fwosub(){
+  clear
+  # Not working like how I want it to yet, put this info in the help menu instead
+  getbrunchdex
+  #widget="FWOwidget"
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│              Options marked with ◯ are disabled              │
+│              Options marked with ◆ are enabled               │
+└───────────────────────────────────────────────────────────────┘
+  Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle or select.
+" ; vanity
+  previousmenu="grubmain"
+  #Declare two variables here to see if B is contained in A
+  arrA=(${defaultframeworkoptions[@]})
+  arrB=(${fwoopts[@]})
+  settoggles
+  # check if there have been any changes made and prompt to safe. disregard order of options
+  #difcheck=(`echo ${originalfwoopts[@]} ${fwoopts[@]} | tr ' ' '\n' | sort | uniq -u`)
+  #if [[ -n ${difcheck[@]} ]] ; then
+  #arrA+=("Save Changes")
+  #fi
+  # Add some QOL options after setting radios
+  arrA+=("Help" "Back" "Quit")
+  getdesc="0"
+  # Call the menu using the new array A
+  case `select_opt "${arrA[@]}"` in
+        *) toggleopt="${arrA[$?]}" ;;
+  esac
+  if [[ "$toggleopt" == "Save Changes" ]] ; then
+    previousmenu="fwosub"
+    grubaction="changefwo"
+    savegrub
+  elif [[ "$toggleopt" == "Help" ]] ; then
+    fwosubhelp
+  elif [[ "$toggleopt" == "Back" ]] ; then
+    $previousmenu
+  elif [[ "$toggleopt" == "Quit" ]] ; then
+    exit
+  fi
+  # Get rid of fancy radio dots before continuing
+  toggleopt=$(echo $toggleopt | cut -d' ' -f2)
+  # If selected item is already selected, remove it from the selection array #!/usr/bin/env bash
+  # Whitespace doesnt matter for what we're doing here
+  if [[ "${fwoopts[@]}" =~ "$toggleopt" ]] ; then
+      fwoopts=( "${fwoopts[@]/$toggleopt}" )
+      for target in "${toggleopt[@]}"; do
+        for i in "${!fwoopts[@]}";do
+          if [[ ${fwoopts[i]} = $target ]]; then
+            unset 'fwoopts[i]'
+          fi
+        done
+      done
+      for i in "${!fwoopts[@]}"; do
+        temparr+=("${fwoopts[i]}")
+      done
+      fwoopts=("${temparr[@]}")
+      unset temparr
+  else
+      fwoopts+=($toggleopt)
+  fi
+  # Always start fresh to prevent graphical bugs, loop for seamless experience
+  unset arrA
+  previousmenu="fwosub"
+  grubaction="changefwo"
+  savegrub
+}
+
+settoggles(){
+# If theres nothing, declare something to prevent bugs with empty arrays
+if [ -z "$arrB" ] ; then
+  arrB=(None)
+fi
+# Check everything in the first array against everything in the second
+# Mark anything that matches with a filled radio ◉
+for (( i=0; i < ${#arrA[@]}; i++ )) ; do
+  for (( j=0; j < ${#arrB[@]}; j++ )) ; do
+    if [[ ${arrA[$i]} = ${arrB[$j]} ]]; then
+    arrA[$i]="◆ ${arrA[$i]}"
+    fi
+done
+done
+# Put an empty radio on unselected items ◯
+for i in "${!arrA[@]}"; do
+    if [[ ! ${arrA[$i]} =~ .*"◆".* ]]; then
+    arrA[$i]="◯ ${arrA[$i]}"
+  fi
+done
+}
+
+FWOwidget(){
+if [ -n "$fwomemo3" ] ; then
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░ Framework Option Details ░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$fwomemo3|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘
+$fwomemo1
+$fwomemo2
 "
-select removegruboptions in "Use these options" "Add an option" ${gruboptionssplit} Quit; do
-    if [[ -z "$removegruboptions" ]]; then
-        echo "[x] Invalid option"
-    elif [[ $removegruboptions == "Add an option" ]]; then
-        addfwo
-    elif [[ $removegruboptions == "Use these options" ]]; then
-        updategrub
-    elif [ "$removegruboptions" == "Quit" ] ; then
-        cleanexit
-    else
-        gruboptremoval
-    fi
-    done
-}
-
-gruboptremoval(){
-gruboptions=${gruboptions//$removegruboptions,/}
-gruboptions=${gruboptions//$removegruboptions/}
-removegruboptions=
-removefwo
-}
-
-updategrub(){
-    if [[ "$frommenu" == "true" ]] ; then
-        echo "[o] Returning to menu..."
-        grubmain
-    fi
-    if [[ "$backupgrub" != "false" ]] ; then
-        returnto="updategrub"
-        grubbackupcheck
-    fi
-    findoptions=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep "options=")
-    gruboptions=$(echo "$gruboptions" | sed 's/,*$//g' | sed 's/^,//g')
-    echo "$gruboptions"
-    if [[ -n "$gruboptions" ]] ; then
-        gruboptions="options=$gruboptions"
-        updategrubsub
-    elif [[ -z "$gruboptions" ]] ; then
-        removegrub
-    fi
-    }
-
-updategrubsub(){
-    if [[ -z "$findoptions" ]] ; then
-        # if options= is not there, find cros_debug and add options directly after.
-        echo "[o] Options added!"
-        sudo sed -i 's/cros_debug.*/& options=/g' /root/tmpgrub/efi/boot/grub.cfg
-        sudo sed -i "s/options=/$gruboptions/g" /root/tmpgrub/efi/boot/grub.cfg
-    else
-        echo "[o] Options updated!"
-        sudo sed -i "s/options=$gruboriginal/$gruboptions/g" /root/tmpgrub/efi/boot/grub.cfg
-    fi
-    echo ""
-    cleanexit
-}
-
-removegrub(){
-    if [[ -z "$findoptions" ]] ; then
-        echo "[!] No change!"
-    else
-        echo "[!] Options removed!"
-        sudo sed -i "s/options=$gruboriginal//g" /root/tmpgrub/efi/boot/grub.cfg
-    fi
-    echo ""
-    cleanexit
-}
-
-grubbackupcheck(){
-    echo "[!] This tool is still in beta and may misbehave"
-    echo "    Would you like to make a backup of your grub file before continuing?"
-    echo ""
-    select grubbak in "Make backup" "No backup" Quit; do
-    if [[ $grubbak == "Make backup" ]]; then
-        grubbackup
-    elif [[ $grubbak == "No backup" ]]; then
-        echo ""
-        echo "[!] Continuing without making a backup."
-        echo ""
-        backupgrub=false
-        $returnto
-    elif [ "$grubbak" == "Quit" ] ; then
-        cleanexit
-    else
-        echo "[x] Invalid option"
-    fi
-    done
-}
-
-grubbackup(){
-    backupexists=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
-    if [[ -z "$backupexists" ]] ; then
-        sudo cp /root/tmpgrub/efi/boot/grub.cfg /usr/local/bin/brunch-toolkit-assets/grub.btgc 2> /dev/null
-        echo ""
-        echo "[o] Grub.cfg has been backed up!"
-        echo ""
-        backupgrub=false
-        $returnto
-    else
-        echo ""
-        echo "[!] There is already a backup file, would you like to replace it?"
-        echo ""
-        select grubbak in "Replace backup" "Keep old backup" Quit; do
-    if [[ $grubbak == "Replace backup" ]]; then
-        rm -rf /usr/local/bin/brunch-toolkit-assets/*.btgc
-        yes | sudo cp -rf /root/tmpgrub/efi/boot/grub.cfg /usr/local/bin/brunch-toolkit-assets/grub.btgc
-        echo ""
-        echo "[o] Grub.cfg has been backed up!"
-        echo ""
-        backupgrub=false
-        $returnto
-    elif [[ $grubbak == "Keep old backup" ]]; then
-        echo ""
-        echo "[!] Continuing with previous backup."
-        echo ""
-        backupgrub=false
-        $returnto
-    elif [ "$grubbak" == "Quit" ] ; then
-        cleanexit
-    else
-        echo "[x] Invalid option"
-    fi
-    done
-    fi
-}
-
-grubrestore(){
-    backupexists=$(ls /usr/local/bin/brunch-toolkit-assets/*.btgc 2> /dev/null)
-    if [[ -z "$backupexists" ]] ; then
-        echo ""
-        echo "[!] There is no backup!"
-        echo "[o] Returning to menu..."
-        grubmain
-    else
-        sudo cp /usr/local/bin/brunch-toolkit-assets/grub.btgc /root/tmpgrub/efi/boot/grub.cfg 2> /dev/null
-        echo ""
-        echo "[o] Grub.cfg has been restored from a backup!"
-        echo "[o] Returning to menu..."
-        grubmain
-    fi
-}
-
-kerneloptions(){
-    echo "[!] Checking avaliable kernels, please wait..."
-    uvc=
-    #enclose into another if//nest when another kernel becomes avaliable
-    neededversion="20201227"
-    universalversioncheck
-    if [[ "$uvc" == "false" ]] ; then
-        echo "[x] Kernel 5.10 is not avaliable."
-        #too old for kernel 5.10
-        neededversion="20201216"
-        universalversioncheck
-        if [[ "$uvc" == "false" ]] ; then
-        # too old for alternate kernel options
-            echo "[x] Alternative kernel options are not avaliable."
-                echo "[!] Minimum Brunch version required: 20201216"
-                echo "[!] Current Brunch version installed: $currentbrunchversion"
-                echo "[x] Please update Brunch to use this feature."
-            echo "[o] Returning to menu...
-            "
-            grubmain
-        elif [[ "$uvc" == "true" ]] ; then
-            echo "[!] Kernels 5.4 and 4.19 are avaliable"
-                echo "[!] Minimum Brunch version required for k5.10: 20201227"
-                echo "[!] Current Brunch version installed: $currentbrunchversion"
-                echo "[x] Please update Brunch for additional features."
-            kernelopts="4.19 5.4"
-            kernelmenu
-        fi
-    elif [[ "$uvc" == "true" ]] ; then
-        #kernels 5.10 and 4.19 avaliable
-        #    echo "[!] Minimum Brunch version required for >future kernel<: $NEWneededversion"
-        #    echo "[!] Current Brunch version installed: $currentbrunchversion"
-        #    echo "[x] Please update Brunch for additional features."
-        kernelopts="4.19 5.4 5.10"
-        kernelmenu
-    fi
-}
-
-kernelmenu(){
-    plate="kerneloptions" ; vanity
-    echo "[o] Your current kernel is $kernelnumber
-    "
-    select kerneloptions in ${kernelopts} Quit; do
-        if [[ -z "$kerneloptions" ]]; then
-            echo "[x] Invalid option"
-        elif [ "$kerneloptions" == "Quit" ] ; then
-            cleanexit
-        else
-            kerneloptchange
-        fi
-        done
-}
-
-kerneloptchange(){
-    if [[ "$backupgrub" != "false" ]] ; then
-        returnto="kerneloptchange"
-        grubbackupcheck
-    fi
-    grubkerneloriginal=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "kernel*" | cut -d' ' -f4 | cut -d'/' -f2)
-    if [[ "$kerneloptions" == "5.4" ]] ; then
-        sudo sed -i "s/$grubkerneloriginal/kernel/" /root/tmpgrub/efi/boot/grub.cfg
-    else
-        sudo sed -i "s/$grubkerneloriginal/kernel-$kerneloptions/" /root/tmpgrub/efi/boot/grub.cfg
-    fi
-    echo "[o] Kernel changed succesfully! Please reboot to test changes."
-    cleanexit
-}
-
-brunchbootsplash(){
-    neededversion="20201201"
-    universalversioncheck
-    if [[ "$uvc" == false ]] ; then
-        echo "[!] Minimum Brunch version required: $neededversion"
-        echo "[!] Current Brunch version installed: $currentbrunchversion"
-        echo "[x] Please update Brunch to use this feature."
-        echo "[o] Returning to menu...
-        "
-        grubmain
-    else
-        bbsmain
-    fi
-}
-
-bbsmain(){
-    plate="bbsmain" ; vanity
-    bbsexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "bootsplash*" | sed "s/.*bootsplash=//" | cut -d' ' -f1)
-    consoleexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "console=")
-    vtgcdexists=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "vt.global_cursor_default=")
-      if [[ -n "$bbsexists" ]] && [[ -n "$consoleexists" ]] ; then
-        echo "[o] Your current Brunch Bootsplash is: $bbsexists"
-    elif [[ -z "$bbsexists" ]] && [[ -n "$consoleexists" ]] ; then
-        echo "[o] Your current Brunch Bootsplash is: blank"
-    elif [[ -z "$bbsexists" ]] && [[ -z "$consoleexists" ]] ; then
-        echo "[o] Your current Brunch Bootsplash is: none"
-    elif [[ -n "$bbsexists" ]] && [[ -z "$consoleexists" ]] ; then
-        echo "[!] Your current Brunch Bootsplash could not be identified"
-    fi
-    echo ""
-    select bbsoptions in ${bbsopts} Quit; do
-        if [[ -z "$bbsoptions" ]]; then
-            echo "[x] Invalid option"
-        elif [ "$bbsoptions" == "Quit" ] ; then
-            cleanexit
-        else
-            bbsoptchange
-        fi
-        done
-}
-
-
-bbsoptchange(){
-    if [[ "$backupgrub" != "false" ]] ; then
-    returnto="bbsoptchange"
-    grubbackupcheck
 fi
-    if [[ "$bbsoptions" == "blank" ]] ; then
-    console="true"
-    vtgcd="false"
-    bbs="false"
-    #add console= and remove other options
-elif [[ "$bbsoptions" == "debug" ]] ; then
-    console="false"
-    vtgcd="false"
-    bbs="false"
-    #remove all options
+}
+
+getbrunchdex(){
+for i in "${!defaultframeworkoptions[@]}"; do
+  if [[ "${defaultframeworkoptions[$i]}" = "${toggleopt}" ]]; then
+    optdesc=${fwodesc[i]}
+  fi
+done
+  fwomemo1=$(echo "Toggle an option on or off with Enter (⏎) to see what it does." | awk '{ z = 64 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+  fwomemo2=$(echo "(You can turn it back off if you want)" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+  fwomemo3=$(echo "$optdesc" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+}
+
+savegrub(){
+  clear
+  mountgrub
+  $grubaction
+  gruboptions
+  unmountgrub
+  $previousmenu
+}
+
+changefwo(){
+  originalfwoopts=$(echo ${originalfwoopts[@]} | xargs | sed "s/ /,/g")
+  fwoopts=$(echo ${fwoopts[@]} | xargs | sed "s/ /,/g")
+  if [[ -z "$findoptions" ]] ; then
+    # if options= is not there, find cros_debug and add options directly after.
+    echo "Options not found, adding manually!"
+    sudo sed -i "s/cros_debug/cros_debug options=/g" /root/tmpgrub/efi/boot/grub.cfg
+    sudo sed -i "s/options=/options=$fwoopts/" /root/tmpgrub/efi/boot/grub.cfg
 else
-    console="true"
-    vtgcd="true"
-    bbs="true"
-    #add selected options
+    echo "Options updated!"
+    sudo sed -i "s/options=$originalfwoopts/options=$fwoopts/" /root/tmpgrub/efi/boot/grub.cfg
 fi
-bbsoptsreplacer
-echo "[o] Brunch Bootsplash changed succesfully! Please reboot to test changes."
-
-cleanexit
 }
 
-bbsoptsreplacer(){
-#check for console= and change as needed
-    if [[ -n "$consoleexists" ]] && [[ "$console" = "true" ]] ; then
-    #do nothing
-    :
-    elif [[ -z "$consoleexists" ]] && [[ "$console" = "false" ]] ; then
-    #do nothing
-    :
-    elif [[ -n "$consoleexists" ]] && [[ "$console" = "false" ]] ; then
-    #remove console
-    sudo sed -i 's/console=//' /root/tmpgrub/efi/boot/grub.cfg
-    elif [[ -z "$consoleexists" ]] && [[ "$console" = "true" ]] ; then
-    #add console
-    sudo sed -i 's/cros_debug.*/& console=/' /root/tmpgrub/efi/boot/grub.cfg
-    fi
-#check for vt.global_cursor_default= and change as needed
-    if [[ -n "$vtgcdexists" ]] && [[ "$vtgcd" = "true" ]] ; then
-    #do nothing
-    :
-    elif [[ -z "$vtgcdexists" ]] && [[ "$vtgcd" = "false" ]] ; then
-    #do nothing
-    :
-    elif [[ -n "$vtgcdexists" ]] && [[ "$vtgcd" = "false" ]] ; then
-    #remove vt.global_cursor_default=
-    sudo sed -i 's/vt.global_cursor_default=0//' /root/tmpgrub/efi/boot/grub.cfg
-    elif [[ -z "$vtgcdexists" ]] && [[ "$vtgcd" = "true" ]] ; then
-    #add vt.global_cursor_default=
-    sudo sed -i 's/console=/& vt.global_cursor_default=0/' /root/tmpgrub/efi/boot/grub.cfg
-    fi
-#check for bootsplash= and change as needed
-    if [[ -n "$bbsexists" ]] && [[ "$bbs" = "true" ]] ; then
-    #check values
-        if [[ "$bbsexists" == "$bbsoptions" ]] ; then
-            #do nothing
-            :
-        else
-            #replace $bbsexists with $bbsoptions
-            sudo sed -i "s/$bbsexists/$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
-        fi
-    elif [[ -z "$bbsexists" ]] && [[ "$bbs" = "false" ]] ; then
-    #do nothing
-    :
-    elif [[ -n "$bbsexists" ]] && [[ "$bbs" = "false" ]] ; then
-    sudo sed -i "s/bootsplash=$bbsexists//" /root/tmpgrub/efi/boot/grub.cfg
-    #remove bootsplash=
-    elif [[ -z "$bbsexists" ]] && [[ "$bbs" = "true" ]] ; then
-    #add bootsplash="$bbsexists
-    sudo sed -i "s/vt.global_cursor_default=0/& bootsplash=$bbsoptions/" /root/tmpgrub/efi/boot/grub.cfg
-    fi
+grubmenuhelp(){
+previousmenu="grubmain"
+
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                     Grub Options Menu Help                    │
+│                                                               │
+│   This is the grub options menu, from here users can make     │
+│   changes to the system's grub configuration.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Brunch Toolkit main menu.               │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+
+helpmenu
 }
+
+cbasubhelp(){
+previousmenu="cbasub"
+
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                 ChromeOS Boot Animation Help                  │
+│                                                               │
+│   This is the ChromeOS boot animation menu, from here users   │
+│   can install or swap between installed animation packs       │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+
+helpmenu
+}
+
+fwosubhelp(){
+previousmenu="fwosub"
+
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                    Framework Options Help                     │
+│                                                               │
+│   This is the framework options menu, from here users can     │
+│   toggle framework options on or off easily.                  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+
+helpmenu
+}
+
+bbssubhelp(){
+previousmenu="bbssub"
+
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                    Brunch Bootsplash Help                     │
+│                                                               │
+│   This is the brunch bootsplash menu, from here users can     │
+│   swap between different brunch bootsplash options easily.    │
+│   These splashscreens are not loaded in debug mode and are    │
+│   seperate from the Chrome OS Boot Animations.                │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   blank                                                       |
+|       Displays a black splashscreen with no debug text        |
+|                                                               │
+|   default & default_notext                                    │
+│       This option displays the Brunch logo with some text     │
+│       to show the boot status. The notext option omits this.  │
+|                                                               │
+|   croissant & croissant_notext                                │
+│       This option displays the Croissant logo with some text  │
+│       to show the boot status. The notext option omits this.  │
+│                                                               │
+|   neon & neon_notext                                          │
+│       This option displays a stylized brunch logo with some   │
+│       text for the boot status. The notext option omits this. │
+│                                                               │
+|   colorful & colorful_dark                                    │
+│       This is an experimental light theme option with a       │
+│       dark theme variant avaliable. Both use a unique logo.   │
+│                                                               │
+│   brunchbook                                                  │
+│       A minimalist light theme created by xeu100              │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+
+helpmenu
+}
+
+cbainstallerhelp(){
+if [ "$onlineallowed" = "true" ] ; then
+helpsub="
+│                                                               │
+│   Download from github                                        │
+│       This option allows the toolkit to connect to github,    │
+│       the avaliable animation files will be listed in a       │
+│       new menu for the user to select from.                   │"
+fi
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                  Boot Animation Menu Help                     │
+│                                                               │
+│   This is the animation menu, from here users can select      │
+│   from the locally downloaded animation files on the system   │
+│   or download them through the toolkit from a github repo.    │
+│   Users should select one with the same resolution they use.  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   [Listed bootsplash files]                                   │
+│       The files listed here are the local animation files     │
+│       already on the system. The toolkit looks for these in   │
+│       the pc's downloads directory (default: ~/Downloads)     │
+│       If a user's files aren't listed, make sure they are     │
+│       zip files starting with boot_splash for the filename.   │$helpsub
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Brunch Toolkit's main menu.             │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
+webanimhelp(){
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                Animation Downloader Menu Help                 │
+│                                                               │
+│   This is the animation downloader menu, from here users      │
+│   can select from animation archives avaliable online.        │
+│   The script will download what the user selects and return   │
+│   to the Boot Animation menu where they can apply them.       │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   [Listed bootsplash files]                                   │
+│       The files listed here are the online animation files    │
+│       avaliable on the github. The script will handle both    │
+│       downloading and unzipping of these files as needed.     │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the ChromeOS Boot Animation main menu.      │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
+cberemhelp(){
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                    Framework Options Help                     │
+│                                                               │
+│   This is the framework options menu, from here users can     │
+│   toggle framework options on or off easily.                  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
 
 #+===============================================================+
 #|  Changelog                                                    |
@@ -1991,6 +2063,7 @@ bbsoptsreplacer(){
 helpmenu(){
     menuheader
     echo "$helpentry"
+    sleep 0.5
     returntomenu
 }
 
@@ -2102,11 +2175,7 @@ echo "
 █████████████████████████████████████████████████████████████████
   "
 clear
-    if [ "$grubmounted" == "true" ] ; then
-        echo "[!] Unmounting partition12, please wait..."
-        sudo umount /root/tmpgrub || { grubmounted="false" ; exitcode="15" ; cleanexit ; }
-        echo "[o] Unmounted successfully."
-    fi
+    unmountgrub
     decodeexitcodes
     echo ""
     if [ -n "$exitmsg" ] ; then
