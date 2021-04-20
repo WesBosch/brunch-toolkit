@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly toolkitversion="v2.0.0"  #TOOLVER
+readonly toolkitversion="v2.0.0b"  #TOOLVER
 
 #+===============================================================+
 #|  Default Variables                                            |
@@ -414,14 +414,15 @@ setvars() {
         chromerecoveries=($(find *hrome*.bin* 2> /dev/null | sort -r))
         chromerecoveries+=("Help" "Back" "Quit")
         tezip=($(find -maxdepth 1 -type f \( -iname \grub_theme*.zip -o -iname \*.jpeg -o -iname \*.jpg -o -iname \*.png \) 2> /dev/null | sort -r | cut -c3- ))
-        tezip+=("Help" "Back" "Quit")
         bootsplashzip=($(find -maxdepth 1 -type f \( -iname \boot_splash*.zip -o -iname \*.gif -o -iname \*.png \) 2> /dev/null | sort -r | cut -c3- ))
         bootsplashurl="https://github.com/WesBosch/brunch-bootsplash/releases/download/"
         if [ "$onlineallowed" == "false" ] ; then
     # remake array without github option if it's OFFLINE
         bootsplashzip+=("Help" "Back" "Quit")
+        tezip+=("Help" "Back" "Quit")
         else
         bootsplashzip+=("Download from Github" "Help" "Back" "Quit")
+        tezip+=("Download Starter Pack" "Help" "Back" "Quit")
         fi
 
     # Get some online data, skip this if running in offline mode
@@ -1234,9 +1235,27 @@ echo "
       esac
     fi
     getstarterpack
+    setupgrubforthemes
+}
+
+setupgrubforthemes(){
+  mountgrub
+  themeready=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "source /efi/boot/theme.cfg")
+  classready=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 'class')
+  if [ -z "$themeready" ] ; then
+  sudo sed -i '/regexp --set disk "(^.+)(,gpt)" $root/d' /root/tmpgrub/efi/boot/grub.cfg
+  sudo sed -i '/^menuentry "ChromeOS".*/i regexp --set disk "(^.+)(,gpt)" $root' /root/tmpgrub/efi/boot/grub.cfg
+  sudo sed -i '/^menuentry "ChromeOS".*/i source /efi/boot/theme.cfg' /root/tmpgrub/efi/boot/grub.cfg
+  fi
+  if [ -z "$classready" ] ; then
+  sudo sed -i 's/menuentry "ChromeOS"/menuentry "ChromeOS" --class "brunch"/' /root/tmpgrub/efi/boot/grub.cfg
+  sudo sed -i 's/menuentry "ChromeOS (debug mode)"/menuentry "Debug" --class "brunch-debug"/' /root/tmpgrub/efi/boot/grub.cfg
+  fi
+  unmountgrub
 }
 
 getstarterpack(){
+  clear
     echo "[o] Downloading theme starter pack, please wait..."
     mkdir -p ~/tmp/brunch-toolkit
     curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/grub_theme_starter_pack.zip -o ~/tmp/brunch-toolkit/grub_theme_starter_pack.zip
@@ -1350,6 +1369,10 @@ teinstaller(){
   if [ "$techoice" == "Help" ] ; then
       previousmenu="teinstaller"
       teinstallerhelp
+  elif [ "$techoice" == "Download Starter Pack" ] ; then
+      getstarterpack
+      setupgrubforthemes
+      $previousmenu
   elif [ "$techoice" == "Back" ] ; then
       $previousmenu
   elif [ "$techoice" == "Quit" ] ; then
