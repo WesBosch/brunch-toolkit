@@ -1,12 +1,10 @@
 #!/bin/bash
+readonly toolkitversion="v2.0.0"  #TOOLVER
 
 #+===============================================================+
 #|  Default Variables                                            |
 #|  Most of these dont need changed or control major functions   |
 #+===============================================================+
-
-# Environmental variables
-PS3=" >> "
 
 # Toolkit uses the ~/Downloads location unless a global variable specifies otherwise
 if [ -z $DOWNLOADS ] ; then
@@ -18,7 +16,6 @@ fi
 # LANG='en' # revisit this later for possible multilingual options
 
 # These variables never need to change in the script. Preserve some old vars for backwards compatibility
-readonly toolkitversion="v2.0.0b"  #TOOLVER
 readonly TOOLVER="$toolkitversion"
 readonly quickstart="$1" #OPTS
 readonly OPTS="$quickstart"
@@ -33,31 +30,31 @@ PS3="
 readonly defaultframeworkoptions=(acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8812au rtl8821ce rtl88x2bu rtbth ipts oled_display disable_intel_hda asus_c302 sysfs_tablet_mode suspend_s3 advanced_als)
 # All currently known descriptions. Mind string length
 readonly fwodesc=(
-"Patches in better support for Power Button hardware"
-"Alternative configuration to fix touchpad issues"
-"Alternative configuration to fix touchpad issues"
-"Alternative init for Android services, may fail"
-"Applies audio fixes specific to Baytrail devices"
-"Enables native ChromeOS updating from the settings"
-"Enables tablet mode on boot using sysfs control"
-"Patches to force mic to work on some devices"
-"Mounts internal drives at boot, visible in files app"
-"Patches in support for some Broadcom wireless cards"
-"Patches in support for some Intel wireless cards"
-"Patches in support for rtl8188eu wireless cards"
-"Patches in support for rtl8723bu wireless cards"
-"Patches in support for rtl8723de wireless cards"
-"Patches in support for rtl8812au wireless cards"
-"Patches in support for rtl8821ce wireless cards"
-"Patches in support for rtl88x2bu wireless cards"
-"Patches in support for rt3290 & rt3298le bluetooth"
-"Patches in support for Surface touchscreens"
-"Patches in support for oled display in Kernel 5.10"
-"Blacklists the snd_hda_intel module"
-"Applies fixes specific to Asus c302 devices"
-"Allows users to force tablet mode from the shell (See github)"
-"Disables suspend to idle (S0ix) and uses S3 instead"
-"Enables more auto-brightness levels on supported hardware"
+"│       Patches in better support for Power Button hardware     │"
+"│       Alternative configuration to fix touchpad issues        │"
+"│       Alternative configuration to fix touchpad issues        │"
+"│       Alternative init for Android services, may fail         │"
+"│       Applies audio fixes specific to Baytrail devices        │"
+"│       Enables native ChromeOS updating from the settings      │"
+"│       Enables tablet mode on boot using sysfs control         │"
+"│       Patches to force mic to work on some devices            │"
+"│       Mounts internal drives at boot, visible in files app    │"
+"│       Patches in support for some Broadcom wireless cards     │"
+"│       Patches in support for some Intel wireless cards        │"
+"│       Patches in support for rtl8188eu wireless cards         │"
+"│       Patches in support for rtl8723bu wireless cards         │"
+"│       Patches in support for rtl8723de wireless cards         │"
+"│       Patches in support for rtl8812au wireless cards         │"
+"│       Patches in support for rtl8821ce wireless cards         │"
+"│       Patches in support for rtl88x2bu wireless cards         │"
+"│       Patches in support for rt3290 & rt3298le bluetooth      │"
+"│       Patches in support for Surface touchscreens             │"
+"│       Patches in support for oled display in Kernel 5.10      │"
+"│       Blacklists the snd_hda_intel module                     │"
+"│       Applies fixes specific to Asus c302 devices             │"
+"│       Allows users to force tablet mode from the shell        │"
+"│       Disables suspend to idle (S0ix) and uses S3 instead     │"
+"│       Enables more auto-brightness levels where supported     │"
 )
 # Currently avaliable kernels
 readonly avaliablekernels=(kernel-4.19 kernel-5.4 kernel-5.10)
@@ -93,7 +90,7 @@ function select_option {
     cursor_blink_off() { printf "$ESC[?25l"; }
     cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
     print_option()     { printf "   $1 "; }
-    print_selected()   { printf "  $ESC[7m $1 $ESC[27m" ; }
+    print_selected()   { printf "⮞ $ESC[7m $1 $ESC[27m" ; }
     get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
                          if [[ $key = $ESC[A ]]; then echo up;     fi
@@ -333,7 +330,6 @@ checkfordualboot(){
     fi
 }
 
-
 # Toolkit behaves badly if ran as root, check to avoid that
 checkforroot(){
     if [ $userid -eq 0 ] ; then
@@ -384,13 +380,12 @@ setvars() {
         previousdir=$(pwd)
     # Get the brunch version in two formats for readability
         currentbrunchversion=$(awk '{print $3}' 2> /dev/null < /etc/brunch_version)
+        #currentbrunchversion="00000000"
         if [ -z "$currentbrunchversion" ] ; then
-        currentbrunchversion=false
+        currentbrunchversion="false"
         else
         chromeosreleaseboard=$(printenv | grep CHROMEOS_RELEASE_BOARD | cut -d"=" -f2 | cut -d"-" -f1)
         # Check the bootsplash status, only look if using brunch (Dont use anymore!)
-        #currentlyset=$(cd /usr/share/chromeos-assets/images_100_percent/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-        #previouslyset=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
         fi
     # Get kernel info and line it up
         kernel1=$(uname -r 2>/dev/null | awk -F'[_.]' '{print $1}')
@@ -418,36 +413,52 @@ setvars() {
         otherarchives+=("Help" "Back" "Quit")
         chromerecoveries=($(find *hrome*.bin* 2> /dev/null | sort -r))
         chromerecoveries+=("Help" "Back" "Quit")
+        tezip=($(find -maxdepth 1 -type f \( -iname \grub_theme*.zip -o -iname \*.jpeg -o -iname \*.jpg -o -iname \*.png \) 2> /dev/null | sort -r | cut -c3- ))
+        tezip+=("Help" "Back" "Quit")
         bootsplashzip=($(find -maxdepth 1 -type f \( -iname \boot_splash*.zip -o -iname \*.gif -o -iname \*.png \) 2> /dev/null | sort -r | cut -c3- ))
         bootsplashurl="https://github.com/WesBosch/brunch-bootsplash/releases/download/"
         if [ "$onlineallowed" == "false" ] ; then
     # remake array without github option if it's OFFLINE
         bootsplashzip+=("Help" "Back" "Quit")
         else
-        bootsplashzip+=("Download from github" "Help" "Back" "Quit")
+        bootsplashzip+=("Download from Github" "Help" "Back" "Quit")
         fi
+
     # Get some online data, skip this if running in offline mode
         if [[ $onlineallowed == true ]] ; then
+          # Online calls - try to minimize calls
             onlinebootsplashzip=($(curl -s https://api.github.com/repos/WesBosch/brunch-bootsplash/releases | grep 'name' | cut -d\" -f4 | grep 'zip' | sed -e s/.zip//))
             onlinebootsplashzip+=("Help" "Back" "Quit")
             latestbrunch=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' )
-            #latestbrunchversion=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz' | cut -d'_' -f4 | cut -d'.' -f1)
-            latesttoolkit=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
-            latesttoolkiturl=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'browser_' | cut -d\" -f4 | grep '.sh')
-            lbuv0=$(curl -s "https://api.github.com/repos/sebanc/brunch-unstable/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
             # Strip all of the unnecessary bits off, integers only
-            lbuv1=${lbuv0/stable_}
+            lbv1=${latestbrunch/stable_}
+            lbv2=${lbv1/unstable_}
+            lbv3=${lbv2/testing_}
+            latestbrunchversion=$(echo "$lbv3" | cut -d'_' -f3 | cut -d'.' -f1)
+            latestbrunchunstable=$(curl -s "https://api.github.com/repos/sebanc/brunch-unstable/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
+            # Strip all of the unnecessary bits off, integers only
+            lbuv1=${latestbrunchunstable/stable_}
             lbuv2=${lbuv1/unstable_}
             lbuv3=${lbuv2/testing_}
             latestbrunchunstableversion=$(echo "$lbuv3" | cut -d'_' -f3 | cut -d'.' -f1)
-            lbv0=$(curl -s "https://api.github.com/repos/sebanc/brunch/releases/latest" | grep 'name' | cut -d\" -f4 | grep 'tar.gz')
-            # Strip all of the unnecessary bits off, integers only
-            lbv1=${lbuv0/stable_}
-            lbv2=${lbuv1/unstable_}
-            lbv3=${lbuv2/testing_}
-            latestbrunchversion=$(echo "$lbuv3" | cut -d'_' -f3 | cut -d'.' -f1)
+            latesttoolkit=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest | grep 'name' | cut -d\" -f4 | grep '.sh' | cut -d'-' -f3 | sed -e s/.sh// )
+            latesttoolkiturl=$(curl -s https://api.github.com/repos/WesBosch/brunch-toolkit/releases/latest  | grep 'browser_' | cut -d\" -f4 | grep '.sh')
+          # Check if toolkit is outdated
+          currentsemversion=$(echo "$toolkitversion" | sed -e "s/^v//" -e "s/b$//")
+          csvint1=$(echo "$currentsemversion" | cut -d'.' -f1)
+          csvint2=$(echo "$currentsemversion" | cut -d'.' -f2)
+          csvint3=$(echo "$currentsemversion" | cut -d'.' -f3)
+          latestsemversion=$(echo "$latesttoolkit" | sed -e "s/^v//" -e "s/b$//")
+          lsvint1=$(echo "$latestsemversion" | cut -d'.' -f1)
+          lsvint2=$(echo "$latestsemversion" | cut -d'.' -f2)
+          lsvint3=$(echo "$latestsemversion" | cut -d'.' -f3)
         fi
         unset IFS
+        if [ "$dualboot" == "false" ] ; then
+        mountgrub
+        gruboptions
+        unmountgrub
+        fi
         if [ "$scriptmode" != "brunch" ] ; then
             getdependencies
         fi
@@ -508,7 +519,6 @@ dependencysearch(){
     lookforprogram
     }
 
-
 # Checks for an internet connection and disables unnecessary options when no connection is present
 checkonlinestatus() {
     if [[ $onlineallowed == true ]] ; then
@@ -530,67 +540,10 @@ checkforquickstartoptions() {
     echo "[o] Getting toolkit ready, please wait..."
     if [ "$quickstart" == "" ]; then
         setvars
-    elif [ "$quickstart" == "--help" ] || [ "$quickstart" == "-h" ]; then
-        displayhelp
-    elif [ "$quickstart" == "--version" ] || [ "$quickstart" == "-v" ]; then
-        displayversion
-    elif [ "$quickstart" == "--changelog" ] || [ "$quickstart" == "-c" ]; then
-        displaychangelog
-    elif [ "$quickstart" == "--legacychangelog" ] || [ "$quickstart" == "-lc" ]; then
-        displaylegacychangelog
-    elif [ "$quickstart" == "--compatibility" ] || [ "$quickstart" == "-k" ]; then
-        onlineallowed=false
-        compatibilitycheckmain
     elif [ "$quickstart" == "--offline" ] || [ "$quickstart" == "-o" ]; then
         echo "[!] Running in offline mode."
         onlineallowed=false
         setvars
-    elif [ "$quickstart" == "--debug" ] || [ "$quickstart" == "-d" ]; then
-        debugmode=true
-        setvars
-    elif [ "$quickstart" == "--install" ] || [ "$quickstart" == "-n" ]; then
-        setvars
-        installbrunchmain
-# Brunch Mode exclusive Quick Start options.
-    elif [ "$quickstart" == "--brunch" ] || [ "$quickstart" == "-br" ]; then
-        brunchexclusive
-        setvars
-        updatebrunchmain
-    elif [ "$quickstart" == "--bootsplash" ] || [ "$quickstart" == "-b" ]; then
-        brunchexclusive
-        setvars
-        updatebootsplashmain
-    elif [ "$quickstart" == "--quickbootsplash" ] || [ "$quickstart" == "-qb" ]; then
-        brunchexclusive
-        previousbootsplash=$(cd /usr/local/bin/brunch-toolkit-assets/ && ls *.btbs 2> /dev/null | sed -e s/.btbs//)
-        resetbootsplashmain
-    elif [ "$quickstart" == "--chrome" ] || [ "$quickstart" == "-cr" ]; then
-        brunchexclusive
-        setvars
-        updatebrunchandchrome
-    elif [ "$quickstart" == "--quick" ] || [ "$quickstart" == "-q" ]; then
-        brunchexclusive
-        quickupdatebrunchmain
-    elif [ "$quickstart" == "--quickignore" ] || [ "$quickstart" == "-i" ]; then
-        brunchexclusive
-        ignoreversioncheck=true
-        quickupdatebrunchandignore
-    elif [ "$quickstart" == "--shell" ] || [ "$quickstart" == "-s" ]; then
-        brunchexclusive
-        echo "[!] Running in offline mode."
-        onlineallowed=false
-        setvars
-        brunchshellsetupmain
-    elif [ "$quickstart" == "--grub" ] || [ "$quickstart" == "-g" ]; then
-        brunchexclusive
-        echo "[!] Running in offline mode."
-        onlineallowed=false
-        setvars
-        editgrubconfigmain
-    elif [ "$quickstart" == "--updatetoolkit" ] || [ "$quickstart" == "-u" ]; then
-        brunchexclusive
-        setvars
-        updateandinstalltoolkit
     elif [ "$quickstart" == "--pwa-auto-update" ] || [ "$quickstart" == "-pwa-au" ]; then
             pwa-autoupdate
     elif [ "$quickstart" == "--pwa-unstable-update" ] || [ "$quickstart" == "-pwa-uu" ]; then
@@ -625,26 +578,17 @@ notifications(){
   notifybrunch=""
   notifychromeos=""
   notifybootsplash=""
-# Check if toolkit is outdated
-currentsemversion=$(echo "$toolkitversion" | sed -e "s/^v//" -e "s/b$//")
-csvint1=$(echo "$currentsemversion" | cut -d'.' -f1)
-csvint2=$(echo "$currentsemversion" | cut -d'.' -f2)
-csvint3=$(echo "$currentsemversion" | cut -d'.' -f3)
-latestsemversion=$(echo "$latesttoolkit" | sed -e "s/^v//" -e "s/b$//")
-lsvint1=$(echo "$latestsemversion" | cut -d'.' -f1)
-lsvint2=$(echo "$latestsemversion" | cut -d'.' -f2)
-lsvint3=$(echo "$latestsemversion" | cut -d'.' -f3)
 if [ -z "$latesttoolkit" ] ; then
 :
 elif (( "$csvint1" < "$lsvint1" )) ; then
   notifytoolkit="
-│  The current version of the Brunch Toolkit may be outdated!   │"
+│             There's a new Brunch Toolkit release!             │"
 elif [ "$csvint1" == "$lsvint1" ] && (( "$csvint2" < "$lsvint2" )) ; then
   notifytoolkit="
-│  The current version of the Brunch Toolkit may be outdated!   │"
+│             There's a new Brunch Toolkit release!             │"
 elif [ "$csvint1" == "$lsvint1" ] && [ "$csvint2" == "$lsvint2" ] && (( "$csvint3" < "$lsvint3" )) ; then
   notifytoolkit="
-│  The current version of the Brunch Toolkit may be outdated!   │"
+│             There's a new Brunch Toolkit release!             │"
 else
   : # Toolkit version is greater or equal in all aspects, don't notify
 fi
@@ -653,35 +597,31 @@ if [ -z "$latestbrunchversion" ] ; then
 :
 elif [ "$currentbrunchver" != "false" ] && (( "$currentbrunchversion" < "$latestbrunchversion" )) ; then
 notifybrunch="
-│         There's a new Brunch Stable release!        │"
+│              There's a new Brunch Stable release!             │"
 fi
 if [ -z "$latestbrunchversion" ] ; then
 :
 elif [ "$currentbrunchver" != "false" ] && (( "$currentbrunchversion" < "$latestbrunchunstableversion" )) ; then
-notifybrunch="
-│        There's a new Brunch Unstable release!       │"
+notifybrunchunstable="
+│             There's a new Brunch Unstable release!            │"
 fi
 # Check if ChromeOS is outdated
 
-# Check if Bootsplash needs fixed
-#if [ -n "$previouslyset" ] && [ -z "$currentlyset" ] ; then
-#animneedsset="true"
-#notifybootsplash="
-#│  The boot animation may have been reset by a system update!   │"
-#fi
 # Check if github's API limit has been reached or if Github is down
-if [[ $onlineallowed == true ]] && [ -z "$latesttoolkit" ] || [[ $onlineallowed == true ]] && [ -z "$latestbrunchversion" ] ; then
+if [[ $onlineallowed == true ]] && [ -z "$latestbrunch" ] ; then
 notifygithub="
-│     The toolkit is online, but Github cannot be reached!      │"
+│     The toolkit is online, but Github cannot be reached!      │
+│       Online tools have been disabled, try again later.       │"
 onlineallowed="false"
 fi
 # If any notifications are avaliable, display them
-if [ -n "$notifytoolkit" ] || [ -n "$notifybrunch" ] || [ -n "$notifychromeos" ] || [ -n "$notifybootsplash" ] || [ -n "$notifygithub" ] || [ -n "$notifyonline" ] ; then
+if [ -n "$notifytoolkit" ] || [ -n "$notifybrunch" ] || [ -n "$notifybrunchunstable" ] || [ -n "$notifychromeos" ] || [ -n "$notifygithub" ] || [ -n "$notifyonline" ] ; then
 printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░░ Notifications ░░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
-echo "│                                                               │$notifytoolkit$notifybrunch$notifychromeos$notifybootsplash$notifygithub$notifyonline
+echo "│                                                               │$notifytoolkit$notifybrunch$notifybrunchunstable$notifychromeos$notifygithub$notifyonline
 │                                                               │
 └───────────────────────────────────────────────────────────────┘"
 fi
+
 }
 
 # Actual main menu functions
@@ -695,22 +635,27 @@ plate="
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 " ; vanity
+startmenuopts=
 # Context aware menu Options, these are for aesthetics only, the functions themselves will handle the context
-#if [ "$animneedsset" == "true" ] ; then
-#  bootanimationmenu="Fix ChromeOS Boot Animation"
-#else
-#  bootanimationmenu="Change ChromeOS Boot Animation"
-#fi
 if [ "$scriptmode" != "brunch" ] ; then
-#    startmenuopts=("Install Brunch" "Compatibility Check" "Changelog" "System Specs" "Help" "Quit")
-    startmenuopts=("Help" "Quit")
-elif [ "$dualboot" == "false" ] ; then
-#    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Grub Options" "Changelog" "System Specs" "Help" "Quit")
-    startmenuopts=("Grub Options" "Help" "Quit")
-elif [ "$dualboot" == "true" ] ; then
-#    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit")
-    startmenuopts=("Update Brunch" "Update Chrome OS & Brunch" "Install Brunch" "Compatibility Check" "$bootanimationmenu" "Install/Update Toolkit" "Shell Shortcuts" "Changelog" "System Specs" "Help" "Quit")
+    startmenuopts=("System Check" "Help" "Quit")
+elif [ "$dualboot" == "false" ] && [ "$scriptmode" == "brunch" ] ; then
+    startmenuopts=("Framework Options" "Kernels" "Grub Themes" "Brunch Bootsplashes" "ChromeOS Boot Animations" "Edit Grub Manually" "System Check")
+elif [ "$dualboot" == "true" ] && [ "$scriptmode" == "brunch" ] ; then
+    startmenuopts=("System Check")
 fi
+# Only show Update options if it's actually possible
+if [ -n "$notifybrunch" ] && [ "$scriptmode" == "brunch" ] ; then
+  startmenuopts+=("Update Brunch")
+fi
+if [ -n "$notifybrunchunstable" ] ; then
+  startmenuopts+=("Update Brunch (Unstable Channel)")
+fi
+if [ -n "$notifytoolkit" ] ; then
+  startmenuopts+=("Update Toolkit")
+fi
+# add "Help" entry here
+startmenuopts+=( "Quit")
     case `select_opt "${startmenuopts[@]}"` in
         *) mainmenuchoice="${startmenuopts[$?]}" ;;
     esac
@@ -720,22 +665,24 @@ fi
 if [[ -z "$mainmenuchoice" ]] ; then
     echo "[x] Invalid option"
 elif [[ "$mainmenuchoice" == "Update Brunch" ]] ; then
+    channel="brunch"
+    updatebrunchmain
+elif [[ "$mainmenuchoice" == "Update Brunch (Unstable Channel)" ]] ; then
+    channel="brunch-unstable"
     updatebrunchmain
 elif [[ "$mainmenuchoice" == "Update ChromeOS & Brunch" ]] ; then
     updatebrunchandchrome
 elif [[ "$mainmenuchoice" == "Install Brunch" ]] ; then
     installbrunchmain
 elif [[ "$mainmenuchoice" == "Compatibility Check" ]] ; then
-    compatibilitycheckmain
+    compatibilitycheck
 elif [[ "$mainmenuchoice" == "Changelog" ]] ; then
     displaychangelog
-elif [[ "$mainmenuchoice" == "System Specs" ]] ; then
+elif [[ "$mainmenuchoice" == "System Check" ]] ; then
     displayversion
 elif [[ "$mainmenuchoice" == "Help" ]] ; then
     startmenuhelp
-elif [[ "$mainmenuchoice" == "Change ChromeOS Boot Animation" ]] || [[ "$mainmenuchoice" == "Fix ChromeOS Boot Animation" ]] ; then
-    updatebootsplashmain
-elif [[ "$mainmenuchoice" == "Install/Update Toolkit" ]] ; then
+elif [[ "$mainmenuchoice" == "Update Toolkit" ]] ; then
     toolkitoptionsmain
 elif [[ "$mainmenuchoice" == "Shell Shortcuts" ]] ; then
     brunchshellsetupmain
@@ -743,6 +690,19 @@ elif [[ "$mainmenuchoice" == "Grub Options" ]] ; then
     editgrubconfigmain
 elif [[ "$mainmenuchoice" == "Quit" ]] ; then
     cleanexit
+elif [ "$mainmenuchoice" == "Grub Themes" ] ; then
+    themeengine
+elif [ "$mainmenuchoice" == "Framework Options" ] ; then
+    fwosub
+elif [ "$mainmenuchoice" == "Kernels" ] ; then
+    kernelsub
+elif [ "$mainmenuchoice" == "Brunch Bootsplashes" ] ; then
+    bbssub
+elif [ "$mainmenuchoice" == "ChromeOS Boot Animations" ] ; then
+    cbasub
+elif [ "$mainmenuchoice" == "Edit Grub Manually" ] ; then
+    manualedit
+    startmenu
 else
     :
 fi
@@ -864,7 +824,55 @@ helpmenu
 #|  Everything related to the Brunch update function goes here   |
 #+===============================================================+
 
-
+updatebrunchmain(){
+  clear
+# Check for existing update process
+    if [ "$updateinprogress" == "true" ] ; then
+        echo "[Error] Update already in progress!"
+        updateinprogress="false"
+        previousmenu="startmenu"
+        returntomenu
+    fi
+    updateinprogress="true"
+    if [[ "$channel" == "brunch" ]] ; then
+      targetversion="$latestbrunchversion"
+    elif [[ "$channel" == "brunch-unstable" ]] ; then
+      targetversion="$latestbrunchunstableversion"
+    fi
+    if (( "$currentbrunchversion" < "$targetversion" )) ; then
+# Make a working directory to keep toolkit out of sight
+        mkdir -p  ~/tmp/brunch-toolkit
+        curdir=$(pwd)
+        cd ~/tmp/brunch-toolkit
+# Download latest release from $channel
+        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
+        updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
+# Call built in update command
+        sudo chromeos-update -f ~/tmp/brunch-toolkit/"$updatefile"
+        cd $curdir
+# Clean up
+        rm -rf ~/tmp/brunch-toolkit/*
+        rmdir ~/tmp/brunch-toolkit
+        clear
+        updateinprogress="false"
+        previousmenu="startmenu"
+echo "
+┌───────────────────────────────────────────────────────────────┐
+│                 ~ Brunch Update Completed ~                   │
+│                                                               │
+│     Brunch has been updated, please reboot to see changes     │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+    "
+        returntomenu
+    else
+# Error if no need to update
+        echo "[ERROR!] You already have the latest version of Brunch."
+        updateinprogress="false"
+        previousmenu="startmenu"
+        returntomenu
+    fi
+}
 
 #+===============================================================+
 #|  Install Brunch Functions                                     |
@@ -874,101 +882,38 @@ helpmenu
 
 
 #+===============================================================+
-#|  Compatibility Check Functions                                |
-#|  Everything related to the compatibility checker goes here    |
-#+===============================================================+
-
-universalversioncheck(){
-    if [[ "$currentbrunchversion" < "$neededversion" ]] ; then
-        uvc="false"
-    else
-        uvc="true"
-    fi
-}
-
-
-#+===============================================================+
 #|  Install and Update Toolkit Functions                         |
 #|  Everything related to upgrading the toolkit goes here        |
 #+===============================================================+
 
 toolkitoptionsmain(){
-    plate="toolkitoptions" ; vanity
-    checktoolkitver
-}
-
-checktoolkitver(){
-    if [ "$onlineallowed" == "false" ] ; then
-        toolkitchoiceoffline
-    else
-        toolkitchoice
-    fi
-}
-
-toolkitchoice(){
-    select toolkitopts in "Install Brunch Toolkit $toolkitversion" "Update to Brunch Toolkit $latesttoolkit" "Update & Install $latesttoolkit" Help Quit; do
-    if [[ -z "$toolkitopts" ]] ; then
-       echo "[x] Invalid option"
-    elif [[ $toolkitopts == "Install Brunch Toolkit $toolkitversion" ]] ; then
-        tbinstall
-    elif [[ $toolkitopts == "Update to Brunch Toolkit $latesttoolkit" ]] ; then
-        tbupdate
-    elif [[ $toolkitopts == "Update & Install $latesttoolkit" ]] ; then
-        updateandinstalltoolkit
-    elif [[ $toolkitopts == "Help" ]] ; then
-        toolkitchoicehelp
-    elif [[ $toolkitopts == "Quit" ]] ; then
-        cleanexit
-    else
-    :
-    fi
-    done
-    cleanexit
-}
-
-toolkitchoiceoffline(){
-    select toolkitopts in "Install Brunch Toolkit $toolkitversion" Help Quit; do
-    if [[ -z "$toolkitopts" ]] ; then
-       echo "[Ex] Invalid option"
-    elif [[ $toolkitopts == "Install Brunch Toolkit $toolkitversion" ]] ; then
-        tbinstall
-    elif [[ $toolkitopts == "Help" ]] ; then
-        toolkitchoiceofflinehelp
-    elif [[ $toolkitopts == "Quit" ]] ; then
-        cleanexit
-    else
-    :
-    fi
-    done
-    cleanexit
-}
-
-tbinstall(){
-    mv -f $downloads/brunch-toolkit-$toolkitversion.sh /usr/local/bin/brunch-toolkit || { exitcode="10" ; cleanexit ; }
-    chmod +x /usr/local/bin/brunch-toolkit || { exitcode="11" ; cleanexit ; }
-    mkdir /usr/local/bin/brunch-toolkit-assets || { exitcode="12" ; cleanexit ; }
-    echo -e "[o] Brunch Toolkit has been installed!
-    To use the installed version just type 'brunch-toolkit' without quotes,
-    it should look something like this:
-
-
-    \e[01;32mchronos@localhost \e[01;34m/ $ \e[0mbrunch-toolkit
-
-
-[!] Note that the installed version does not require '.sh' at the end."
-    cleanexit
-}
-
-tbupdate(){
-    echo "[o] Downloading latest Brunch Toolkit, please wait..."
-    curl -l -O --progress-bar "$latesttoolkiturl"
-    echo "[o] Downloaded successfully!"
-}
-
-updateandinstalltoolkit(){
-    tbupdate
-    toolkitversion=$latesttoolkit
-    tbinstall
+  clear
+  # Check for existing update process
+      if [ "$updateinprogress" == "true" ] ; then
+          echo "[Error] Update already in progress!"
+          updateinprogress="false"
+          previousmenu="startmenu"
+          returntomenu
+      fi
+      updateinprogress="true"
+  echo "[o] Downloading latest Brunch Toolkit, please wait..."
+  curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/brunch-toolkit -o ~/Downloads/brunch-toolkit
+  echo "[o] Downloaded successfully!"
+  sudo install -Dt /usr/local/bin -m 755 ~/Downloads/brunch-toolkit
+  echo "[o] Updated successfully!"
+  clear
+  echo "
+┌───────────────────────────────────────────────────────────────┐
+│              ~ Brunch Toolkit Update Completed ~              │
+│                                                               │
+│              The Brunch Toolkit has been updated              │
+│              please run it again to see changes.              │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+      "
+  updateinprogress="false"
+  previousmenu="startmenu"
+  returntomenu
 }
 
 #+===============================================================+
@@ -1040,7 +985,7 @@ brunchshellsetup(){
         fi
     }
 
-    addshelltools(){
+addshelltools(){
     echo ""
     echo "You can add your own commands here for easy access to scripts or chroots"
     echo "These commands must be one line and can not include commas (,)"
@@ -1050,7 +995,7 @@ brunchshellsetup(){
     addshelltoolssub
     }
 
-    addshelltoolssub(){
+addshelltoolssub(){
     echo "Current shortcuts:"
     echo "$toolsvar"
     echo ""
@@ -1060,7 +1005,7 @@ brunchshellsetup(){
         esac
     }
 
-    shelltooladdition(){
+shelltooladdition(){
     toolsvar="$toolsvar$adopt,"
     adopt=
     currenttools=$(echo "$toolsvar"  | sed 's/,/\n/g')
@@ -1087,7 +1032,7 @@ brunchshellsetup(){
         done
     }
 
-    removeshelltools(){
+removeshelltools(){
         echo ""
         echo "Choose which shortcut to remove."
         echo "You can add them back later."
@@ -1111,14 +1056,13 @@ brunchshellsetup(){
         done
     }
 
-    shelltoolremoval(){
+shelltoolremoval(){
         toolsvar=${toolsvar//$rmopt,/}
         currenttools=$(echo "$toolsvar"  | sed 's/,/\n/g')
         removeshelltools
     }
 
-
-    installshelltools(){
+installshelltools(){
         echo "$toolsvar" > $downloads/shell-tools.btst
         mv -f $downloads/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
         if [ "$shellfound" = "true" ] ; then
@@ -1129,15 +1073,13 @@ brunchshellsetup(){
         cleanexit
     }
 
-    uninstallshelltools(){
+uninstallshelltools(){
         echo ""
         rm -f $downloads/shell-tools.btst
         rm -f /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
         echo "[!] Shell shortcuts have been uninstalled!"
         cleanexit
     }
-
-
 
 #+===============================================================+
 #|  grub options                                                 |
@@ -1207,6 +1149,9 @@ gruboptions(){
     originalchromeanim=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "chromeos_bootsplash=" | sed "s/.*chromeos_bootsplash=//g" | cut -d' ' -f1)
     userchromeanim=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "chromeos_bootsplash=" | sed "s/.*chromeos_bootsplash=//g" | cut -d' ' -f1)
     cbaopts=$(ls /mnt/stateful_partition/unencrypted/bootsplash/)
+    findthemes=$(cat /root/tmpgrub/efi/boot/grub.cfg | grep -m 1 "source /efi/boot/theme.cfg")
+    themeopts=$(ls /root/tmpgrub/efi/boot/themes)
+    currenttheme=$(cat /root/tmpgrub/efi/boot/theme.cfg | grep -m 1 "grub_theme=" | sed "s/.*grub_theme=//g")
 }
 
 grubmain(){
@@ -1224,7 +1169,7 @@ grubmain(){
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
 " ; vanity
     previousmenu="startmenu"
-    grubmenuopts=("Framework Options" "Kernels" "Brunch Bootsplash" "ChromeOS Boot Animation" "Edit Grub Manually" "Help" "Back" "Quit")
+    grubmenuopts=("Framework Options" "Kernels" "Grub Themes" "Brunch Bootsplashes" "ChromeOS Boot Animations" "Edit Grub Manually" "Help" "Back" "Quit")
     case `select_opt "${grubmenuopts[@]}"` in
         *) grubmenuoptions="${grubmenuopts[$?]}" ;;
     esac
@@ -1237,20 +1182,272 @@ grubmain(){
         cleanexit
     elif [ "$grubmenuoptions" == "Help" ] ; then
         grubmenuhelp
+    elif [ "$grubmenuoptions" == "Grub Themes" ] ; then
+        themeengine
     elif [ "$grubmenuoptions" == "Framework Options" ] ; then
         fwosub
     elif [ "$grubmenuoptions" == "Kernels" ] ; then
         kernelsub
-    elif [ "$grubmenuoptions" == "Brunch Bootsplash" ] ; then
+    elif [ "$grubmenuoptions" == "Brunch Bootsplashes" ] ; then
         bbssub
-    elif [ "$grubmenuoptions" == "ChromeOS Boot Animation" ] ; then
+    elif [ "$grubmenuoptions" == "ChromeOS Boot Animations" ] ; then
         cbasub
     elif [ "$grubmenuoptions" == "Edit Grub Manually" ] ; then
-        sudo edit-grub-config
+        manualedit
         editgrubconfigmain
     else
         echo "[x] Invalid option"
     fi
+}
+
+TEwidget(){
+if [ -n "$currenttheme" ] ; then
+currentcba1=$(echo "Currently set grub theme:" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+currentcba2=$(echo "$currenttheme" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+printf "\n│\033[7m░░░░░░░░░░░░░░░░░░░░░░░ Grub Theme Info ░░░░░░░░░░░░░░░░░░░░░░░\033[27m│\n"
+echo "│                                                               │
+|$currentcba1|
+|$currentcba2|"
+echo "│                                                               │
+└───────────────────────────────────────────────────────────────┘"
+fi
+}
+
+setupthemes(){
+  if [ "$onlineallowed" == "false" ] ; then
+echo "
+┌───────────────────────────────────────────────────────────────┐
+│                   ~ No Internet Detected ~                    │
+│                                                               │
+│    Currently, an internet connection is required to set up    │
+│    grub themes automatically. You can still do it manually.   │
+│         Please consult the Brunch Discord for support         │
+│                                                               │
+│                 Return to the previous menu?                  │
+└───────────────────────────────────────────────────────────────┘
+            Please type Yes or No (y/n) to continue."
+
+      read -rp " >> " yn
+      case $yn in
+          [Yy]* ) echo "[o] Continuing to main menu..." ;;
+          [Nn]* ) exitcode=""; cleanexit;;
+      esac
+    fi
+    getstarterpack
+}
+
+getstarterpack(){
+    echo "[o] Downloading theme starter pack, please wait..."
+    mkdir -p ~/tmp/brunch-toolkit
+    curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/grub_theme_starter_pack.zip -o ~/tmp/brunch-toolkit/grub_theme_starter_pack.zip
+    curdir=$(pwd)
+    cd ~/tmp/brunch-toolkit
+    bsdtar -xvf ~/tmp/brunch-toolkit/grub_theme_starter_pack.zip --exclude "*_MACOSX*" | pv -s $(du -sb ~/tmp/brunch-toolkit | awk '{print $1}')
+    cd $curdir
+    rm ~/tmp/brunch-toolkit/grub_theme_starter_pack.zip
+    mountgrub
+    sudo cp -r ~/tmp/brunch-toolkit/* /root/tmpgrub/efi/boot
+    rm -rf ~/tmp/brunch-toolkit
+    gruboptions
+    unmountgrub
+}
+
+themeengine(){
+  clear
+  if [ -z "$findthemes" ] ; then
+    setupthemes
+  fi
+  widget="TEwidget"
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│                    ~ Grub Theme Manager ~                     │
+│                                                               │
+│     Quickly install or swap between installed grub themes     │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+   Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+" ; vanity
+  previousmenu="startmenu"
+  thememenuopts=(${themeopts[@]})
+  thememenuopts+=("Install New Theme" "Remove a Theme" "Help" "Back" "Quit")
+  case `select_opt "${thememenuopts[@]}"` in
+      *) thememenuopts="${thememenuopts[$?]}" ;;
+  esac
+  if [[ -n "$thememenuopts" ]] ; then
+      echo "[o] User selected: $thememenuopts"
+  fi
+  if [ "$thememenuopts" == "Back" ] ; then
+      $previousmenu
+  elif [ "$thememenuopts" == "Quit" ] ; then
+      cleanexit
+  elif [ "$thememenuopts" == "Help" ] ; then
+      previousmenu="themeengine"
+      tehelp
+  elif [ "$thememenuopts" == "Install New Theme" ] ; then
+      teinstaller
+  elif [ "$thememenuopts" == "Remove a Theme" ] ; then
+      teremover
+  else
+      grubaction="changete"
+      previousmenu="themeengine"
+      savegrub
+  fi
+}
+
+changete(){
+sudo sed -i "s/grub_theme=$currenttheme/grub_theme=$thememenuopts/" /root/tmpgrub/efi/boot/theme.cfg
+}
+
+teremover(){
+  clear
+  previousmenu="themeengine"
+  widget="TEwidget"
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│                   ~ Grub Theme Remover Menu ~                 │
+│                                                               │
+│               Easily remove unwanted grub themes              │
+│                                                               │
+│          Please select one of the following to remove         │
+└───────────────────────────────────────────────────────────────┘
+      Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+  teremoptions=(${themeopts[@]/default/})
+  teremoptions+=("Help" "Back" "Quit")
+  case `select_opt "${teremoptions[@]}"` in
+      *) teremchoice=${teremoptions[$?]} ; echo "[o] User selected: $teremchoice";;
+  esac
+  if [ "$teremchoice" == "Help" ] ; then
+      previousmenu="teremover"
+      teremhelp
+  elif [ "$teremchoice" == "Back" ] ; then
+      $previousmenu
+  elif [ "$teremchoice" == "Quit" ] ; then
+      cleanexit
+  else
+      remte
+  fi
+}
+
+teinstaller(){
+  clear
+  previousmenu="themeengine"
+  widget="TEwidget"
+  plate="
+┌───────────────────────────────────────────────────────────────┐
+│                 ~ Grub Theme Installer Menu ~                 │
+│                                                               │
+│                  Easily install Grub themes                   │
+│                                                               │
+│           Please select one of the following options          │
+└───────────────────────────────────────────────────────────────┘
+      Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+  " ; vanity
+  case `select_opt "${tezip[@]}"` in
+      *) techoice=${tezip[$?]} ; echo "[o] User selected: $techoice";;
+  esac
+  if [ "$techoice" == "Help" ] ; then
+      previousmenu="teinstaller"
+      teinstallerhelp
+  elif [ "$techoice" == "Back" ] ; then
+      $previousmenu
+  elif [ "$techoice" == "Quit" ] ; then
+      cleanexit
+  else
+      installtheme
+  fi
+}
+
+installtheme(){
+  tedir=$(echo "$techoice" | sed -e s/.${techoice##*.}//)
+  mkdir -p ~/tmp/brunch-toolkit
+  temppwd=$(pwd)
+  cd ~/tmp/brunch-toolkit
+
+# Do something unique if it's a pack of themes
+  if [ "$techoice" == "grub_theme_starter_pack.zip" ] ; then
+        cp $downloads/$techoice ~/tmp/brunch-toolkit
+        echo "[o] Installing theme pack, please wait..."
+        bsdtar -xvf $techoice --exclude "*_MACOSX*" | pv -s $(du -sb ~/tmp/brunch-toolkit | awk '{print $1}')
+        rm -rf ~/tmp/brunch-toolkit/$techoice
+        cd $temppwd
+        mountgrub
+        sudo cp -r ~/tmp/brunch-toolkit/* /root/tmpgrub/efi/boot
+        rm -rf ~/tmp/brunch-toolkit
+        gruboptions
+        unmountgrub
+#See what kind of file it is
+elif [ "${techoice##*.}" == "zip" ] && [ "$techoice" != "grub_theme_starter_pack.zip" ] ; then
+    cp $downloads/$techoice ~/tmp/brunch-toolkit
+    echo "[!] Unzipping archive, please wait..."
+    bsdtar -xvf "$techoice" --exclude "*_MACOSX*" | pv -s $(du -sb ~/tmp/brunch-toolkit | awk '{print $1}')
+    rm -rf ~/tmp/brunch-toolkit/$techoice
+    cd $temppwd
+    mountgrub
+    sudo cp -r ~/tmp/brunch-toolkit/* /root/tmpgrub/efi/boot/themes
+    rm -rf ~/tmp/brunch-toolkit
+    gruboptions
+    unmountgrub
+elif [ "${techoice##*.}" == "png" ] || [ "${techoice##*.}" == "jpeg" ] || [ "${techoice##*.}" == "jpg" ] ; then
+    cp $downloads/$techoice ~/tmp/brunch-toolkit
+# Do this thing to make pngs look nice
+    usercolor=$(convert $techoice -format "%[pixel:p{0,0}]" info:)
+    pngw=$(identify $techoice | cut -f 3 -d " " | sed s/x.*//)
+    pngh=$(identify $techoice | cut -f 3 -d " " | sed s/.*x//)
+# If images are the perfect size or larger, leave them be
+    if (( $pngw >= $width )) || (( $pngh >= $height )) ; then
+        if (( $pngh > $pngw )) ; then
+        padding=$(( $pngh - $pngw ))
+        pngw=$(( $pngw + $padding ))
+        fi
+    else
+    pngw=$(( $width + $pngw ))
+    pngh=$(( $height + $pngh ))
+    fi
+# assume black for now, set up selector later
+    if [ -z "$usercolor" ] || [ "$usercolor" == "srgba(0,0,0,0)" ] ; then
+    usercolor="black"
+    fi
+# Ask about padding?
+    echo "Converting image to fit your screen, please wait..."
+    convert $techoice -gravity center -background "$usercolor" -flatten -extent "$pngw"x"$pngh" -geometry "$width"x"$height"^ -crop "$width"x"$height"+0+0 background.png
+    cd $temppwd
+    mountgrub
+    sudo mkdir -p /root/tmpgrub/efi/boot/themes/"$tedir"
+    sudo cp -r /root/tmpgrub/efi/boot/themes/default/* /root/tmpgrub/efi/boot/themes/"$tedir"
+    sudo cp ~/tmp/brunch-toolkit/background.png /root/tmpgrub/efi/boot/themes/"$tedir"
+    rm -rf ~/tmp/brunch-toolkit
+    sudo sed -i "s/grub_theme=$currenttheme/grub_theme=$tedir/" /root/tmpgrub/efi/boot/theme.cfg
+    gruboptions
+    unmountgrub
+fi
+  themeengine
+}
+
+remte(){
+  mountgrub
+  sudo rm -rf /root/tmpgrub/efi/boot/themes/"$teremchoice"
+  if [ "$teremchoice" == "$currenttheme" ] ; then
+  grubaction="changete"
+  previousmenu="teremover"
+  sudo sed -i "s/grub_theme=$currenttheme/grub_theme=default/" /root/tmpgrub/efi/boot/theme.cfg
+  fi
+  gruboptions
+  unmountgrub
+  teremover
+}
+
+manualedit(){
+  previousmenu="startmenu"
+  if [ -z "$GRUBEDITOR" ] ; then
+  GRUBEDITOR=nano
+  fi
+  mountgrub
+  sudo $GRUBEDITOR /root/tmpgrub/efi/boot/grub.cfg
+  gruboptions
+  unmountgrub
+  $previousmenu
 }
 
 CBAwidget(){
@@ -1279,7 +1476,7 @@ cbasub(){
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
   " ; vanity
-      previousmenu="grubmain"
+      previousmenu="startmenu"
       cbamenuoptions=(${cbaopts[@]})
       cbamenuoptions+=("default" "Install New Animation" "Remove an Animation" "Help" "Back" "Quit")
       case `select_opt "${cbamenuoptions[@]}"` in
@@ -1293,6 +1490,7 @@ cbasub(){
       elif [ "$cbamenuoptions" == "Quit" ] ; then
           cleanexit
       elif [ "$cbamenuoptions" == "Help" ] ; then
+        previousmenu="cbasub"
           cbamenuhelp
       elif [ "$cbamenuoptions" == "Install New Animation" ] ; then
           cbainstaller
@@ -1370,7 +1568,7 @@ $platesub
   case `select_opt "${bootsplashzip[@]}"` in
       *) bootsplashchoice=${bootsplashzip[$?]} ; echo "[o] User selected: $bootsplashchoice";;
   esac
-  if [ "$bootsplashchoice" == "Download from github" ] ; then
+  if [ "$bootsplashchoice" == "Download from Github" ] ; then
       webanimcheck
   elif [ "$bootsplashchoice" == "Help" ] ; then
       previousmenu="cbainstaller"
@@ -1444,7 +1642,7 @@ changebootsplash(){
     mkdir -p $downloads/$bsdir
     temppwd=$(pwd)
     cd $downloads/$bsdir
-    
+
 #See what kind of file it is
 if [ "${bootsplashchoice##*.}" == "gif" ] ; then
     cp $downloads/$bootsplashchoice $downloads/$bsdir
@@ -1464,14 +1662,10 @@ if [ "${bootsplashchoice##*.}" == "gif" ] ; then
         if (( $pngh > $pngw )) ; then
         padding=$(( $pngh - $pngw ))
         pngw=$(( $pngw + $padding ))
-        pngh="0"
-        else
-        pngw="0"
-        pngh="0"
         fi
     else
-    pngw=$(( $width - $pngw ))
-    pngh=$(( $height - $pngh ))
+    pngw=$(( $width + $pngw ))
+    pngh=$(( $height + $pngh ))
     fi
 # assume black for now, set up selector later
     if [ -z "$usercolor" ] || [ "$usercolor" == "srgba(0,0,0,0)" ] ; then
@@ -1484,7 +1678,7 @@ if [ "${bootsplashchoice##*.}" == "gif" ] ; then
     done
 
 elif [ "${bootsplashchoice##*.}" == "zip" ] ; then
-    mv $downloads/$bootsplashchoice $downloads/$bsdir
+    cp $downloads/$bootsplashchoice $downloads/$bsdir
     echo "[!] Unzipping archive, please wait..."
     bsdtar -xvf "$bootsplashchoice" --exclude "*_MACOSX*" | pv -s $(du -sb $downloads/$bsdir | awk '{print $1}')
     # Insert resize command here
@@ -1499,19 +1693,17 @@ elif [ "${bootsplashchoice##*.}" == "png" ] ; then
     #get primary color from first frame
     #usercolor=$(convert $bootsplashchoice +dither -colors 5 -unique-colors txt: | grep "0,0" | xargs | cut -d' ' -f3)
     usercolor=$(convert $bootsplashchoice -format "%[pixel:p{0,0}]" info:)
+    pngw=$(identify $bootsplashchoice | cut -f 3 -d " " | sed s/x.*//)
+    pngh=$(identify $bootsplashchoice | cut -f 3 -d " " | sed s/.*x//)
 # If images are the perfect size or larger, leave them be
     if (( $pngw >= $width )) || (( $pngh >= $height )) ; then
         if (( $pngh > $pngw )) ; then
         padding=$(( $pngh - $pngw ))
         pngw=$(( $pngw + $padding ))
-        pngh="0"
-        else
-        pngw="0"
-        pngh="0"
         fi
     else
-    pngw=$(( $width - $pngw ))
-    pngh=$(( $height - $pngh ))
+    pngw=$(( $width + $pngw ))
+    pngh=$(( $height + $pngh ))
     fi
 # assume black for now, set up selector later
     if [ -z "$usercolor" ] || [ "$usercolor" == "srgba(0,0,0,0)" ] ; then
@@ -1519,6 +1711,12 @@ elif [ "${bootsplashchoice##*.}" == "png" ] ; then
     fi
     echo "Converting image to fit your screen, please wait..."
     convert $bootsplashchoice -gravity center -background "$usercolor" -flatten -extent "$pngw"x"$pngh" -geometry "$width"x"$height"^ -crop "$width"x"$height"+0+0 boot_splash_frame01.png
+    for i in {2..9} ; do
+    cp boot_splash_frame01.png boot_splash_frame0$i.png
+    done
+    for i in {10..13} ; do
+    cp boot_splash_frame01.png boot_splash_frame$i.png
+    done
 fi
 
     cd $temppwd
@@ -1558,7 +1756,7 @@ bbssub(){
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
   " ; vanity
-      previousmenu="grubmain"
+      previousmenu="startmenu"
       bbsmenuoptions=(${bbsopts[@]})
       bbsmenuoptions+=("Help" "Back" "Quit")
       case `select_opt "${bbsmenuoptions[@]}"` in
@@ -1617,7 +1815,7 @@ kernelsub(){
 └───────────────────────────────────────────────────────────────┘
        Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
   " ; vanity
-      previousmenu="grubmain"
+      previousmenu="startmenu"
       kernelmenuoptions=(${avaliablekernels[@]})
       kernelmenuoptions+=("Help" "Back" "Quit")
       case `select_opt "${kernelmenuoptions[@]}"` in
@@ -1653,12 +1851,13 @@ fwosub(){
   #widget="FWOwidget"
   plate="
 ┌───────────────────────────────────────────────────────────────┐
-│              Options marked with ◯ are disabled              │
-│              Options marked with ◆ are enabled               │
+│            Select Framework Options to enable them.           │
+│      Changes are saved automatically, reboot to test them.    │
 └───────────────────────────────────────────────────────────────┘
+        Options marked with ◯ are disabled, ◆ are enabled.
   Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle or select.
 " ; vanity
-  previousmenu="grubmain"
+  previousmenu="startmenu"
   #Declare two variables here to see if B is contained in A
   arrA=(${defaultframeworkoptions[@]})
   arrB=(${fwoopts[@]})
@@ -1784,7 +1983,7 @@ fi
 }
 
 grubmenuhelp(){
-previousmenu="grubmain"
+previousmenu="startmenu"
 
 helpentry="
 ┌───────────────────────────────────────────────────────────────┐
@@ -2040,6 +2239,64 @@ helpentry="
 helpmenu
 }
 
+tehelp(){
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                    Framework Options Help                     │
+│                                                               │
+│   This is the framework options menu, from here users can     │
+│   toggle framework options on or off easily.                  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
+teremhelp(){
+helpentry="
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                    Framework Options Help                     │
+│                                                               │
+│   This is the framework options menu, from here users can     │
+│   toggle framework options on or off easily.                  │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│                      Under Construction!                      │
+│                                                               │
+│   Help                                                        │
+│       Displays relevant help information about the current    │
+│       options available to the user at that time. It is not   │
+│       always the same page, so check it when help is needed!  │
+│                                                               │
+│   Back                                                        │
+│       Takes the user back to the previous menu. In this case  │
+│       it leads to the Grub Options main menu.                 │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
+"
+helpmenu
+}
+
 
 #+===============================================================+
 #|  Changelog                                                    |
@@ -2047,12 +2304,206 @@ helpmenu
 #+===============================================================+
 
 
+#+===============================================================+
+#|  Compatibility Checking Tool                                  |
+#|  Everything related to the System Specs tool goes here        |
+#+===============================================================+
+# Define function to determine brunch compatibility & suggested recoveries
+# Ideally this entire code can be safely incorperated into other scripts
+
+quietcompatibilitycheck(){
+        cputype=$(cat /proc/cpuinfo | grep "model name" | head -1 | awk -F '[:]' '{print $2}')
+        if [[ ! "$cputype" =~ .*"AMD".* ]] && [[ ! "$cputype" =~ .*"Intel".* ]]   ; then
+            suggested="unknown"
+        elif [[ "$cputype" =~ .*"AMD".* ]] ; then
+            quietamdcpu
+        elif [[ "$cputype" =~ .*"Intel".* ]] ; then
+            quietintelcpu
+        else
+            suggested="unknown"
+        fi
+    }
+
+quietamdcpu(){
+        oldcpu=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq)
+        amdtype=$(cat /proc/cpuinfo | grep "[a|e][0-9]-9" | head -1 | awk -F '[:]' '{print $2}')
+        if [[ "$cputype" =~ .*"yzen".* ]] ; then
+                suggested="zork"
+                stoneyridge=true
+        elif [[ "$cputype" =~ .*"$amdtype".* ]] ; then
+            suggested="grunt"
+            stoneyridge=true
+        elif [[ -z "$amdtype" ]] ; then
+            suggested="unknown"
+            stoneyridge=false
+        else
+            suggested="unknown"
+        fi
+    }
+
+quietintelcpu(){
+        newcpu=$(grep -Ewo 'movbe|avx|vaes' /proc/cpuinfo  | sort | uniq | sed -e 's/movbe/Rammus is recommended./g' -e 's/avx/Eve, Nami, and Hatch are supported./g' -e 's/vaes/This CPU may require a special build to boot!/g')
+        oldcpu=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Samus is recommended./g')
+        if [ -z "$oldcpu" ] ; then
+            suggested="unknown"
+        elif [ -n "$oldcpu" ] && [ -z "$newcpu" ] ; then
+            suggested="samus"
+        elif [ -n "$newcpu" ] ; then
+            suggested="rammus"
+            if [[ "$newcpu" =~ .*"supported".* ]] ; then
+            secondchoice=true
+            fi
+            if [[ "$newcpu" =~ .*"special".* ]] ; then
+            specialbuild=true
+            fi
+        else
+            suggested="unknown"
+        fi
+    }
+
 
 #+===============================================================+
 #|  Version // System Specs                                      |
 #|  Everything related to the System Specs tool goes here        |
 #+===============================================================+
 
+displayversion(){
+  getversionvars
+  menuheader
+      previousmenu="startmenu"
+echo "
+┌───────────────────────────────────────────────────────────────┐
+│                                                               │
+│                      ~ System Report ~                        │
+│                                                               │
+├───────────────────────────────────────────────────────────────┤
+│                                                               │
+│   CPU Model                                                   │
+$dvcputype
+│                                                               │
+│   Current Kernel                                              │
+$dvkernelnumber
+│                                                               │
+│   Virtualization                                              │
+$dvvirt
+│                                                               │
+│   Hypervisor                                                  │
+$dvhype
+│                                                               │"
+if [ "$scriptmode" == "brunch" ] ; then
+echo "│   Brunch Version                                              │
+$dvcurrentrelease
+│                                                               │
+│   ChromeOS Version                                            │
+$dvsysver
+│                                                               │
+│   Current Recovery                                            │
+$dvchromeosreleaseboard
+│                                                               │"
+else
+echo "│   Current Distro                                              │
+$dvsysver
+│                                                               │"
+fi
+echo "│   Compatibility Check                                         │
+$dvsuggested
+│                                                               │
+│   Brunch Toolkit Version                                      │
+$dvtoolkitversion
+│                                                               │
+├───────────────────────────────────────────────────────────────┤
+│     Tip: Use Shift + Up (↑) or Shift + Down (↓) to scroll!    │
+└───────────────────────────────────────────────────────────────┘
+"
+      returntomenu
+  }
+
+getversionvars(){
+      #dvtoolkitversion=$(echo "$toolkitversion" | awk '{ z = 63 - length; y = int(z / 2); x = z - y; printf "%*s%s%*s\n", x, "", $0, y, ""; }')
+      dvtoolkitversion=$(printf "│       %-56s│\n" "$toolkitversion")
+      getcpu
+      getvirt
+      getcrosver
+      dvkernelnumber=$(printf "│       %-56s│\n" "$kernelnumber")
+      if [ "$scriptmode" == "brunch" ] ; then
+          dvchromeosreleaseboard=$(printf "│       %-56s│\n" "${chromeosreleaseboard^}")
+      fi
+      getbrunchver
+      quietcompatibilitycheck
+      compatibilitysub
+  }
+
+compatibilitysub(){
+        if [[ "$cputype" =~ .*"AMD".* ]] && [[ -z "$oldcpu" ]] ; then
+          suggested="This AMD CPU is not compatible with Brunch."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested")
+        elif [[ "$cputype" =~ .*"AMD".* ]] && [[ "$suggested" == "unknown" ]] ; then
+          suggested="This AMD CPU is probably not compatible with Brunch."
+          suggested2="Only Stoney/Bristol Ridge and Ryzen are known to work."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested" "$suggested2")
+        elif [[ "$cputype" =~ .*"Intel".* ]] && [[ "$suggested" == "unknown" ]] ; then
+          suggested="This Intel CPU is not compatible with Brunch."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested")
+        elif [[ "$suggested" == "unknown" ]] ; then
+          suggested="This CPU is not compatible with Brunch."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested")
+        elif [[ "$suggested" == "rammus" ]] && [[ "$secondchoice" == "true" ]] ; then
+          suggested="${suggested^} is the suggested recovery for this CPU."
+          suggested2="Eve, Octopus, Nautilus, and Hatch are also supported."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested" "$suggested2")
+        else
+          suggested="${suggested^} is the suggested recovery for this CPU."
+          dvsuggested=$(printf "│       %-56s│\n" "$suggested")
+        fi
+}
+
+getvirt() {
+      virt=$(grep -Ewo 'vmx|svm' /proc/cpuinfo  | sort | uniq | sed -e 's/svm/AMD-V Virtualization supported/g' -e 's/vmx/Intel Virtualization supported/g')
+      hype=$(grep -Ewo 'hypervisor' /proc/cpuinfo  | sort | uniq | sed -e 's/hypervisor/Hypervisor detected/g')
+      if [ -z "$virt" ]; then
+          virt="Virtualization not supported"
+      else
+      :
+      fi
+      if [ -z "$hype" ]; then
+          hype="Hypervisor not detected"
+      else
+      :
+      fi
+      dvvirt=$(printf "│       %-56s│\n" "$virt")
+      dvhype=$(printf "│       %-56s│\n" "$hype")
+  }
+
+# Determine if user is running ChromeOS or another system and display relevant information.
+# Might expand on this later for future plans
+getcrosver() {
+      source /etc/os-release 2>/dev/null
+      if [ -z "$GOOGLE_CRASH_ID" ]; then
+          sysver=$"$ID $VERSION $BUILD_ID"
+      else
+          sysver=$"$GOOGLE_CRASH_ID $VERSION $BUILD_ID"
+      fi
+      dvsysver=$(printf "│       %-56s│\n" "$sysver")
+      }
+
+# Determine if user is running Brunch or another system.
+getbrunchver() {
+      if [ -z "$currentrelease" ]; then
+      :
+      else
+      dvcurrentrelease=$(printf "│       %-56s│\n" "$currentrelease")
+      fi
+  }
+
+# Displays just a user's CPU, quietly fails if the option returns nothing
+getcpu() {
+      cputype=$(cat /proc/cpuinfo | grep "model name" | head -1 | awk -F '[:]' '{print $2}')
+      if [ -z "$cputype" ]; then
+      :
+      else
+      dvcputype=$(printf "│      %-57s│\n" "$cputype")
+      fi
+}
 
 #+===============================================================+
 #|  Help glossary                                                |
@@ -2071,7 +2522,7 @@ helpmenu(){
 returntomenu(){
 # Intentionally break formatting here for the ~ a e s t h e t i c ~
     read -rp "
-           Press Enter (⏎) to return to the previous menu.
+        Press Enter (⏎) to return to the previous menu.
 " return
     case $return in
         * ) $previousmenu ;;
