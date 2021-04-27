@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.9b"
+TOOLVER="v1.0.10b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -1120,7 +1120,7 @@ fi
            echo "[ERROR] Invalid option"
         elif [[ $RECOVERYTODOWNLOAD == "Quit" ]] ; then
             cleanexit
-        elif [[ $RECOVERYTODOWNLOAD == "Use suggested" ]] ; then
+        elif [[ $RECOVERYTODOWNLOAD == "Use suggested ($SUGGESTED)" ]] ; then
             RECOVERYTODOWNLOAD=$SUGGESTED
             getchrome
         elif [[ $RECOVERYTODOWNLOAD == "Select another" ]] ; then
@@ -1404,6 +1404,7 @@ fi
         curl -L -O --progress-bar $ETCHERLINK
     fi
     echo "The Etcher window should open shortly, please select your chromeos.img and your USB to write the img."
+    echo "It should be located in $BOOKMARK/brunch-toolkit-workspace/chromeos.img"
     $ETCHER
     }
 
