@@ -19,7 +19,7 @@ fi
 readonly TOOLVER="$toolkitversion"
 readonly quickstart="$1" #OPTS
 readonly OPTS="$quickstart"
-readonly defaultshelltools='brunch-toolkit,brunch-toolkit --quickbootsplash,brunch-toolkit --shell,'
+readonly defaultshelltools=("brunch-toolkit" "brunch-toolkit --shell")
 readonly discordinvite="https://discord.gg/x2EgK2M"
 readonly userid=`id -u $USERNAME`
 # Incorrect formatting is intentional here
@@ -27,34 +27,38 @@ PS3="
  >> "
 
 # All currently known framework options. Update this list as necessary (any order)
-readonly defaultframeworkoptions=(acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8812au rtl8821ce rtl88x2bu rtbth ipts oled_display disable_intel_hda asus_c302 sysfs_tablet_mode suspend_s3 advanced_als)
+readonly defaultframeworkoptions=(acpi_power_button alt_touchpad_config alt_touchpad_config2 android_init_fix baytrail_chromebook enable_updates force_tablet_mode internal_mic_fix mount_internal_drives broadcom_wl iwlwifi_backport rtl8188eu rtl8723bu rtl8723de rtl8812au rtl8821ce rtl88x2bu rtbth ipts oled_display disable_intel_hda asus_c302 sysfs_tablet_mode suspend_s3 advanced_als pwa)
 # All currently known descriptions. Mind string length
 readonly fwodesc=(
-"│       Patches in better support for Power Button hardware     │"
-"│       Alternative configuration to fix touchpad issues        │"
-"│       Alternative configuration to fix touchpad issues        │"
-"│       Alternative init for Android services, may fail         │"
-"│       Applies audio fixes specific to Baytrail devices        │"
-"│       Enables native ChromeOS updating from the settings      │"
-"│       Enables tablet mode on boot using sysfs control         │"
-"│       Patches to force mic to work on some devices            │"
-"│       Mounts internal drives at boot, visible in files app    │"
-"│       Patches in support for some Broadcom wireless cards     │"
-"│       Patches in support for some Intel wireless cards        │"
-"│       Patches in support for rtl8188eu wireless cards         │"
-"│       Patches in support for rtl8723bu wireless cards         │"
-"│       Patches in support for rtl8723de wireless cards         │"
-"│       Patches in support for rtl8812au wireless cards         │"
-"│       Patches in support for rtl8821ce wireless cards         │"
-"│       Patches in support for rtl88x2bu wireless cards         │"
-"│       Patches in support for rt3290 & rt3298le bluetooth      │"
-"│       Patches in support for Surface touchscreens             │"
-"│       Patches in support for oled display in Kernel 5.10      │"
-"│       Blacklists the snd_hda_intel module                     │"
-"│       Applies fixes specific to Asus c302 devices             │"
-"│       Allows users to force tablet mode from the shell        │"
-"│       Disables suspend to idle (S0ix) and uses S3 instead     │"
-"│       Enables more auto-brightness levels where supported     │"
+"Patches in better support for Power Button hardware"
+"Alternative configuration to fix touchpad issues"
+"Alternative configuration to fix touchpad issues (2)"
+"Alternative init for Android services, may fail"
+"Applies audio fixes specific to Baytrail devices"
+"Enables native ChromeOS updating from the settings"
+"Enables tablet mode on boot using sysfs control"
+"Patches to force mic to work on some devices"
+"Mounts internal drives at boot, visible in files app"
+"Patches in support for some Broadcom wireless cards"
+"Patches in support for some Intel wireless cards"
+"Patches in support for rtl8188eu wireless cards"
+"Patches in support for rtl8723bu wireless cards"
+"Patches in support for rtl8723de wireless cards"
+"Patches in support for rtl8812au wireless cards"
+"Patches in support for rtl8821ce wireless cards"
+"Patches in support for rtl88x2bu wireless cards"
+"Patches in support for rt3290 & rt3298le bluetooth"
+"Patches in support for Surface touchscreens"
+"Patches in support for oled display in Kernel 5.10"
+"Blacklists the snd_hda_intel module"
+"Applies fixes specific to Asus c302 devices"
+"Allows users to force tablet mode from the shell"
+"Disables suspend to idle (S0ix) and uses S3 instead"
+"Enables more auto-brightness levels where supported"
+"Enables Brunch PWA functions"
+"Open the Help menu"
+"Go back to the previous menu"
+"Exit the toolkit"
 )
 # Currently avaliable kernels
 readonly avaliablekernels=(kernel-4.19 kernel-5.4 kernel-5.10)
@@ -82,15 +86,29 @@ includechrome=false
 #   Arguments   : list of options, maximum of 256
 #                 "opt1" "opt2" ...
 #   Return value: selected index (0 for opt1, 1 for opt2 ...)
-function select_option {
 
+
+function select_option {
+    local gllarr=("$@")
+
+    gll() {
+      l=-1
+      for x in "${submenu[@]}" ; do
+      if [ ${#x} -gt $l ] ; then
+        l=$(( ${#x} * 2 + 4 ))
+      fi
+    done
+    }
+
+    alttext=("${submenu[@]}")
+    gll
     # little helpers for terminal print control and key input
     ESC=$( printf "\033")
     cursor_blink_on()  { printf "$ESC[?25h"; }
     cursor_blink_off() { printf "$ESC[?25l"; }
     cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
-    print_option()     { printf "   $1 "; }
-    print_selected()   { printf "⮞ $ESC[7m $1 $ESC[27m" ; }
+    print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
+    print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"; }
     get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
                          if [[ $key = $ESC[A ]]; then echo up;     fi
@@ -98,7 +116,8 @@ function select_option {
                          if [[ $key = ""     ]]; then echo enter;  fi; }
 
     # initially print empty new lines (scroll down if at bottom of screen)
-    for opt; do printf "\n"; done
+    for opt; do
+    printf "\n"; done
 
     # determine current screen position for overwriting the options
     local lastrow=`get_cursor_row`
@@ -113,12 +132,21 @@ function select_option {
         # print options by overwriting the last lines
         local idx=0
         for opt; do
+            if [ "$subbed" == "true" ] ; then
+              cursor_to $lastrow
+              printf "\33[A\33[2K\r%s\n"
+              makebox subtitle "$subtitle"
+              printf "\33[2K\r%s\n"
+              printf "\33[2K\r%s\n"
+            fi
             cursor_to $(($startrow + $idx))
             if [ $idx -eq $selected ]; then
+                subtitle=${alttext[$idx]}
                 print_selected "$opt"
             else
                 print_option "$opt"
             fi
+
             ((idx++))
         done
 
@@ -146,6 +174,202 @@ function select_opt {
     echo $result
     return $result
 }
+
+makebox()
+{
+    # dynamic variables
+    local terminal_width=$(tput cols)     # query the Terminfo database: number of columns
+    local box_width=$(( terminal_width - 8 ))
+    local part="${1:?}"                   # What part of the box to make
+    local text="$2"                       # text to center
+    local topbar="${3:-─}"                # glyph to compose the top bar
+    if [[ "$part" == div ]]; then
+      local wall="${4:-├}"                # outer bounding wall with divider
+    else
+      local wall="${4:-│}"                # outer bounding wall
+    fi
+    local corner="${5:-┌}"                # outer bounding corners
+    if [[ "$part" == header ]]; then
+      local glyph="${3:-░}"               # glyph to compose the header
+    else
+      local glyph=" "                     # box filler, just use spaces
+    fi
+    if [[ "$part" == out ]] ; then
+    topbar=" "
+    wall=" "
+    corner=" "
+    fi
+
+    #static variables
+    local padding="2"
+    local text_width=${#text}
+    local size_limit=$(( text_width + 8 ))
+    if (( size_limit < 40 )) ; then
+      local size_limit="40"
+    fi
+    # some bars are a bit short, align them appropriately
+    short_bars=(─━┄┅┈┉╌╍═░▒▓)
+    if [[ "${short_bars[@]}" =~ "$topbar" ]] && [[ "${short_bars[@]}" != "" ]]; then
+    local bar_width=$(( ((terminal_width - (padding * 2) - 1) / 2) - 1 ))
+    else
+    local bar_width=$(( ((terminal_width - (padding * 2) - 1) / 2) - 2 ))
+    fi
+
+
+    local border_width=$(( ((terminal_width - (padding * 2) - text_width) / 2) - 2 ))
+    local border=                         # shape of the border
+    local bar=
+
+    # create the border (left side or right side)
+    for ((i=0; i<border_width; i++))
+    do
+        border+="${glyph}"
+    done
+    # create the topbar (left side or right side)
+    for ((i=0; i<bar_width; i++))
+    do
+        bar+="${topbar}"
+    done
+
+    # a side of the border may be longer (e.g. the right border)
+    if (( ( terminal_width - ( padding * 2 ) - text_width ) % 2 == 0 ))
+    then
+        # the left and right borders have the same width
+        local left_border=$border
+        local right_border=$left_border
+    else
+        # the right border has one more character than the left border
+        # the text is aligned leftmost
+        local left_border=$border
+        local right_border="${border}${glyph}"
+    fi
+    # a side of the topbar may be longer (e.g. the right border)
+    if (( ( terminal_width - ( padding * 2 ) - 1 ) % 2 == 0 ))
+    then
+        # the left and right bars have the same width
+        local left_bar=$bar
+        local right_bar=$left_bar
+    else
+        # the right bar has one more character than the left bar
+        # the text is aligned leftmost
+        local left_bar=$bar
+        local right_bar="${bar}${topbar}"
+    fi
+
+    # make matching corners and walls as necessary
+     left_walls=(├ ┝ ┞ ┟ ┠ ┡ ┢ ┣ ╞ ╟ ╠)
+    right_walls=(┤ ┥ ┦ ┧ ┨ ┩ ┪ ┫ ╡ ╢ ╣)
+     top_left_corners=(┌ ┍ ┎ ┏ ╒ ╓ ╔ ╭)
+     btm_left_corners=(└ ┕ ┖ ┗ ╘ ╙ ╚ ╰)
+    top_right_corners=(┐ ┑ ┒ ┓ ╕ ╖ ╗ ╮)
+    btm_right_corners=(┘ ┙ ┚ ┛ ╛ ╜ ╝ ╯)
+    if [[ "${top_left_corners[@]}" =~ "$corner" ]] ; then
+      for target in "$corner"; do
+        for i in "${!top_left_corners[@]}";do
+          if [[ ${top_left_corners[$i]} == $target ]]; then
+            local top_left_corner=$corner
+            local top_right_corner=${top_right_corners[$i]}
+            local btm_left_corner=${btm_left_corners[$i]}
+            local btm_right_corner=${btm_right_corners[$i]}
+          fi
+        done
+      done
+    else
+      local top_left_corner=$corner
+      local top_right_corner=$corner
+      local btm_left_corner=$corner
+      local btm_right_corner=$corner
+    fi
+    if [[ "${left_walls[@]}" =~ "$wall" ]] ; then
+      for target in "$wall"; do
+        for i in "${!left_walls[@]}";do
+          if [[ ${left_walls[$i]} == $target ]]; then
+            local left_wall=$wall
+            local right_wall=${right_walls[$i]}
+          fi
+        done
+      done
+    else
+      local left_wall=$wall
+      local right_wall=$wall
+    fi
+
+# parse text based on string length
+if (( terminal_width < 50 )) && [[ "$part" == body ]] ; then
+    printf "${text}\n" | fold -w $terminal_width -s
+elif (( terminal_width < 50 )) && [[ "$part" == out ]] ; then
+    printf "${text}\n" | fold -w $terminal_width -s
+elif (( terminal_width < 50 )) && [[ "$part" == header ]] ; then
+    printf "\033[7m${text}\033[27m\n" | fold -w $terminal_width -s
+elif (( terminal_width < 50 )) ; then
+        echo "" # do nothing if theres no text. Dont draw boxes on small screens
+elif (( (text_width + 8) > terminal_width )) &&  [[ "$part" == body ]] ; then
+# do something fancy to split long lines and try to keep them in boxes
+        local text="$(echo "$text" | fold -w $box_width -s)"
+        IFS=$'\n'
+        text=($text)
+        unset IFS
+        multibox "${text[@]}"
+elif (( (text_width + 8) > terminal_width )) &&  [[ "$part" == header ]] ; then
+# do something fancy to split long lines and try to keep them in boxes
+        local text="$(echo "$text" | fold -w $box_width -s)"
+        IFS=$'\n'
+        text=($text)
+        unset IFS
+        multiheader "${text[@]}"
+elif (( (text_width + 8) > terminal_width )) &&  [[ "$part" == subtitle ]] ; then
+# hide subtitles if the screen is too small
+    printf "\33[A\33[2K\r\n\n"
+    printf "\33[A\33[2K\r\n\n"
+    printf "\33[A\33[2K\r%s\n" "${text}" | fold -w $terminal_width -s
+    printf "\33[2K\r\n"
+elif (( (text_width + 2) > terminal_width )) && [[ "$part" == out ]] ; then
+        printf "   ${text}\n" | fold -w $terminal_width -s
+# special subfunctions to make tops and bottoms
+elif [[ "$part" == top ]] ; then
+  printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+elif [[ "$part" == btm ]]; then
+  printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+elif [[ "$part" == header ]]; then
+  printf "  ${left_wall}\033[7m${left_border} ${text} ${right_border}\033[27m${right_wall}\n"
+elif [[ "$part" == body ]]; then
+  printf "  ${left_wall}${left_border} ${text} ${right_border}${right_wall}\n"
+elif (( terminal_width > 65 )) && [[ "$part" == out ]]; then
+  printf "  ${left_wall}${left_border}    ${text} ${right_border}${right_wall}\n"
+elif [[ "$part" == out ]]; then
+  printf "  ${left_wall}${left_border}  ${text} ${right_border}${right_wall}\n"
+elif [[ "$part" == space ]]; then
+  printf "  ${left_wall}${left_border}  ${right_border}${right_wall}\n"
+elif [[ "$part" == div ]]; then
+  printf "  ${left_wall}${left_bar}${topbar}${right_bar}${right_wall}\n"
+elif [[ "$part" == box ]]; then
+    # displays the text in the center of the screen, surrounded by borders.
+    printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+    printf "  ${left_wall}${left_border} ${text} ${right_border}${right_wall}\n"
+    printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+elif [[ "$part" == subtitle ]]; then
+      # displays the text in the center of the screen, surrounded by borders.
+      printf "\r%s  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+      printf "\r%s  ${left_wall}${left_border} ${text} ${right_border}${right_wall}\n"
+      printf "\r%s  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+      printf "\r%s"
+fi
+}
+
+multibox(){
+  local multibody=("$@")
+  for i in "${multibody[@]}" ; do
+  makebox body "$i"
+  done
+}
+
+multiheader(){
+  local multibody=("$@")
+  for i in "${multibody[@]}" ; do
+  makebox header "$i"
+  done
+}
+
 
 
 #+===============================================================+
@@ -628,20 +852,28 @@ fi
 # Actual main menu functions
 startmenu(){
 widget="notifications"
-plate="
-┌───────────────────────────────────────────────────────────────┐
-│                         ~ Main Menu ~                         │
-│                                                               │
-│           Please select one of the following options          │
-└───────────────────────────────────────────────────────────────┘
-       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
-" ; vanity
+#plate="
+#┌───────────────────────────────────────────────────────────────┐
+#│                         ~ Main Menu ~                         │
+#│                                                               │
+#│           Please select one of the following options          │
+#└───────────────────────────────────────────────────────────────┘
+#       Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select.
+#" ; vanity
+clear
+textbox=("~ Main Menu ~" "" "Please select one of the following options")
+makebox top
+multibox "${textbox[@]}"
+makebox btm
+makebox out "Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select."
+echo "
+"
 startmenuopts=
 # Context aware menu Options, these are for aesthetics only, the functions themselves will handle the context
 if [ "$scriptmode" != "brunch" ] ; then
     startmenuopts=("System Check" "Help" "Quit")
 elif [ "$dualboot" == "false" ] && [ "$scriptmode" == "brunch" ] ; then
-    startmenuopts=("Framework Options" "Kernels" "Grub Themes" "Brunch Bootsplashes" "ChromeOS Boot Animations" "Edit Grub Manually" "System Check")
+    startmenuopts=("Framework Options" "Kernels" "Grub Themes" "Brunch Bootsplashes" "ChromeOS Boot Animations" "Edit Grub Manually" "Shell Shortcuts" "System Check")
 elif [ "$dualboot" == "true" ] && [ "$scriptmode" == "brunch" ] ; then
     startmenuopts=("System Check")
 fi
@@ -924,10 +1156,71 @@ toolkitoptionsmain(){
 
 brunchshellsetupmain(){
     plate="brunchshellsetup" ; vanity
-    brunchshellsetup
+    shellmenu
 }
 
-brunchshellsetup(){
+shellmenu(){
+# set a return point for "Back"
+    previousmenu="startmenu"
+    clear
+# Make something nice looking and informative
+makebox top
+makebox body "~ Shell Shortcuts ~"
+makebox btm
+makebox out "Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select"
+echo ""
+# setup menu options as an array
+    menuopts=("Add Option" "Remove Option" "Help" "Back" "Quit")
+# generate menu from array
+    case `select_opt "${menuopts[@]}"` in
+        *) selection="${menuopts[$?]}" ;;
+    esac
+    if [[ -n "$selection" ]] ; then
+        echo "[o] User selected: $selection"
+    else
+        echo "[x] Invalid option"
+    fi
+# interpret selection based on if/elif/else/fi filter
+if [ "$selection" == "Back" ] ; then
+    $previousmenu
+elif [ "$selection" == "Quit" ] ; then
+    cleanexit
+elif [ "$selection" == "Help" ] ; then
+    helpmenu "shellmenu"
+fi
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+brunchshellsetup0(){
         if [[ -z "$shelltools" ]] ; then
         touch $downloads/shell-tools.btst
         echo "[!] Shell shortcuts not found, please wait..."
@@ -938,10 +1231,9 @@ brunchshellsetup(){
         fi
         echo ""
         if [ "$shellfound" == "true" ] ; then
-        currenttools=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst | sed 's/,/\n/g')
         toolsvar=$(cat /usr/local/bin/brunch-toolkit-assets/shell-tools.btst)
         echo "Your current shell shortcuts are:"
-        echo "$currenttools"
+        echo "$toolsvar"
         echo ""
         echo "What would you like to do?"
         echo ""
@@ -963,9 +1255,11 @@ brunchshellsetup(){
         done
         elif [ "$shellfound" == "false" ] ; then
             echo "The default shell shortcuts are:"
-            echo "$shelltools"  | sed 's/,/\n/g'
-        currenttools=$(echo "$shelltools"  | sed 's/,/\n/g')
-        toolsvar="$shelltools"
+            echo "$shelltools"
+        toolsvar=
+        for i in "${!shelltools[@]}"; do
+            toolsvar+=("${shelltools[i]}")
+        done
         echo ""
         echo "What would you like to do?"
         echo ""
@@ -989,9 +1283,8 @@ brunchshellsetup(){
 addshelltools(){
     echo ""
     echo "You can add your own commands here for easy access to scripts or chroots"
-    echo "These commands must be one line and can not include commas (,)"
+    echo "These commands must be one line and must not include quotes"
     echo "Type the whole command and press enter, you can remove it later."
-    echo "(You do not need to include a trailing comma, this is added automatically)"
     echo ""
     addshelltoolssub
     }
@@ -1007,9 +1300,8 @@ addshelltoolssub(){
     }
 
 shelltooladdition(){
-    toolsvar="$toolsvar$adopt,"
+    toolsvar+=("$adopt")
     adopt=
-    currenttools=$(echo "$toolsvar"  | sed 's/,/\n/g')
     echo ""
     echo "Current shortcuts:"
     echo "$toolsvar"
@@ -1027,8 +1319,6 @@ shelltooladdition(){
         elif [ "$anopt" == "Quit" ] ; then
             rm -f $downloads/shell-tools.btst
             cleanexit
-        else
-            shelltoolremoval
         fi
         done
     }
@@ -1041,7 +1331,7 @@ removeshelltools(){
         echo "Current shortcuts:"
         echo "$toolsvar"
         echo ""
-        IFS=$'\n' ; select rmopt in ${currenttools} "Add a shortcut" "Install these shortcuts" Quit; do
+        IFS=$'\n' ; select rmopt in ${toolsvar} "Add a shortcut" "Install these shortcuts" Quit; do
         if [[ -z "$rmopt" ]]; then
             echo "[ERROR] Invalid option"
         elif [[ $rmopt == "Add a shortcut" ]]; then
@@ -1058,13 +1348,26 @@ removeshelltools(){
     }
 
 shelltoolremoval(){
-        toolsvar=${toolsvar//$rmopt,/}
-        currenttools=$(echo "$toolsvar"  | sed 's/,/\n/g')
+        toolsvar=( "${toolsvar[@]/$rmopt}" )
+      for target in "${rmopt[@]}"; do
+        for i in "${!toolsvar[@]}";do
+          if [[ ${toolsvar[i]} = $target ]]; then
+            unset 'toolsvar[i]'
+          fi
+        done
+      done
+      for i in "${!toolsvar[@]}"; do
+        temparr+=("${toolsvar[i]}")
+      done
+      toolsvar=("${temparr[@]}")
+      unset temparr
         removeshelltools
+        rmopt=
     }
 
 installshelltools(){
         echo "$toolsvar" > $downloads/shell-tools.btst
+        mkdir /usr/local/bin/brunch-toolkit-assets
         mv -f $downloads/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
         if [ "$shellfound" = "true" ] ; then
             echo "[o] Shell shortcuts have been updated!"
@@ -1871,15 +2174,24 @@ fwosub(){
   clear
   # Not working like how I want it to yet, put this info in the help menu instead
   getbrunchdex
+  subbed="true"
   #widget="FWOwidget"
-  plate="
-┌───────────────────────────────────────────────────────────────┐
-│            Select Framework Options to enable them.           │
-│      Changes are saved automatically, reboot to test them.    │
-└───────────────────────────────────────────────────────────────┘
-        Options marked with ◯ are disabled, ◆ are enabled.
-  Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle or select.
-" ; vanity
+#  plate="
+#┌───────────────────────────────────────────────────────────────┐
+#│            Select Framework Options to enable them.           │
+#│      Changes are saved automatically, reboot to test them.    │
+#└───────────────────────────────────────────────────────────────┘
+#        Options marked with ◯ are disabled, ◆ are enabled.
+#  Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle or select.
+#" ; vanity
+  textbox=("Select Framework Options to enable them." "Changes are saved automatically, reboot to test them.")
+  makebox top
+  makebox body "${textbox[@]}"
+  makebox btm
+  makebox out "Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle."
+  makebox out "Options marked with ◯ are disabled, ◆ are enabled."
+  echo "
+  "
   previousmenu="startmenu"
   #Declare two variables here to see if B is contained in A
   arrA=(${defaultframeworkoptions[@]})
@@ -1894,6 +2206,7 @@ fwosub(){
   arrA+=("Help" "Back" "Quit")
   getdesc="0"
   # Call the menu using the new array A
+  submenu=("${fwodesc[@]}")
   case `select_opt "${arrA[@]}"` in
         *) toggleopt="${arrA[$?]}" ;;
   esac
@@ -1904,13 +2217,15 @@ fwosub(){
   elif [[ "$toggleopt" == "Help" ]] ; then
     fwosubhelp
   elif [[ "$toggleopt" == "Back" ]] ; then
+    subbed="false"
     $previousmenu
   elif [[ "$toggleopt" == "Quit" ]] ; then
-    exit
+    subbed="false"
+    cleanexit
   fi
   # Get rid of fancy radio dots before continuing
   toggleopt=$(echo $toggleopt | cut -d' ' -f2)
-  # If selected item is already selected, remove it from the selection array #!/usr/bin/env bash
+  # If selected item is already selected, remove it from the selection array
   # Whitespace doesnt matter for what we're doing here
   if [[ "${fwoopts[@]}" =~ "$toggleopt" ]] ; then
       fwoopts=( "${fwoopts[@]/$toggleopt}" )
@@ -2404,10 +2719,16 @@ echo "
 │   CPU Model                                                   │
 $dvcputype
 │                                                               │
+│   RAM (Approximate Value)                                     │
+$totalram
+│                                                               │
+│   Wifi Hardware (from lspci)                                  │
+$lspciwifi
+│                                                               │
 │   Current Kernel                                              │
 $dvkernelnumber
 │                                                               │
-│   Virtualization                                              │
+│   Virtualization (Linux Beta Compatibility)                   │
 $dvvirt
 │                                                               │
 │   Hypervisor                                                  │
@@ -2454,7 +2775,16 @@ getversionvars(){
       getbrunchver
       quietcompatibilitycheck
       compatibilitysub
+      totalramsub=$(free -g | grep "Mem:" | xargs | cut -d' ' -f2)
+      totalram=$(printf "│       %-56s│\n" "$totalramsub")
+      getwifihardware
   }
+
+getwifihardware(){
+  lspciwifisub=$(sudo lspci | grep -i network | cut -d':' -f3 | xargs)
+  lspciwifi=$(printf "│       %-56s│\n" "$lspciwifisub")
+  # do something to make this more useful
+}
 
 compatibilitysub(){
         if [[ "$cputype" =~ .*"AMD".* ]] && [[ -z "$oldcpu" ]] ; then
