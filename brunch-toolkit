@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.10b"
+TOOLVER="v1.0.11b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -1911,8 +1911,8 @@ fi
         echo "
         Recent Changelog
 
-        v1.0.9b
-        Add PWA specific functions for quick/auto updating.
+        v1.0.11b
+        Fix shell tools installer
         "
         cleanexit
     }
@@ -2440,7 +2440,8 @@ fi
 
     installshelltools(){
         echo "$TOOLSVAR" > $DOWNLOADS/shell-tools.btst
-        mv -f $DOWNLOADS/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
+        sudo mkdir -p /usr/local/bin/brunch-toolkit-assets 
+        sudo mv -f $DOWNLOADS/shell-tools.btst /usr/local/bin/brunch-toolkit-assets/shell-tools.btst
         if [ "$SHELLFOUND" = "true" ] ; then
             echo "Shell tools have been updated!"
         else
