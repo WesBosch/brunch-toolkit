@@ -67,7 +67,7 @@ readonly defaultrecoveries="eve grunt hatch lulu nami rammus samus zork" #RECOVE
 # All currently known Chrome OS recoveries. Update this list as necessary (any order)
 readonly allrecoveries="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork" #VALIDRECOVERIES
 # Currently avaliable Brunch Bootsplash OPTIONS
-readonly bbsopts="blank default default_notext croissant croissant_notext neon neon_notext colorful colorful_dark brunchbook"
+readonly bbsopts="blank default default_notext croissant croissant_notext neon neon_notext colorful_light colorful_dark brunchbook"
 
 # These variables are expected to have a "false" state unless otherwise set
 onlineallowed=true
@@ -1156,7 +1156,7 @@ toolkitoptionsmain(){
 
 brunchshellsetupmain(){
     plate="brunchshellsetup" ; vanity
-    shellmenu
+    brunchshellsetup0
 }
 
 shellmenu(){
