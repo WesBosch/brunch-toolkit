@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.11b"
+TOOLVER="v1.0.12b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -1903,6 +1903,15 @@ fi
 
         v1.0.9b
         Add PWA specific functions for quick/auto updating.
+
+        v1.0.10b
+        Fix Suggested recovery bug
+
+        v1.0.11b
+        Fix shell tools installer
+
+        v1.0.12b
+        Update comptibility check tool
         "
         cleanexit
     }
@@ -1911,8 +1920,8 @@ fi
         echo "
         Recent Changelog
 
-        v1.0.11b
-        Fix shell tools installer
+        v1.0.12b
+        Update comptibility check tool
         "
         cleanexit
     }
@@ -2134,7 +2143,7 @@ fi
         CPUTYPE=$(cat /proc/cpuinfo | grep "model name" | head -1 | awk -F '[:]' '{print $2}')
         echo "CPU:$CPUTYPE"
         if [[ ! "$CPUTYPE" =~ .*"AMD".* ]] && [[ ! "$CPUTYPE" =~ .*"Intel".* ]]   ; then
-             echo "[X] Brunch may not be compatible with this CPU."
+             echo "[X] Brunch is probably not be compatible with this CPU."
              echo "This toolkit is unable to determine what recovery your processor should use."
              echo "This could be a bug. Please refer to the wiki page to determine compatibility for yourself."
              echo ""
@@ -2158,19 +2167,7 @@ fi
 
     amdcpu(){
         AMDTYPE=$(cat /proc/cpuinfo | grep "[a|e][0-9]-9" | head -1 | awk -F '[:]' '{print $2}')
-        if [[ "$CPUTYPE" =~ .*"yzen".* ]] ; then
-            echo "[!] Brunch may be compatible with this CPU!"
-            echo "AMD support is limited, Zork is recommended."
-            SUGGESTED="zork"
-            STONEYRIDGE=true
-            asktoinstall
-        elif [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
-            echo "[!] Brunch may be compatible with this CPU!"
-            echo "AMD support is limited, Grunt is recommended."
-            SUGGESTED="grunt"
-            STONEYRIDGE=true
-            asktoinstall
-        elif [[ -z "$AMDTYPE" ]] ; then
+        if [[ -z "$AMDTYPE" ]] ; then
             echo "[X] Brunch may not be compatible with this CPU."
             echo "AMD support is limited to Stoney Ridge and Ryzen processors"
             echo "Grunt is recommended for Stoney Ridge."
@@ -2178,6 +2175,18 @@ fi
             echo "Please look up your processor and use your best judgement."
             SUGGESTED="grunt"
             STONEYRIDGE=false
+            asktoinstall
+        elif [[ "$CPUTYPE" =~ .*"yzen".* ]] ; then
+            echo "[!] Brunch may be compatible with this CPU!"
+            echo "AMD support is limited, Zork is most likely to work."
+            SUGGESTED="zork"
+            STONEYRIDGE=true
+            asktoinstall
+        elif [[ "$CPUTYPE" =~ .*"$AMDTYPE".* ]] ; then
+            echo "[!] Brunch may be compatible with this CPU!"
+            echo "AMD support is limited, Grunt is most likely to work."
+            SUGGESTED="grunt"
+            STONEYRIDGE=true
             asktoinstall
         else
             SUGGESTED="unknown"
@@ -2188,8 +2197,8 @@ fi
     }
 
     intelcpu(){
-        NEWCPU=$(grep -Ewo 'movbe|avx|vaes' /proc/cpuinfo  | sort | uniq | sed -e 's/movbe/Rammus is recommended./g' -e 's/avx/Eve, Nami, and Hatch are supported./g' -e 's/vaes/Please use Brunch 87 or higher!/g')
-        OLDCPU=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Samus is recommended./g')
+        NEWCPU=$(cat /proc/cpuinfo  | sed -e "s/G//g" | grep "i[3|5|7|9]-1[0-1][0-9][0-9][0-9]")
+        OLDCPU=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Rammus is recommended./g')
         if [ -z "$OLDCPU" ] ; then
             echo "[X] Brunch may not be compatible with this CPU.\e[0m"
             echo "This computer's CPU does not have the instructions required to run Brunch."
@@ -2200,18 +2209,12 @@ fi
         elif [ -n "$OLDCPU" ] && [ -z "$NEWCPU" ] ; then
             echo "Brunch is compatible with this CPU!"
             echo "$OLDCPU"
-            SUGGESTED="samus"
+            SUGGESTED="rammus"
             asktoinstall
         elif [ -n "$NEWCPU" ] ; then
             echo "Brunch is compatible with this CPU!"
-            echo "$NEWCPU"
-            SUGGESTED="rammus"
-            if [[ "$NEWCPU" =~ .*"supported".* ]] ; then
-            SECONDCHOICE=true
-            fi
-            if [[ "$NEWCPU" =~ .*"special".* ]] ; then
-            SPECIALBUILD=true
-            fi
+            echo "Volteer is reccomended."
+            SUGGESTED="volteer"
             asktoinstall
         else
             echo "[X] Something seems to have gone wrong, your support could not be determined."
@@ -2281,20 +2284,14 @@ fi
     }
 
     quietintelcpu(){
-        NEWCPU=$(grep -Ewo 'movbe|avx|vaes' /proc/cpuinfo  | sort | uniq | sed -e 's/movbe/Rammus is recommended./g' -e 's/avx/Eve, Nami, and Hatch are supported./g' -e 's/vaes/This CPU may require a special build to boot!/g')
-        OLDCPU=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Samus is recommended./g')
+        NEWCPU=$(cat /proc/cpuinfo  | sed -e "s/G//g" | grep "i[3|5|7|9]-1[0-1][0-9][0-9][0-9]")
+        OLDCPU=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Rammus is recommended./g')
         if [ -z "$OLDCPU" ] ; then
             SUGGESTED="unknown"
         elif [ -n "$OLDCPU" ] && [ -z "$NEWCPU" ] ; then
-            SUGGESTED="samus"
-        elif [ -n "$NEWCPU" ] ; then
             SUGGESTED="rammus"
-            if [[ "$NEWCPU" =~ .*"supported".* ]] ; then
-            SECONDCHOICE=true
-            fi
-            if [[ "$NEWCPU" =~ .*"special".* ]] ; then
-            SPECIALBUILD=true
-            fi
+        elif [ -n "$NEWCPU" ] ; then
+            SUGGESTED="volteer"
         else
             SUGGESTED="unknown"
         fi
