@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.12b"
+TOOLVER="v1.0.13b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -28,8 +28,8 @@ INSTALLTYPE=
 DESTINATION=
 CHROMEURL=
 CHROMEURLVERS=
-RECOVERYOPTIONS="eve grunt hatch lulu nami rammus samus zork"
-VALIDRECOVERIES="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna zako zgb zork"
+RECOVERYOPTIONS="rammus volteer grunt zork"
+VALIDRECOVERIES="alex asuka atlas banjo banon big blaze bob buddy butterfly candy caroline cave celes chell clapper coral cyan daisy drallion edgar elm enguarde eve expresso falco-li fievel fizz gandof glimmer gnawty grunt guado hana hatch heli jacuzzi jaq jerry kalista kefka kevin kip kitty kukui lars leon link lulu lumpy mario mccloud mickey mighty minnie monroe nami nautilus ninja nocturne octopus orco paine panther parrot peppy pi pit pyro quawks rammus reef reks relm rikku samus sand sarien scarlet sentry setzer skate snappy soraka speedy spring squawks stout stumpy sumo swanky terra tidus tiger tricky ultima winky wizpig wolf yuna volteer zako zgb zork"
 DISCORD="https://discord.gg/x2EgK2M"
 
 #####################################################################
@@ -1066,26 +1066,19 @@ fi
         quietcompatibilitycheck
         echo ""
         echo "CPU:$CPUTYPE"
-        if [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "true" ; then
+        if [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "true" ] ; then
         echo "Your CPU is only compatible with Grunt."
         echo "You may select others if you want, but they may not work."
-        elif [ "$SUGGESTED" == "zork" ] && [ "$STONEYRIDGE" == "true" ; then
+        elif [ "$SUGGESTED" == "zork" ] && [ "$STONEYRIDGE" == "true" ] ; then
         echo "Your CPU is only compatible with Zork."
         echo "You may select others if you want, but they may not work."
-        elif [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "false" ; then
-        echo "Your CPU may be compatible with Grunt or Zork, but isn't a known CPU."
+        elif [ "$SUGGESTED" == "grunt" ] && [ "$STONEYRIDGE" == "false" ] ; then
+        echo "Your CPU might not be compatible with Grunt or Zork."
         echo "Only AMD's Stoney Ridge CPUs are compatible with Grunt."
         echo "Only AMD's Ryzen CPUs are compatible with Zork."
         echo "You may select others if you want, but they may not work."
         elif [ "$SUGGESTED" != "grunt" ] ; then
         echo "The suggested recovery for your CPU is $SUGGESTED"
-        fi
-        if [ "$SECONDCHOICE" == true ] && [ "$SUGGESTED" != "grunt" ] ; then
-        echo "Your CPU is also compatible with Eve, Nami and Hatch."
-        fi
-        if [ "$SPECIALBUILD" == true ] && [ "$SUGGESTED" != "grunt" ] ; then
-        echo "Your CPU may require a special build to boot!"
-        echo "If you run into problems, check out our discord for assistance."
         fi
         if [ "$SUGGESTED" == "unknown" ] ; then
         echo "Your CPU could not be determined or may not be compatible with Brunch."
@@ -1093,12 +1086,12 @@ fi
         echo "Which recovery would you like to download?"
         echo ""
         echo "Grunt only works on AMD Stoney Ridge CPUs."
-        echo "Zork only works on AMD Ryzen CPUs."
-        echo "Samus is suggested for Intel Core ix 3rd gen and older CPUs."
-        echo "Rammus is suggested for Intel Core ix 4th gen and newer CPUS."
+        echo "Zork only works on AMD Ryzen CPU
+        echo "Rammus is suggested for Intel Core ix CPUs up to gen 9."
+        echo "Volteer is suggested for Intel Core ix series 10th and 11th gen." 
         echo "All other CPUs are currently unsupported."
         echo ""
-        select RECOVERYTODOWNLOAD in rammus samus grunt zork "Choose another" Quit; do
+        select RECOVERYTODOWNLOAD in rammus volteer grunt zork "Choose another" Quit; do
         if [[ -z "$RECOVERYTODOWNLOAD" ]] ; then
            echo "[ERROR] Invalid option"
         elif [[ $RECOVERYTODOWNLOAD == "Quit" ]] ; then
@@ -1912,6 +1905,9 @@ fi
 
         v1.0.12b
         Update comptibility check tool
+
+        v1.0.13b
+        Minor bugfix to compatibility check tool
         "
         cleanexit
     }
@@ -1920,8 +1916,8 @@ fi
         echo "
         Recent Changelog
 
-        v1.0.12b
-        Update comptibility check tool
+        v1.0.13b
+        Minor bugfix to compatibility check tool
         "
         cleanexit
     }
