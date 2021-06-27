@@ -1086,11 +1086,12 @@ fi
         echo "Which recovery would you like to download?"
         echo ""
         echo "Grunt only works on AMD Stoney Ridge CPUs."
-        echo "Zork only works on AMD Ryzen CPU
+        echo "Zork only works on AMD Ryzen CPU" 
         echo "Rammus is suggested for Intel Core ix CPUs up to gen 9."
         echo "Volteer is suggested for Intel Core ix series 10th and 11th gen." 
         echo "All other CPUs are currently unsupported."
         echo ""
+        fi
         select RECOVERYTODOWNLOAD in rammus volteer grunt zork "Choose another" Quit; do
         if [[ -z "$RECOVERYTODOWNLOAD" ]] ; then
            echo "[ERROR] Invalid option"
