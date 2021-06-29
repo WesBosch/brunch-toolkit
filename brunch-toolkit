@@ -1,5 +1,5 @@
 #!/bin/bash
-TOOLVER="v1.0.13b"
+TOOLVER="v1.0.14b"
 OPTS="$1"
 # Do not move the DOWNLOADS variable from line 5!
 DOWNLOADS="$HOME/Downloads"
@@ -618,10 +618,10 @@ echo "Version: $TOOLVER"
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/share/chromeos-assets/images_200_percent 2> /dev/null
         sudo cp $DOWNLOADS/$BSDIR/boot_splash_frame*.png /usr/local/bin/brunch-toolkit-assets 2> /dev/null
         sudo rm /usr/share/chromeos-assets/images_100_percent/*.btbs 2> /dev/null
-        rm /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
+        sudo rm /usr/local/bin/brunch-toolkit-assets/*.btbs 2> /dev/null
         sudo touch /usr/share/chromeos-assets/images_100_percent/$BSDIR.btbs 2> /dev/null
         sudo touch /usr/local/bin/brunch-toolkit-assets/$BSDIR.btbs 2> /dev/null
-        rm -rf $DOWNLOADS/$BSDIR
+        sudo rm -rf $DOWNLOADS/$BSDIR
     # Cleanup
     # Prompt to reboot
         echo "New boot animation applied, please reboot to see results."
