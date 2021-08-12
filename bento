@@ -75,7 +75,7 @@ bento_usage_sub1(){
     "(-a|--arrows) Displays a small usage tip for selecting items in the menu.        "
     "(-e|--exit)   Displays a small usage tip for exiting the script.                 "
     '(-r|--return) Displays a small usage tip for returning to the $previous_menu     '
-    "(-x|--toggle) Displays a small useage tip for toggling options on or off.        "
+    "(-x|--toggle) Displays a small usage tip for toggling options on or off.         "
     )
     bento -t "Bento - Usage" -c "${bento_usage_contents[@]}" -r
 }
