@@ -69,7 +69,7 @@ bento_usage_sub1(){
     "The following flags do not accept options, and can be used to modify your boxes. "
     ""
     "(-b|--boxless) This option will disable box drawing and just display plain text. "
-    "(-g|--glyph) This option turns on doublelined boxes, like what this menu uses.   "
+    "(-g|--glyph) This option turns on doublelined boxes, like the main menu uses.    "
     "(-n|--noclear) Prevent Bento clearing the screen before and after making boxes.  "
     ""
     "(-a|--arrows) Displays a small usage tip for selecting items in the menu.        "
