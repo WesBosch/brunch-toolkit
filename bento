@@ -1,0 +1,674 @@
+#!/bin/bash
+
+#<~> Bento - Brunch's ENhanced Text Options
+#
+# This is the code that makes boxes possible,
+# When 'bento_boxes=disabled' then the script will not draw boxes.
+#
+bento_usage(){
+    clear
+    bento_help_menu_title=("Bento - Help Menu")
+    bento_help_menu_contents=(
+    "Welcome to Bento."
+    "Brunch's ENhanced Text Options")
+    bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
+    bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
+    bento -g -t "${bento_help_menu_title}" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
+    previous_menu="bento_usage"
+    case "$selection" in
+        "Usage") bento_usage_sub1 ; break ;;
+        "Examples") bento_usage_sub2 ; break ;;
+        "Support") bento_usage_sub3 ; break ;;
+        "Exit") exit 0 ;;
+    esac
+}
+
+bento_usage_sub3(){
+    clear
+    bento -t "Bento - Further Support" -c "This whole project was made by a beginner, and has been modified greatly over time as they learned more." "If you'd like to know anything specific, you can find Wisteria in the Brunch discord group." " " "https://discord.gg/x2EgK2M" -r
+}
+
+bento_usage_sub2(){
+    clear
+    bento -t "Bento - Examples" -c "Here is how the previous menu was made:"
+echo '
+bento_usage(){
+  bento_help_menu_title=("Bento - Help Menu")
+  bento_help_menu_contents=("Welcome to Bento." "Brunchs ENhanced Text Options")
+  bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
+  bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
+  bento -g -t "${bento_help_menu_title}" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
+  previous_menu="bento_usage"
+  case "$selection" in
+    "Usage") bento_usage_sub1 ;;
+    "Examples") bento_usage_sub2 ;;
+    "Support") bento_usage_sub3 ;;
+    "Exit") exit 0 ;;
+    *) echo "[x] Invalid option" ;;
+ }
+ '
+
+    bento -c "As you can see, the main command is bento with a handful of flags and arrays afterwards. Then we use something like case to parse the selection made in the menu, and send users off to their destinations." -r -n
+}
+
+bento_usage_sub1(){
+    clear
+    bento_usage_contents=(
+    "Basic Usage - Flags accepting options"
+    ""
+    "These flags are all meant to be used with options afterwards to generate content."
+    'Options can be strings, $variables or ${arrays[@]}. The format is: -flag $option '
+    ""
+    "(-c|--content) The following options will make up the textbox. (like this one!)  "
+    "(-m|--menu) The options listed here will become selectable options for the user. "
+    "(-s|--subtitles) These options act as on screen tooltips for the menu options.   "
+    "(-t|--title) This will define the titlebar displayed at the top of the box.      "
+    "div"
+    "Advanced Usage - Special flags"
+    ""
+    "The following flags do not accept options, and can be used to modify your boxes. "
+    ""
+    "(-b|--boxless) This option will disable box drawing and just display plain text. "
+    "(-g|--glyph) This option turns on doublelined boxes, like what this menu uses.   "
+    "(-n|--noclear) Prevent Bento clearing the screen before and after making boxes.  "
+    ""
+    "(-a|--arrows) Displays a small usage tip for selecting items in the menu.        "
+    "(-e|--exit)   Displays a small usage tip for exiting the script.                 "
+    '(-r|--return) Displays a small usage tip for returning to the $previous_menu     '
+    "(-x|--toggle) Displays a small useage tip for toggling options on or off.        "
+    )
+    bento -t "Bento - Usage" -c "${bento_usage_contents[@]}" -r
+}
+
+#<~> Bento funtions
+bento(){
+    if [[ -z "$@" ]] ; then
+        bento_usage
+    fi
+    # preset variable defaults
+    terminal_width=$(tput cols)             # query the Terminfo database: number of columns
+    box_width=$(( terminal_width - 8 ))     # set the width of the box with a buffer
+    if [[ "$bento_boxes" == "disabled" ]] ; then
+        boxless="true"
+    elif (( terminal_width < 50 )) ; then
+      boxless="true"
+    else
+      boxless="false"
+    fi
+    glyph="─"
+    noclear="false"
+    sub_buffer=""
+    keys_opt_arrows="Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select."
+    keys_opt_return="Press Enter (⏎) to return to the previous menu."
+    keys_opt_exit="Press Enter (⏎) to exit."
+    keys_opt_toggle=("Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle." "Options marked with ◯ are disabled, ◆ are enabled.")
+    arrows="false"
+    return="false"
+    toggle="false"
+    exit="false"
+    selection=
+    # parse bento flags here
+    PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    -b|--boxless)
+      boxless="true"
+      shift
+      ;;
+    -h|--help)
+      bento_usage
+      exit 0
+      ;;
+    -a|--arrows)
+      arrows="true"
+      shift
+      ;;
+    -r|--return)
+      return="true"
+      shift
+      ;;
+    -e|--exit)
+      exit="true"
+      shift
+      ;;
+    -x|--toggle)
+      toggle="true"
+      shift
+      ;;
+    -g|--glyph)
+      glyph="true"
+      shift
+      ;;
+    -n|--noclear)
+      noclear="true"
+      shift
+      ;;
+    -t|--title)
+      if [ -n "$2" ] ; then
+          shift 1
+          array=("$@")
+          for ((i = 0; i < ${#array[@]}; ++i)); do
+          if [[ "${array[$i]}" == -* ]] ; then
+              break # end loop
+          else
+              title+=("${array[$i]}")
+          fi
+          done
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    -c|--content)
+      if [ -n "$2" ] ; then
+          shift 1
+          array=("$@")
+          for ((i = 0; i < ${#array[@]}; ++i)); do
+          if [[ "${array[$i]}" == -* ]] ; then
+              break # end loop
+          else
+              content+=("${array[$i]}")
+          fi
+          done
+      #content="$2"
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    -m|--menu)
+      if [ -n "$2" ] ; then
+          shift 1
+          array=("$@")
+          for ((i = 0; i < ${#array[@]}; ++i)); do
+          if [[ "${array[$i]}" == -* ]] ; then
+              break # end loop
+          else
+              menu+=("${array[$i]}")
+          fi
+          done
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    -s|--subtitles)
+      if [ -n "$2" ] ; then
+          shift 1
+          array=("$@")
+          for ((i = 0; i < ${#array[@]}; ++i)); do
+          if [[ "${array[$i]}" == -* ]] ; then
+              break # end loop
+          else
+              submenu+=("${array[$i]}")
+          fi
+          done
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        exit 1
+      fi
+      ;;
+    -*|--*=) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+# set positional arguments in their proper place
+eval set -- "$PARAMS"
+
+    # dynamic variables
+    #bento_vars
+    if [[ "$noclear" == false ]] ; then
+    clear
+    fi
+    if [[ -n "$title" ]] ; then
+        echo ""
+        bento_vars
+        printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+        for line in "${title[@]}"; do
+            bento_vars
+            if (( (text_width + 8) > terminal_width )) ; then
+            long_title="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_title)
+            unset IFS
+            multititle "${multi_array[@]}"
+            else
+        printf "  ${left_wall}\033[7m${title_left_border}${filler}${line}${filler}${title_right_border}\033[27m${right_wall}\n"
+            fi
+        done
+        printf "  ${left_div_wall}${left_bar}${topbar}${right_bar}${right_div_wall}\n"
+    else
+        echo ""
+        bento_vars
+        printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+    fi
+    if [[ -n "$content" ]] ; then
+        for line in "${content[@]}"; do
+            bento_vars
+            if (( (text_width + 8) > terminal_width )) ; then
+            long_content="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_content)
+            unset IFS
+            multibox "${multi_array[@]}"
+            else
+            printf "  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+            fi
+        done
+    printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+    fi
+    if [[ -n "$menu" ]] ; then
+        if [[ "$arrows" == "true" ]] ; then
+        line="${keys_opt_arrows}"
+        bento_vars
+            if (( (text_width + 8) > terminal_width )) ; then
+            long_content="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_content)
+            unset IFS
+            multistep "${multi_array[@]}"
+            else
+            printf "     ${left_border}${line}${right_border} \n"
+            fi
+        elif [[ "$toggle" == "true" ]] ; then
+            for line in "${keys_opt_toggle[@]}"; do
+            bento_vars
+            if (( (text_width + 8) > terminal_width )) ; then
+                long_content="$(echo "$line" | fold -w $box_width -s)"
+                IFS=$'\n'
+                multi_array=($long_content)
+                unset IFS
+                multistep "${multi_array[@]}"
+            fi
+        done
+        fi
+            echo ""
+            selection=
+            case `select_opt "${menu[@]}"` in
+                *) selection="${menu[$?]}" ;;
+            esac
+    elif [[ "$return" == "true" ]] && [[ -z "$menu" ]] ; then
+        line="${keys_opt_return}"
+        bento_vars
+            if (( (text_width + 8) > terminal_width )) ; then
+            long_content="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_content)
+            unset IFS
+            multistep "${multi_array[@]}"
+            else
+            printf "     ${left_border}${line}${right_border} \n"
+            fi
+        case `select_opt ""` in
+            *) selection="previous_menu" ;;
+        esac
+elif [[ "$exit" == "true" ]] && [[ -z "$menu" ]] ; then
+line="${keys_opt_exit}"
+bento_vars
+    if (( (text_width + 8) > terminal_width )) ; then
+    long_content="$(echo "$line" | fold -w $box_width -s)"
+    IFS=$'\n'
+    multi_array=($long_content)
+    unset IFS
+    multistep "${multi_array[@]}"
+    else
+    printf "     ${left_border}${line}${right_border} \n"
+    fi
+case `select_opt ""` in
+    *) exit 0 ;;
+esac
+fi
+    echo ""
+    echo ""
+
+# cleanup arrays for next box
+unset title
+unset content
+unset menu
+unset submenu
+unset line
+unset long_title
+unset long_content
+unset multi_array
+unset array
+unset multi
+if [[ "$selection" == "previous_menu" ]] ; then
+    $previous_menu
+elif [[ -n "$selection" ]] ; then
+        echo "[o] User selected: $selection"
+fi
+}
+
+bento_vars(){
+    padding="2"
+    text_width=${#line}
+    size_limit=$(( text_width + 8 ))
+    if (( size_limit < 40 )) ; then
+      size_limit="40"
+    fi
+    title_text_width=${#line}
+    title_size_limit=$(( title_text_width + 8 ))
+    if (( title_size_limit < 40 )) ; then
+      title_size_limit="40"
+    fi
+    # Glyph settings
+    filler=" "                              # box filler, just use spaces
+    title_filler="░"                        # title box filler
+    # make matching corners and walls as necessary
+      possible_bars=(─ ═)
+     left_div_walls=(├ ╠)
+    right_div_walls=(┤ ╣)
+   top_left_corners=(┌ ╔)
+   btm_left_corners=(└ ╚)
+  top_right_corners=(┐ ╗)
+  btm_right_corners=(┘ ╝)
+              walls=(│ ║)
+  if [[ "$glyph" == "true" ]] ; then
+      top_left_corner="╔"
+      top_right_corner="╗"
+      btm_left_corner="╚"
+      btm_right_corner="╝"
+      left_wall="║"
+      right_wall="║"
+      left_div_wall="╠"
+      right_div_wall="╣"
+      topbar="═"
+  else
+      top_left_corner="┌"
+      top_right_corner="┐"
+      btm_left_corner="└"
+      btm_right_corner="┘"
+      left_wall="│"
+      right_wall="│"
+      left_div_wall="├"
+      right_div_wall="┤"
+      topbar="─"
+  fi
+    # some bars are a bit short, align them appropriately
+    short_bars=(─━┄┅┈┉╌╍═░▒▓)
+    if [[ "${short_bars[@]}" =~ "$topbar" ]] && [[ "${short_bars[@]}" != "" ]]; then
+    bar_width=$(( ((terminal_width - (padding * 2) - 1) / 2) - 1 ))
+    else
+    bar_width=$(( ((terminal_width - (padding * 2) - 1) / 2) - 2 ))
+    fi
+    border_width=$(( ((terminal_width - (padding * 2) - text_width) / 2) - 2 ))
+    title_border_width=$(( ((terminal_width - (padding * 2) - title_text_width) / 2) - 2 ))
+    border=                         # shape of the border
+    title_border=                         # shape of the border
+    bar=
+
+    # special search/replace for making dividers
+
+    # special search/replace for making dividers
+    if [[ "$line" == "div" ]] ; then
+        line="$topbar$topbar$topbar"
+        filler="$topbar"
+        title_filler="$topbar"
+        left_wall="$left_div_wall"
+        right_wall="$right_div_wall"
+
+    fi
+    # create the border (left side or right side)
+    for ((i=0; i<border_width; i++))
+    do
+        border+="${filler}"
+    done
+    for ((i=0; i<title_border_width; i++))
+    do
+        title_border+="${title_filler}"
+    done
+    # create the topbar (left side or right side)
+    for ((i=0; i<bar_width; i++))
+    do
+        bar+="${topbar}"
+    done
+    # a side of the border may be longer (e.g. the right border)
+    if (( ( terminal_width - ( padding * 2 ) - text_width ) % 2 == 0 ))
+    then
+        # the left and right borders have the same width
+        left_border="$border"
+        right_border="$left_border"
+    else
+        # the right border has one more character than the left border
+        # the text is aligned leftmost
+        left_border="$border"
+        right_border="$left_border$filler"
+    fi
+    # a side of the border may be longer (e.g. the right border)
+    if (( ( terminal_width - ( padding * 2 ) - title_text_width ) % 2 == 0 ))
+    then
+        # the left and right borders have the same width
+        title_left_border="$title_border"
+        title_right_border="$title_left_border"
+    else
+        # the right border has one more character than the left border
+        # the text is aligned leftmost
+        title_left_border="$title_border"
+        title_right_border="$title_left_border$title_filler"
+    fi
+    # a side of the topbar may be longer (e.g. the right border)
+    if (( ( terminal_width - ( padding * 2 ) - 1 ) % 2 == 0 ))
+    then
+        # the left and right bars have the same width
+        left_bar=$bar
+        right_bar=$left_bar
+    else
+        # the right bar has one more character than the left bar
+        # the text is aligned leftmost
+        left_bar=$bar
+        right_bar="${bar}${topbar}"
+    fi
+    # undo all of this if we arent making boxes
+    if [[ "$boxless" == "true" ]] ; then
+        top_left_corner=""
+        top_right_corner=""
+        btm_left_corner=""
+        btm_right_corner=""
+        left_wall=""
+        right_wall=""
+        left_div_wall=""
+        right_div_wall=""
+        topbar=""
+        title_filler=""
+        filler=""
+        left_bar=""
+        right_bar=""
+        left_border=""
+        right_border=""
+        title_left_border=""
+        title_right_border=""
+      fi
+}
+
+multibox(){
+  local multi=("$@")
+  for line in "${multi[@]}" ; do
+      bento_vars
+  printf "  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+  done
+}
+
+multititle(){
+  local multi=("$@")
+  for line in "${multi[@]}" ; do
+      bento_vars
+  printf "  ${left_wall}\033[7m${title_left_border}${title_filler}${line}${title_filler}${title_right_border}\033[27m${right_wall}\n"
+  done
+}
+
+multisub(){
+  local multi=("$@")
+  for line in "${multi[@]}" ; do
+      bento_vars
+          echo ""
+          printf "\33[A\33[2K\r%s"
+      printf "\r%s  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+  done
+}
+
+multistep(){
+  local multi=("$@")
+  for line in "${multi[@]}" ; do
+      bento_vars
+      printf "     ${left_border}${filler}${line}${filler}${right_border} \n"
+  done
+}
+
+
+#</>
+
+#<~> Menu Maker
+# Modified from https://unix.stackexchange.com/questions/146570/arrow-key-enter-menu/415155#415155
+# Renders a text based list of options that can be selected by the
+# user using up, down and enter keys and returns the chosen option.
+
+#<~> Menu Maker functions
+
+# normally called from Bento, it can also be called on it's own with a preset menuopts array
+menumaker(){
+    selection=
+    case `select_opt "${menuopts[@]}"` in
+        *) selection="${menuopts[$?]}" ;;
+    esac
+}
+
+function select_option {
+
+echo""
+    local menuopts=("$@")
+    local terminal_height=$(tput lines)     # query the Terminfo database: number of lines
+    local box_height=$(( terminal_height - 13 ))
+    local terminal_width=$(tput cols)     # query the Terminfo database: number of columns
+    local box_width=$(( terminal_width - 8 ))
+    # little helpers for terminal print control and key input
+    ESC=$( printf "\033")
+    cursor_blink_on()  { printf "$ESC[?25h"; }
+    cursor_blink_off() { printf "$ESC[?25l"; }
+    cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
+    print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
+    print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"; }
+    get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+    key_input()        { read -s -n3 key 2>/dev/null >&2
+                         if [[ $key = $ESC[A ]]; then echo up;     fi
+                         if [[ $key = $ESC[B ]]; then echo down;   fi
+                         if [[ $key = ""     ]]; then echo enter;  fi; }
+
+    get_menuopts_total(){
+      menuopts_length=0
+        for x in "${menuopts[@]}" ; do
+          ((menuopts_length++))
+        done
+      if [ $menuopts_length -gt $box_height ] ; then
+         :# do nothing for now, this may be useful again later
+      fi
+    }
+
+
+    # initially print empty new lines (scroll down if at bottom of screen)
+    for opt ; do
+    printf "\n"; done
+
+    # determine current screen position for overwriting the options
+    lastrow=`get_cursor_row`
+    #local lastrow="$terminal_height"
+    startrow=$(($lastrow - $#))
+
+    # ensure cursor and input echoing back on upon a ctrl+c during read -s
+    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
+    cursor_blink_off
+
+
+    get_subtitle_max_size(){
+      subtitle_length=-1
+        for x in "${submenu[@]}" ; do
+          if [[ ${#x} -gt $subtitle_length ]] ; then
+            subtitle_length=$(( ${#x} + 0 ))
+          fi
+        done
+    }
+
+    make_subtitles(){
+      get_menuopts_total
+      get_subtitle_max_size
+      if [[ "$tooltips" == "enabled" ]] ; then
+        cursor_to $lastrow
+        printf "\33[A\33[2K\r%s\n"
+        bento_subs
+        printf "\33[2K\r%s\n"
+        printf "\33[2K\r%s\n"
+      fi
+    }
+
+    bento_subs(){
+    if [[ -n "${submenu[$idx]}" ]] ; then
+        line="${submenu[$idx]}"
+        bento_vars
+            printf "\r%s  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+            if (( (text_width + 8) > terminal_width )) ; then
+            long_content="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_content)
+            unset IFS
+            multisub "${multi_array[@]}"
+            else
+                echo ""
+                printf "\33[A\33[2K\r%s"
+            printf "\r%s  ${left_wall}${left_border} $line ${right_border}${right_wall}\n"
+            fi
+        echo ""
+        printf "\33[A\33[2K\r%s"
+        printf "\r%s  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+        printf "\r%s"
+    fi
+    }
+
+    local selected=0
+    while true; do
+        # print options by overwriting the last lines
+        local idx=0
+        for opt; do
+            cursor_to $(($startrow + $idx))
+            if [ $idx -eq $selected ]; then
+                print_selected "$opt"
+                make_subtitles
+            else
+                print_option "$opt"
+            fi
+
+            ((idx++))
+        done
+
+        # user key control
+        case `key_input` in
+            enter) break;;
+            up)    ((selected--));
+                   if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;
+            down)  ((selected++));
+                   if [ $selected -ge $# ]; then selected=0; fi;;
+        esac
+    done
+
+    # cursor position back to normal
+    cursor_to $lastrow
+    printf "\n"
+    cursor_blink_on
+    return $selected
+}
+
+function select_opt {
+    select_option "$@" 1>&2
+    local result=$?
+    echo $result
+    return $result
+}
+#</>
+#</>
+#</>
+
+bento "$@"
