@@ -1,88 +1,127 @@
 #!/bin/bash
+source "/var/brunch/toolkit/toolkit.cfg"
 
-#<~> Bento - Brunch's ENhanced Text Options
+#<~> Bento boxes - Brunch's ENhanced Text Options
 #
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
+bento_version="1.0.1"
 bento_usage(){
-    clear
-    bento_help_menu_title=("Bento - Help Menu")
-    bento_help_menu_contents=(
-    "Welcome to Bento."
-    "Brunch's ENhanced Text Options")
-    bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
-    bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
-    bento -g -t "${bento_help_menu_title}" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
-    previous_menu="bento_usage"
-    case "$selection" in
-        "Usage") bento_usage_sub1 ; break ;;
-        "Examples") bento_usage_sub2 ; break ;;
-        "Support") bento_usage_sub3 ; break ;;
-        "Exit") exit 0 ;;
-    esac
-}
+
+# Set variables to use in the menu
+  bento_help_menu_title=("Bento - Help Menu")
+  bento_help_menu_contents=("Welcome to Bento." "Brunch's ENhanced Text Options")
+  bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
+  bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
+
+# Use bento to generate a textbox and menu from the above variables
+  bento -g -t "$bento_help_menu_title" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
+
+# Set a return point using function names, then parse selection.
+  previous_menu="bento_usage"
+  case "$selection" in
+    "Usage") bento_usage_sub1 ; return ;;
+    "Examples") bento_usage_sub2 ; return ;;
+    "Support") bento_usage_sub3 ; return ;;
+    "Exit") exit 0 ;;
+  esac
+ }
 
 bento_usage_sub3(){
     clear
+# make a textbox with a link to discord and some minor info about this script
     bento -t "Bento - Further Support" -c "This whole project was made by a beginner, and has been modified greatly over time as they learned more." "If you'd like to know anything specific, you can find Wisteria in the Brunch discord group." " " "https://discord.gg/x2EgK2M" -r
 }
 
 bento_usage_sub2(){
     clear
+# make a textbox to describe the content of this page
     bento -t "Bento - Examples" -c "Here is how the previous menu was made:"
+
+# output the main help menu's code as an example
 echo '
 bento_usage(){
+
+# Set variables to use in the menu
   bento_help_menu_title=("Bento - Help Menu")
   bento_help_menu_contents=("Welcome to Bento." "Brunchs ENhanced Text Options")
   bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
   bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
-  bento -g -t "${bento_help_menu_title}" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
+
+# Use bento to generate a textbox and menu from the above variables
+  bento -g -t "$bento_help_menu_title" -c "${bento_help_menu_contents[@]}" -m "${bento_help_menu_options[@]}" -s "${bento_help_menu_tooltips[@]}"
+
+# Set a return point using function names, then parse selection.
   previous_menu="bento_usage"
   case "$selection" in
-    "Usage") bento_usage_sub1 ;;
-    "Examples") bento_usage_sub2 ;;
-    "Support") bento_usage_sub3 ;;
+    "Usage") bento_usage_sub1 ; return ;;
+    "Examples") bento_usage_sub2 ; return ;;
+    "Support") bento_usage_sub3 ; return ;;
     "Exit") exit 0 ;;
-    *) echo "[x] Invalid option" ;;
+  esac
  }
  '
 
+# make another textbox with the -n (noclear) flag to have multiple textboxes on screen
     bento -c "As you can see, the main command is bento with a handful of flags and arrays afterwards. Then we use something like case to parse the selection made in the menu, and send users off to their destinations." -r -n
 }
 
 bento_usage_sub1(){
     clear
+# One very large formatted array. It's split by line between elements to more easily align content
     bento_usage_contents=(
     "Basic Usage - Flags accepting options"
     ""
     "These flags are all meant to be used with options afterwards to generate content."
-    'Options can be strings, $variables or ${arrays[@]}. The format is: -flag $option '
+    'Options can be strings, $variables or ${arrays[@]}. The format is: -flag $option'
     ""
-    "(-c|--content) The following options will make up the textbox. (like this one!)  "
-    "(-m|--menu) The options listed here will become selectable options for the user. "
-    "(-s|--subtitles) These options act as on screen tooltips for the menu options.   "
-    "(-t|--title) This will define the titlebar displayed at the top of the box.      "
+    "(-c|--content)     The following options will make up the textbox. (like this one!) "
+    "(-m|--menu)        The options listed here will become selectable options for the user."
+    "(-s|--subtitles)   These options act as on screen tooltips for the menu options."
+    "(-t|--title)       This will define the titlebar displayed at the top of the box."
     "div"
     "Advanced Usage - Special flags"
     ""
-    "The following flags do not accept options, and can be used to modify your boxes. "
+    "The following flags do not accept options, and can be used to modify your boxes."
     ""
-    "(-b|--boxless) This option will disable box drawing and just display plain text. "
-    "(-g|--glyph) This option turns on doublelined boxes, like the main menu uses.    "
-    "(-n|--noclear) Prevent Bento clearing the screen before and after making boxes.  "
+    "(-b|--boxless)     This option will disable box drawing and just display plain text."
+    "(-g|--glyph)       This option turns on doublelined boxes, like what this menu uses."
+    "(-n|--noclear)     Prevent Bento clearing the screen before and after making boxes."
     ""
-    "(-a|--arrows) Displays a small usage tip for selecting items in the menu.        "
-    "(-e|--exit)   Displays a small usage tip for exiting the script.                 "
-    '(-r|--return) Displays a small usage tip for returning to the $previous_menu     '
-    "(-x|--toggle) Displays a small usage tip for toggling options on or off.         "
+    "(-a|--arrows)      Displays a small usage tip for selecting items in the menu. "
+    "(-e|--exit)        Displays a small usage tip for exiting the script."
+    '(-r|--return)      Displays a small usage tip for returning to the $previous_menu.'
+    "(-x|--toggle)      Displays a small useage tip for toggling options on or off."
+    "                   (This also will switch menu selection to toggle mode.)"
+    "div"
+    "Other useful features"
+    ""
+    "Array elements matching 'div' or ' ' (empty) will create dividers and spaces."
+    "Array elements matching 'lid' or 'btm' will create seperate box tops and bottoms."
+    "Textboxes will attempt to size themselves according to the user's terminal."
+    "If a user's screen is too small, bento will not draw boxes to keep things simple."
+    "If content does not fit on one line in a textbox, it will attempt to wordwrap."
+    "div"
+    "Alignment"
+    ""
+    "Elements can be aligned with a wide degree of customization."
+    ""
+    "(-ra|--rightaligned) (-la|--leftaligned)                   Align all text"
+    "(-tra|--titlerightaligned) (-tla|--titleleftaligned)       Align title text"
+    "(-cra|--contentrightaligned) (-cla|--contentrightaligned)  Align content text"
+    "(-sra|--subrightaligned) (-sla|--subleftaligned)           Align tooltip text"
+    "(-mra|--menurightaligned) (-mca|--menucenteraligned)       Align menu text"
+    "(note that menu text defaults to be left aligned, all other text is centered)"
     )
-    bento -t "Bento - Usage" -c "${bento_usage_contents[@]}" -r
+
+# Make a simple box based on the above array.
+    bento -t "Bento - Usage" -cla -c "${bento_usage_contents[@]}" -r
 }
 
 #<~> Bento funtions
 bento(){
-    if [[ -z "$@" ]] ; then
+    if [[ -z "$*" ]] ; then
         bento_usage
     fi
     # preset variable defaults
@@ -97,20 +136,69 @@ bento(){
     fi
     glyph="─"
     noclear="false"
-    sub_buffer=""
     keys_opt_arrows="Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select."
     keys_opt_return="Press Enter (⏎) to return to the previous menu."
-    keys_opt_exit="Press Enter (⏎) to exit."
+    keys_opt_exit="Press Enter (⏎) to continue."
     keys_opt_toggle=("Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle." "Options marked with ◯ are disabled, ◆ are enabled.")
     arrows="false"
     return="false"
     toggle="false"
+    rightaligned="false"
+    leftaligned="false"
+    crightaligned="false"
+    cleftaligned="false"
+    trightaligned="false"
+    tleftaligned="false"
+    srightaligned="false"
+    sleftaligned="false"
+    mrightaligned="false"
+    mcenteraligned="false"
     exit="false"
     selection=
     # parse bento flags here
     PARAMS=""
 while (( "$#" )); do
   case "$1" in
+    -ra|--rightaligned)
+      rightaligned="true"
+      shift
+      ;;
+    -la|--leftaligned)
+      leftaligned="true"
+      shift
+      ;;
+        -cra|--contentrightaligned)
+          crightaligned="true"
+          shift
+          ;;
+        -cla|--contentleftaligned)
+          cleftaligned="true"
+          shift
+          ;;
+        -tra|--titlerightaligned)
+          trightaligned="true"
+          shift
+          ;;
+        -tla|--titleleftaligned)
+          tleftaligned="true"
+          shift
+          ;;
+        -sra|--subrightaligned)
+          srightaligned="true"
+          shift
+          ;;
+        -sla|--subleftaligned)
+          sleftaligned="true"
+          shift
+          ;;
+        -mra|--menurightaligned)
+          mrightaligned="true"
+          shift
+          ;;
+        -mca|--menucenteraligned)
+          mcenteraligned="true"
+          shift
+          ;;
     -b|--boxless)
       boxless="true"
       shift
@@ -208,7 +296,7 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
-    -*|--*=) # unsupported flags
+    --*=|-*) # unsupported flags
       echo "Error: Unsupported flag $1" >&2
       exit 1
       ;;
@@ -227,6 +315,11 @@ eval set -- "$PARAMS"
     clear
     fi
     if [[ -n "$title" ]] ; then
+        if [[ "$trightaligned" == "true" ]] ; then
+            rightaligned="true"
+        elif [[ "$tleftaligned" == "true" ]] ; then
+            leftaligned="true"
+        fi
         echo ""
         bento_vars
         printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
@@ -248,7 +341,17 @@ eval set -- "$PARAMS"
         bento_vars
         printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
     fi
+
+        if [[ "$trightaligned" == "true" ]] || [[ "$tleftaligned" == "true" ]] ; then
+            rightaligned="false"
+            leftaligned="false"
+        fi
     if [[ -n "$content" ]] ; then
+        if [[ "$crightaligned" == "true" ]] ; then
+            rightaligned="true"
+        elif [[ "$cleftaligned" == "true" ]] ; then
+            leftaligned="true"
+        fi
         for line in "${content[@]}"; do
             bento_vars
             if (( (text_width + 8) > terminal_width )) ; then
@@ -288,6 +391,11 @@ eval set -- "$PARAMS"
             fi
         done
         fi
+
+            if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
+                rightaligned="false"
+                leftaligned="false"
+            fi
             echo ""
             selection=
             case `select_opt "${menu[@]}"` in
@@ -305,6 +413,10 @@ eval set -- "$PARAMS"
             else
             printf "     ${left_border}${line}${right_border} \n"
             fi
+                if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
+                    rightaligned="false"
+                    leftaligned="false"
+                fi
         case `select_opt ""` in
             *) selection="previous_menu" ;;
         esac
@@ -320,6 +432,10 @@ bento_vars
     else
     printf "     ${left_border}${line}${right_border} \n"
     fi
+            if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
+                rightaligned="false"
+                leftaligned="false"
+            fi
 case `select_opt ""` in
     *) exit 0 ;;
 esac
@@ -413,6 +529,20 @@ bento_vars(){
         left_wall="$left_div_wall"
         right_wall="$right_div_wall"
 
+    elif [[ "$line" == "lid" ]] ; then
+        line="$topbar$topbar$topbar"
+        filler="$topbar"
+        title_filler="$topbar"
+        left_wall="$top_left_corner"
+        right_wall="$top_right_corner"
+
+    elif [[ "$line" == "btm" ]] ; then
+        line="$topbar$topbar$topbar"
+        filler="$topbar"
+        title_filler="$topbar"
+        left_wall="$btm_left_corner"
+        right_wall="$btm_right_corner"
+
     fi
     # create the border (left side or right side)
     for ((i=0; i<border_width; i++))
@@ -451,6 +581,18 @@ bento_vars(){
         # the text is aligned leftmost
         title_left_border="$title_border"
         title_right_border="$title_left_border$title_filler"
+    fi
+    # set alignments by combining variables then clearing one of them.
+    if [[ "$rightaligned" == "true" ]] ; then
+        left_border="$left_border""$right_border"
+        right_border=""
+        title_left_border="$title_left_border""$title_right_border"
+        title_right_border=""
+    elif [[ "$leftaligned" == "true" ]] ; then
+        right_border="$left_border""$right_border"
+        left_border=""
+        title_right_border="$title_left_border""$title_right_border"
+        title_left_border=""
     fi
     # a side of the topbar may be longer (e.g. the right border)
     if (( ( terminal_width - ( padding * 2 ) - 1 ) % 2 == 0 ))
@@ -521,12 +663,17 @@ multistep(){
 }
 
 
-#</>
-
 #<~> Menu Maker
+#
+# This is the code that makes the nice selection UI
+# When 'tooltips=disabled' then tooltips won't be avaliable.
 # Modified from https://unix.stackexchange.com/questions/146570/arrow-key-enter-menu/415155#415155
 # Renders a text based list of options that can be selected by the
 # user using up, down and enter keys and returns the chosen option.
+#
+#   Arguments   : list of options, maximum of 256
+#                 "opt1" "opt2" ...
+#   Return value: selected index (0 for opt1, 1 for opt2 ...)
 
 #<~> Menu Maker functions
 
@@ -551,8 +698,56 @@ echo""
     cursor_blink_on()  { printf "$ESC[?25h"; }
     cursor_blink_off() { printf "$ESC[?25l"; }
     cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
-    print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
-    print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"; }
+#    print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
+    print_option()     {
+    if [[ "$mrightaligned" == "true" ]] ; then
+                rightaligned="true"
+                leftaligned="false"
+                line="$1"
+                bento_vars
+                printf "\33[A\33[2K\r    ${left_border}$line${right_border}"
+    elif [[ "$mcenteraligned" == "true" ]] ; then
+                leftaligned="false"
+                line="$1"
+                bento_vars
+                printf "\33[A\33[2K\r    ${left_border}$line${right_border}"
+    else
+                printf "\33[A\33[2K\r%s    $1 "
+    fi
+    if [[ "$mrightaligned" == "true" ]] || [[ "$mcenteraligned" == "true" ]] ; then
+        rightaligned="false"
+        leftaligned="false"
+    fi
+}
+
+
+    if [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] ; then
+    print_selected()   { printf " "; }
+    else
+    print_selected()   {
+    if [[ "$mrightaligned" == "true" ]] ; then
+            rightaligned="true"
+            leftaligned="false"
+            line="$1"
+            bento_vars
+            printf "\33[A\33[2K\r ⮞ ${left_border}$ESC[7m $line$ESC[27m${right_border}"
+    elif [[ "$mcenteraligned" == "true" ]] ; then
+            leftaligned="false"
+            line="$1"
+            bento_vars
+            printf "\33[A\33[2K\r ⮞  ${left_border}$ESC[7m$line$ESC[27m${right_border}"
+    else
+            printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"
+    fi
+    if [[ "$mrightaligned" == "true" ]] || [[ "$mcenteraligned" == "true" ]] ; then
+        rightaligned="false"
+        leftaligned="false"
+    fi
+#   print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m";
+}
+
+
+    fi
     get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
                          if [[ $key = $ESC[A ]]; then echo up;     fi
@@ -565,7 +760,7 @@ echo""
           ((menuopts_length++))
         done
       if [ $menuopts_length -gt $box_height ] ; then
-         :# do nothing for now, this may be useful again later
+         : # do nothing for now, this may be useful again later
       fi
     }
 
@@ -596,7 +791,7 @@ echo""
     make_subtitles(){
       get_menuopts_total
       get_subtitle_max_size
-      if [[ "$tooltips" == "enabled" ]] ; then
+      if [[ ! "$tooltips" == "disabled" ]] ; then
         cursor_to $lastrow
         printf "\33[A\33[2K\r%s\n"
         bento_subs
@@ -607,7 +802,13 @@ echo""
 
     bento_subs(){
     if [[ -n "${submenu[$idx]}" ]] ; then
+                if [[ "$srightaligned" == "true" ]] ; then
+                    rightaligned="true"
+                elif [[ "$sleftaligned" == "true" ]] ; then
+                    leftaligned="true"
+                fi
         line="${submenu[$idx]}"
+        glyph="true"
         bento_vars
             printf "\r%s  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
             if (( (text_width + 8) > terminal_width )) ; then
@@ -625,6 +826,11 @@ echo""
         printf "\33[A\33[2K\r%s"
         printf "\r%s  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
         printf "\r%s"
+
+                if [[ "$srightaligned" == "true" ]] || [[ "$sleftaligned" == "true" ]] ; then
+                    rightaligned="false"
+                    leftaligned="false"
+                fi
     fi
     }
 
@@ -667,6 +873,7 @@ function select_opt {
     echo $result
     return $result
 }
+#</>
 #</>
 #</>
 #</>
