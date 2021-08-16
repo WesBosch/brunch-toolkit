@@ -6,7 +6,7 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.1"
+bento_version="1.0.2"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -40,8 +40,7 @@ bento_usage_sub2(){
     bento -t "Bento - Examples" -c "Here is how the previous menu was made:"
 
 # output the main help menu's code as an example
-echo '
-bento_usage(){
+echo 'bento_usage(){
 
 # Set variables to use in the menu
   bento_help_menu_title=("Bento - Help Menu")
@@ -60,8 +59,7 @@ bento_usage(){
     "Support") bento_usage_sub3 ; return ;;
     "Exit") exit 0 ;;
   esac
- }
- '
+ }'
 
 # make another textbox with the -n (noclear) flag to have multiple textboxes on screen
     bento -c "As you can see, the main command is bento with a handful of flags and arrays afterwards. Then we use something like case to parse the selection made in the menu, and send users off to their destinations." -r -n
@@ -124,7 +122,7 @@ bento(){
     if [[ -z "$*" ]] ; then
         bento_usage
     fi
-    # preset variable defaults
+    # preset variable defaults to keep menus from acidentally merging into eachother
     terminal_width=$(tput cols)             # query the Terminfo database: number of columns
     box_width=$(( terminal_width - 8 ))     # set the width of the box with a buffer
     if [[ "$bento_boxes" == "disabled" ]] ; then
@@ -153,91 +151,120 @@ bento(){
     sleftaligned="false"
     mrightaligned="false"
     mcenteraligned="false"
+    multiselection="false"
     exit="false"
-    selection=
     # parse bento flags here
     PARAMS=""
 while (( "$#" )); do
   case "$1" in
     -ra|--rightaligned)
+    # Align all text to the right
       rightaligned="true"
       shift
       ;;
     -la|--leftaligned)
+    # Align all text to the left
       leftaligned="true"
       shift
       ;;
-        -cra|--contentrightaligned)
-          crightaligned="true"
-          shift
-          ;;
-        -cla|--contentleftaligned)
-          cleftaligned="true"
-          shift
-          ;;
-        -tra|--titlerightaligned)
-          trightaligned="true"
-          shift
-          ;;
-        -tla|--titleleftaligned)
-          tleftaligned="true"
-          shift
-          ;;
-        -sra|--subrightaligned)
-          srightaligned="true"
-          shift
-          ;;
-        -sla|--subleftaligned)
-          sleftaligned="true"
-          shift
-          ;;
-        -mra|--menurightaligned)
-          mrightaligned="true"
-          shift
-          ;;
-        -mca|--menucenteraligned)
-          mcenteraligned="true"
-          shift
-          ;;
+    -cra|--contentrightaligned)
+    # Align all -c content to the right
+      crightaligned="true"
+      shift
+      ;;
+    -cla|--contentleftaligned)
+    # Align all -c content to the left
+      cleftaligned="true"
+      shift
+      ;;
+    -tra|--titlerightaligned)
+    # Align -t title to the right
+      trightaligned="true"
+      shift
+      ;;
+    -tla|--titleleftaligned)
+    # Align -t title to the left
+      tleftaligned="true"
+      shift
+      ;;
+    -sra|--subrightaligned)
+    # Align -s subtitle/tooltips to the right
+      srightaligned="true"
+      shift
+      ;;
+    -sla|--subleftaligned)
+    # Align -s subtitle/tooltips to the right
+      sleftaligned="true"
+      shift
+      ;;
+    -mra|--menurightaligned)
+    # Align -m menu options to the right
+      mrightaligned="true"
+      shift
+      ;;
+    -mca|--menucenteraligned)
+    # Align -m menu options to the left
+      mcenteraligned="true"
+      shift
+      ;;
     -b|--boxless)
+    # Dont draw boxes (sets all box components to "")
       boxless="true"
       shift
       ;;
     -h|--help)
+    # Display bento help menu
       bento_usage
       exit 0
       ;;
+    -d|--debug)
+    # Display bento debug menu
+      bento_debug
+      exit 0
+      ;;
     -a|--arrows)
+    # displays: "Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select." under content
       arrows="true"
       shift
       ;;
     -r|--return)
+    # displays: "Press Enter (⏎) to return to the previous menu." under content
+    # waits for input then returns to $previous_menu
       return="true"
       shift
       ;;
     -e|--exit)
+    # displays: "Press Enter (⏎) to continue." under content
+    # waits for input, does not set a $selection and continues to next function
       exit="true"
       shift
       ;;
     -x|--toggle)
+    # Work in progress
+    # displays: "Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle." "Options marked with ◯ are disabled, ◆ are enabled." under content
       toggle="true"
       shift
       ;;
     -g|--glyph)
+    # Sets textbox borders to doublelined bars
       glyph="true"
       shift
       ;;
     -n|--noclear)
+    # does not 'clear' when starting a textbox
       noclear="true"
       shift
       ;;
     -t|--title)
+    # displays all options until the next -flag as a title, supports multiple lines
       if [ -n "$2" ] ; then
+          # shift to next variable, the -flag is not included
           shift 1
           array=("$@")
           for ((i = 0; i < ${#array[@]}; ++i)); do
+          # keep looping for every option to add them to our array
           if [[ "${array[$i]}" == -* ]] ; then
-              break # end loop
+              break # end loop at next flag
           else
               title+=("${array[$i]}")
           fi
@@ -248,29 +275,34 @@ while (( "$#" )); do
       fi
       ;;
     -c|--content)
+    # displays all options until the next -flag as content, supports multiple lines
       if [ -n "$2" ] ; then
+          # shift to next variable, the -flag is not included
           shift 1
           array=("$@")
           for ((i = 0; i < ${#array[@]}; ++i)); do
+          # keep looping for every option to add them to our array
           if [[ "${array[$i]}" == -* ]] ; then
-              break # end loop
+              break # end loop at next flag
           else
               content+=("${array[$i]}")
           fi
           done
-      #content="$2"
       else
         echo "Error: Argument for $1 is missing" >&2
         exit 1
       fi
       ;;
     -m|--menu)
+    # displays all options until the next -flag as menu options, supports multiple lines
       if [ -n "$2" ] ; then
+          # shift to next variable, the -flag is not included
           shift 1
           array=("$@")
           for ((i = 0; i < ${#array[@]}; ++i)); do
+          # keep looping for every option to add them to our array
           if [[ "${array[$i]}" == -* ]] ; then
-              break # end loop
+              break # end loop at next flag
           else
               menu+=("${array[$i]}")
           fi
@@ -280,13 +312,39 @@ while (( "$#" )); do
         exit 1
       fi
       ;;
+  -mm|--multimenu)
+  # displays all options until the next -flag as menu options, supports multiple lines
+    if [ -n "$2" ] ; then
+        # shift to next variable, the -flag is not included
+        shift 1
+        array=("$@")
+        for ((i = 0; i < ${#array[@]}; ++i)); do
+        # keep looping for every option to add them to our array
+        if [[ "${array[$i]}" == -* ]] ; then
+            break # end loop at next flag
+        else
+            multimenu+=("${array[$i]}")
+        fi
+        done
+        # to allow for multiple selections, add a confirmation option at the end and set a var
+            multimenu+=("Confirm Selection")
+            # let the script know we're doing something complicated here
+            multiselection="true"
+    else
+      echo "Error: Argument for $1 is missing" >&2
+      exit 1
+    fi
+    ;;
     -s|--subtitles)
+    # displays all options until the next -flag as tooltip text, supports multiple lines
       if [ -n "$2" ] ; then
+          # shift to next variable, the -flag is not included
           shift 1
           array=("$@")
           for ((i = 0; i < ${#array[@]}; ++i)); do
+          # keep looping for every option to add them to our array
           if [[ "${array[$i]}" == -* ]] ; then
-              break # end loop
+              break # end loop at next flag
           else
               submenu+=("${array[$i]}")
           fi
@@ -309,51 +367,69 @@ done
 # set positional arguments in their proper place
 eval set -- "$PARAMS"
 
-    # dynamic variables
-    #bento_vars
     if [[ "$noclear" == false ]] ; then
     clear
     fi
+
+# generate the title
     if [[ -n "$title" ]] ; then
+        # set alignment
         if [[ "$trightaligned" == "true" ]] ; then
             rightaligned="true"
         elif [[ "$tleftaligned" == "true" ]] ; then
             leftaligned="true"
         fi
-        echo ""
-        bento_vars
-        printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+        # if boxes are disabled, dont bother with formattting
+        if [[ "$boxless" == "false" ]] ; then
+            echo ""
+            # make top of the box
+            bento_vars
+            printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+        fi
+        # loop for each line in the box
         for line in "${title[@]}"; do
             bento_vars
+            # if the text is too long, split it into another line
             if (( (text_width + 8) > terminal_width )) ; then
-            long_title="$(echo "$line" | fold -w $box_width -s)"
-            IFS=$'\n'
-            multi_array=($long_title)
-            unset IFS
-            multititle "${multi_array[@]}"
+                long_title="$(echo "$line" | fold -w $box_width -s)"
+                IFS=$'\n'
+                multi_array=($long_title)
+                unset IFS
+                multititle "${multi_array[@]}"
             else
-        printf "  ${left_wall}\033[7m${title_left_border}${filler}${line}${filler}${title_right_border}\033[27m${right_wall}\n"
+                printf "  ${left_wall}\033[7m${title_left_border}${filler}${line}${filler}${title_right_border}\033[27m${right_wall}\n"
             fi
         done
-        printf "  ${left_div_wall}${left_bar}${topbar}${right_bar}${right_div_wall}\n"
+        # if theres no content, make a box bottom instead of a divider
+        if [[ -z "$content" ]] && [[ "$boxless" == "false" ]] ; then
+            printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+        elif [[ -n "$content" ]] && [[ "$boxless" == "false" ]] ; then
+            printf "  ${left_div_wall}${left_bar}${topbar}${right_bar}${right_div_wall}\n"
+        fi
     else
+        # if theres no title, just make the top of the box
         echo ""
         bento_vars
         printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
     fi
-
+        # unset alignment if it was only for this section
         if [[ "$trightaligned" == "true" ]] || [[ "$tleftaligned" == "true" ]] ; then
             rightaligned="false"
             leftaligned="false"
         fi
+
+    # generate the content
     if [[ -n "$content" ]] ; then
+        # set alignment
         if [[ "$crightaligned" == "true" ]] ; then
             rightaligned="true"
         elif [[ "$cleftaligned" == "true" ]] ; then
             leftaligned="true"
         fi
+        # loop for each line in the box
         for line in "${content[@]}"; do
             bento_vars
+            # if the text is too long, split it into another line
             if (( (text_width + 8) > terminal_width )) ; then
             long_content="$(echo "$line" | fold -w $box_width -s)"
             IFS=$'\n'
@@ -364,101 +440,92 @@ eval set -- "$PARAMS"
             printf "  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
             fi
         done
-    printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
-    fi
-    if [[ -n "$menu" ]] ; then
-        if [[ "$arrows" == "true" ]] ; then
-        line="${keys_opt_arrows}"
-        bento_vars
-            if (( (text_width + 8) > terminal_width )) ; then
-            long_content="$(echo "$line" | fold -w $box_width -s)"
-            IFS=$'\n'
-            multi_array=($long_content)
-            unset IFS
-            multistep "${multi_array[@]}"
-            else
-            printf "     ${left_border}${line}${right_border} \n"
-            fi
-        elif [[ "$toggle" == "true" ]] ; then
-            for line in "${keys_opt_toggle[@]}"; do
-            bento_vars
-            if (( (text_width + 8) > terminal_width )) ; then
-                long_content="$(echo "$line" | fold -w $box_width -s)"
-                IFS=$'\n'
-                multi_array=($long_content)
-                unset IFS
-                multistep "${multi_array[@]}"
-            fi
-        done
+        if [[ "$boxless" == "false" ]] ; then
+            printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
         fi
+    fi
 
-            if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
-                rightaligned="false"
-                leftaligned="false"
-            fi
-            echo ""
-            selection=
-            case `select_opt "${menu[@]}"` in
-                *) selection="${menu[$?]}" ;;
-            esac
-    elif [[ "$return" == "true" ]] && [[ -z "$menu" ]] ; then
-        line="${keys_opt_return}"
+# display optional guides
+    if [[ "$arrows" == "true" ]] || [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] || [[ "$toggle" == "true" ]] ; then
+        if [[ "$arrows" == "true" ]] ; then
+            line="${keys_opt_arrows}"
+        elif [[ "$return" == "true" ]] ; then
+            menu="previous_menu"
+            line="${keys_opt_return}"
+        elif [[ "$exit" == "true" ]] ; then
+            menu="previous_menu"
+            line="${keys_opt_exit}"
+        elif [[ "$toggle" == "true" ]] ; then
+            line="${keys_opt_toggle}"
+        fi
         bento_vars
-            if (( (text_width + 8) > terminal_width )) ; then
+        if (( (text_width + 8) > terminal_width )) ; then
             long_content="$(echo "$line" | fold -w $box_width -s)"
             IFS=$'\n'
             multi_array=($long_content)
             unset IFS
             multistep "${multi_array[@]}"
-            else
+        else
             printf "     ${left_border}${line}${right_border} \n"
-            fi
-                if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
-                    rightaligned="false"
-                    leftaligned="false"
-                fi
-        case `select_opt ""` in
-            *) selection="previous_menu" ;;
-        esac
-elif [[ "$exit" == "true" ]] && [[ -z "$menu" ]] ; then
-line="${keys_opt_exit}"
-bento_vars
-    if (( (text_width + 8) > terminal_width )) ; then
-    long_content="$(echo "$line" | fold -w $box_width -s)"
-    IFS=$'\n'
-    multi_array=($long_content)
-    unset IFS
-    multistep "${multi_array[@]}"
-    else
-    printf "     ${left_border}${line}${right_border} \n"
+        fi
     fi
-            if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
-                rightaligned="false"
-                leftaligned="false"
-            fi
-case `select_opt ""` in
-    *) exit 0 ;;
-esac
-fi
-    echo ""
-    echo ""
 
-# cleanup arrays for next box
-unset title
-unset content
-unset menu
-unset submenu
-unset line
-unset long_title
-unset long_content
-unset multi_array
-unset array
-unset multi
-if [[ "$selection" == "previous_menu" ]] ; then
-    $previous_menu
-elif [[ -n "$selection" ]] ; then
-        echo "[o] User selected: $selection"
-fi
+    # unset alignment if it was only for this section
+    if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
+        rightaligned="false"
+        leftaligned="false"
+    fi
+
+    # generate the menu
+    if [[ -n "$menu" ]] || [[ -n "$multimenu" ]]; then
+            echo ""
+            menumaker
+    fi
+}
+
+menumaker(){
+    unset selection
+    if [[ "$multiselection" == "true" ]] ; then
+        if [[ -n "${menu[*]}" ]] ; then
+            for ((i = 0; i < ${#menu[@]}; ++i)); do
+                # keep looping for every option to add them to our array
+                multimenu+=("${menu[$i]}")
+            done
+            unset menu
+        fi
+        for ((i = 0; i < ${#multimenu[@]}; ++i)); do
+            # keep looping for every option to add them to our array
+            menu+=("${multimenu[$i]}")
+        done
+        unset multimenu
+    fi
+    select_opt "${menu[@]}"
+        # parse selection
+        if [[ "$selection" == "previous_menu" ]] ; then
+            bento_cleanup
+            unset selection
+            $previous_menu
+        elif [[ -n "$selection" ]] ; then
+        echo ""
+        echo ""
+                echo "[o] User selected: ${selection[*]}"
+        fi
+        bento_cleanup
+}
+
+bento_cleanup(){
+    # cleanup arrays for next box
+    unset title
+    unset content
+    unset menu
+    unset multimenu
+    unset submenu
+    unset line
+    unset long_title
+    unset long_content
+    unset multi_array
+    unset array
+    unset multi
 }
 
 bento_vars(){
@@ -662,9 +729,6 @@ multistep(){
   done
 }
 
-
-#<~> Menu Maker
-#
 # This is the code that makes the nice selection UI
 # When 'tooltips=disabled' then tooltips won't be avaliable.
 # Modified from https://unix.stackexchange.com/questions/146570/arrow-key-enter-menu/415155#415155
@@ -677,15 +741,60 @@ multistep(){
 
 #<~> Menu Maker functions
 
-# normally called from Bento, it can also be called on it's own with a preset menuopts array
-menumaker(){
-    selection=
-    case `select_opt "${menuopts[@]}"` in
-        *) selection="${menuopts[$?]}" ;;
-    esac
+function select_option {
+
+    # set/unset selections when dealing with a multiple selection menu
+    multimenu(){
+        if [[ "$multiselection" == "true" ]] ; then
+            for ((i = 0; i < ${#menu[@]}; ++i)); do
+                # keep looping for every option to add them to our array
+                if [[ "${menu[$i]}" == "Confirm Selection" ]] ; then
+                    break # end loop at "Confirm Selection" dont let it or others after it be added to selection
+                else
+                    multimenu+=("${menu[$i]}")
+                fi
+            done
+        fi
+        if  [[ "$multiselection" == "true" ]] && [[ "${menu[$selected]}" == "Confirm Selection" ]] ; then
+            break
+        elif [[ "$multiselection" == "true" ]] && [[ "${multimenu[$selected]}" == "${menu[$selected]}" ]] ; then
+            # toggle selection on or off
+            toggle_selection
+        else
+            # standard menu function down here
+            selection=("${menu[$selected]}")
+            break
+        fi
+    }
+
+toggle_selection(){
+    # search already selected item to see if this option was already selected and deselect it
+    # use the found variable to confirm if it was an exact match
+    found="false"
+    if [[ "${selection[*]}" =~ "${menu[$selected]}" ]] ; then
+        for selectopt in "${selection[@]}" ; do
+            if [[ "${selection[$selectopt]}" == "${menu[$selected]}" ]] ; then
+                unset "selection[$selectopt]"
+                found="true"
+            fi
+        done
+    fi
+    # If the option was not found in the selection
+    if [[ "$found" == "false" ]] ; then
+        selection+=("${menu[$selected]}")
+    else # If it was found, clean up the arrays
+        for i in "${selection[*]}" ; do
+            temparr+=("${selection[@]}")
+        done
+        unset selection
+        for i in "${temparr[*]}" ; do
+            selection+=("${temparr[@]}")
+        done
+        unset temparr
+    fi
 }
 
-function select_option {
+
 
 echo""
     local menuopts=("$@")
@@ -698,56 +807,55 @@ echo""
     cursor_blink_on()  { printf "$ESC[?25h"; }
     cursor_blink_off() { printf "$ESC[?25l"; }
     cursor_to()        { printf "$ESC[$1;${2:-1}H"; }
-#    print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
-    print_option()     {
+
+#   control display of non-highlighted options
+#   print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
+print_option()     {
+    # check if option is among selections
+    if [[ ${selection[@]} =~ "$1" ]]
+    then
+            hilite="$ESC[7m" && end_hilite="$ESC[27m"
+        else
+            hilite="" && end_hilite=""
+    fi
+
+
+    # set alignment
     if [[ "$mrightaligned" == "true" ]] ; then
-                rightaligned="true"
-                leftaligned="false"
                 line="$1"
                 bento_vars
-                printf "\33[A\33[2K\r    ${left_border}$line${right_border}"
+                printf "\33[A\33[2K\r   $hilite $line $end_hilite${left_border}${right_border}"
     elif [[ "$mcenteraligned" == "true" ]] ; then
-                leftaligned="false"
                 line="$1"
                 bento_vars
-                printf "\33[A\33[2K\r    ${left_border}$line${right_border}"
+                printf "\33[A\33[2K\r  $hilite ${left_border}${right_border}$line $end_hilite"
     else
-                printf "\33[A\33[2K\r%s    $1 "
+                printf "\33[A\33[2K\r%s   $hilite $1 $end_hilite"
     fi
-    if [[ "$mrightaligned" == "true" ]] || [[ "$mcenteraligned" == "true" ]] ; then
-        rightaligned="false"
-        leftaligned="false"
-    fi
+    # turn highlights back off
+        hilite="" && end_hilite=""
 }
 
-
+#   control display of currently-highlighted options
+#   print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m";
+print_selected()   {
     if [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] ; then
-    print_selected()   { printf " "; }
+        # dont bother displaying an option with these enabled
+        printf " "
     else
-    print_selected()   {
     if [[ "$mrightaligned" == "true" ]] ; then
-            rightaligned="true"
-            leftaligned="false"
             line="$1"
             bento_vars
-            printf "\33[A\33[2K\r ⮞ ${left_border}$ESC[7m $line$ESC[27m${right_border}"
+            printf "\33[A\33[2K\r ⮞ ${left_border}${right_border}$ESC[7m $line $ESC[27m"
     elif [[ "$mcenteraligned" == "true" ]] ; then
-            leftaligned="false"
             line="$1"
             bento_vars
-            printf "\33[A\33[2K\r ⮞  ${left_border}$ESC[7m$line$ESC[27m${right_border}"
+            printf "\33[A\33[2K\r ⮞ $ESC[7m $line $ESC[27m${left_border}${right_border}"
     else
             printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"
-    fi
-    if [[ "$mrightaligned" == "true" ]] || [[ "$mcenteraligned" == "true" ]] ; then
-        rightaligned="false"
-        leftaligned="false"
-    fi
-#   print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m";
+    fi fi
 }
 
-
-    fi
     get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
                          if [[ $key = $ESC[A ]]; then echo up;     fi
@@ -852,7 +960,7 @@ echo""
 
         # user key control
         case `key_input` in
-            enter) break;;
+            enter) multimenu ;;
             up)    ((selected--));
                    if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;
             down)  ((selected++));
@@ -867,15 +975,28 @@ echo""
     return $selected
 }
 
+
 function select_opt {
     select_option "$@" 1>&2
     local result=$?
-    echo $result
+    #echo $result
     return $result
 }
 #</>
 #</>
-#</>
+
+bento_debug(){
+    bento -t "Test" -c "Testing multi select menu" -mm "one" "two" "three" "four" "five" "six" -m "seven" "eight" "Exit" -a
+    case "$selection" in
+        "Exit") exit 0 ;;
+    esac
+    bento -t "Results" -c "Here are the results" 'Array "${selection[@]}" returns the following:' "div" "${selection[@]}" "btm" "lid" "Test again?" -m "Restart" "Exit"
+    case "$selection" in
+        "Restart") bento -d ; return ;;
+        "Exit") exit 0 ;;
+    esac
+}
+
 #</>
 
 bento "$@"
