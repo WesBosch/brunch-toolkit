@@ -6,11 +6,11 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.2"
+bento_version="1.0.3"
 bento_usage(){
 
 # Set variables to use in the menu
-  bento_help_menu_title=("Bento - Help Menu")
+  bento_help_menu_title=("Bento $bento_version - Help Menu")
   bento_help_menu_contents=("Welcome to Bento." "Brunch's ENhanced Text Options")
   bento_help_menu_options=("Usage" "Examples" "Support" "Exit")
   bento_help_menu_tooltips=("How to use Bento" "How this menu was made" "Where to get support" "Exit")
@@ -212,6 +212,16 @@ while (( "$#" )); do
       boxless="true"
       shift
       ;;
+    -u|--update)
+    # Display bento help menu
+      bento_update
+      exit 0
+      ;;
+    -i|--install)
+    # Display bento help menu
+      bento_install
+      exit 0
+    ;;
     -h|--help)
     # Display bento help menu
       bento_usage
@@ -481,6 +491,7 @@ eval set -- "$PARAMS"
             echo ""
             menumaker
     fi
+    bento_cleanup
 }
 
 menumaker(){
@@ -984,6 +995,32 @@ function select_opt {
 }
 #</>
 #</>
+
+bento_update(){
+      update_failed="false"
+      sudo mkdir -p /var/brunch/toolkit
+      sudo chown -R $USER /var/brunch
+      bento -t "Update" -c "Updating Bento, please wait..."
+      curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/bento -o /var/brunch/toolkit/bento || update_failed="true"
+      sudo install -Dt /usr/local/bin -m 755 /var/brunch/toolkit/bento || update_failed="true"
+      rm /var/brunch/toolkit/bento
+      if [[ "$update_failed" == "true" ]] ; then
+      bento -t "Update" -c "Unable to update Bento!" "Make sure your internet connection is stable and try again." "You can also update manually by downloading Bento from:" "https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/bento" "then run: bash ~/Downloads/bento --install" -e
+      else
+          bento -t "Update" -c "Update succesful!" -e
+      fi
+}
+
+bento_install(){
+    install_failed="false"
+    bento -t "Update" -c "Installing Bento $bento_version, please wait..."
+    sudo install -Dt /usr/local/bin -m 755 "$0" || install_failed="true"
+    if [[ "$update_failed" == "true" ]] ; then
+    bento -t "Update" -c "Unable to update Bento!" 'Try moving Bento to /usr/local/bin manually, or to somewhere else in your $PATH' -e
+    else
+        bento -t "Update" -c "Install succesful!" -e
+    fi
+}
 
 bento_debug(){
     bento -t "Test" -c "Testing multi select menu" -mm "one" "two" "three" "four" "five" "six" -m "seven" "eight" "Exit" -a
