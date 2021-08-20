@@ -6,7 +6,7 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.3"
+bento_version="1.0.4"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -76,6 +76,7 @@ bento_usage_sub1(){
     ""
     "(-c|--content)     The following options will make up the textbox. (like this one!) "
     "(-m|--menu)        The options listed here will become selectable options for the user."
+    "(-mm|--multimenu)  The options here can be toggled and multiselected together"
     "(-s|--subtitles)   These options act as on screen tooltips for the menu options."
     "(-t|--title)       This will define the titlebar displayed at the top of the box."
     "div"
@@ -86,6 +87,7 @@ bento_usage_sub1(){
     "(-b|--boxless)     This option will disable box drawing and just display plain text."
     "(-g|--glyph)       This option turns on doublelined boxes, like what this menu uses."
     "(-n|--noclear)     Prevent Bento clearing the screen before and after making boxes."
+    '(-w|--write)       User input is directed into the $selection variable'
     ""
     "(-a|--arrows)      Displays a small usage tip for selecting items in the menu. "
     "(-e|--exit)        Displays a small usage tip for exiting the script."
@@ -137,6 +139,7 @@ bento(){
     keys_opt_arrows="Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to select."
     keys_opt_return="Press Enter (⏎) to return to the previous menu."
     keys_opt_exit="Press Enter (⏎) to continue."
+    keys_opt_input="Type your selection, then press Enter (⏎) to continue."
     keys_opt_toggle=("Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle." "Options marked with ◯ are disabled, ◆ are enabled.")
     arrows="false"
     return="false"
@@ -153,10 +156,16 @@ bento(){
     mcenteraligned="false"
     multiselection="false"
     exit="false"
+    input="false"
     # parse bento flags here
     PARAMS=""
 while (( "$#" )); do
   case "$1" in
+    -w|--write)
+    # set $selection to a written in input with read
+      input="true"
+      shift
+      ;;
     -ra|--rightaligned)
     # Align all text to the right
       rightaligned="true"
@@ -465,6 +474,8 @@ eval set -- "$PARAMS"
         elif [[ "$exit" == "true" ]] ; then
             menu="previous_menu"
             line="${keys_opt_exit}"
+        elif [[ "$input" == "true" ]] ; then
+            line="${keys_opt_input}"
         elif [[ "$toggle" == "true" ]] ; then
             line="${keys_opt_toggle}"
         fi
@@ -491,7 +502,36 @@ eval set -- "$PARAMS"
             echo ""
             menumaker
     fi
+
+    # if using a user-generated input...
+    if [[ "$input" == "true" ]] ; then
+        echo ""
+        input_reader
+        selection="$input_selection"
+    fi
+
     bento_cleanup
+}
+
+input_reader(){
+    input_selection=""
+    if [[ "$boxless" == "true" ]] ; then
+        b="-b"
+    fi
+    read -p ' >> ' input_selection
+    bento_cleanup
+    if [[ -z "$input_selection" ]] ; then
+    bento $b -t "Confirm" -c "Continue without entering anything?" -m "Yes" "No" "Back" "Exit" -s "Confirm entry" "Try again" "Go back to the previous menu" "Exit without saving"
+    else
+    bento $b -t "Confirm" -c "Is this correct?" "$input_selection" -m "Yes" "No" "Back" "Exit" -s "Confirm entry" "Try again" "Go back to the previous menu" "Exit without saving"
+    fi
+    case "$selection" in
+        "Yes") return ;;
+        "No") input_reader ; return ;;
+        "Back") previous_menu ; return ;;
+        "Exit") exit 0 ;;
+    esac
+
 }
 
 menumaker(){
