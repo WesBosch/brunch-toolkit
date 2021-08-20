@@ -528,7 +528,7 @@ input_reader(){
     case "$selection" in
         "Yes") return ;;
         "No") input_reader ; return ;;
-        "Back") previous_menu ; return ;;
+        "Back") $previous_menu ; return ;;
         "Exit") exit 0 ;;
     esac
 
