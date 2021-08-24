@@ -1,12 +1,4 @@
 #!/bin/bash
 # This is a Brunch Toolkit Announcement script
-announcement=("This is a test")
-
-already_read="false"
-command -v bento >/dev/null 2>&1 || have_bento="false"
-
-if [[ "$already_read" == "false" ]] && [[ ! "$have_bento" == "false" ]] ; then
-    bento -t "Announcement" -c "${announcement[@]}" -e
-else
-    echo "${annoucement[@]}"
-fi
+announcement=("This is a new test")
+announcement_ver="1"
