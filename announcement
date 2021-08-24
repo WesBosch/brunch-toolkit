@@ -1,4 +1,4 @@
 #!/bin/bash
-# This is a Brunch Toolkit Announcement script
-announcement=("This is a new test")
-announcement_ver="1"
+# This is the Brunch Toolkit Announcement script
+announcement=("No announcements at this time")
+announcement_ver="0"
