@@ -14,21 +14,21 @@ This software is provided as-is with no warranty. I am not an expert and I am no
 Please do not use or showcase my script in videos, and do not use this script in any other projects. If you'd like permission to do so please contact me.
 
 ## What is Brunch?
-Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at it's official source: https://github.com/sebanc/brunch
+Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at its official source: https://github.com/sebanc/brunch
 
 ## How to Use
-- Open a terminal with ctrl + alt + t (For brunch users, type "shell" at the prompt)
+- Open a terminal with CTRL + ALT + T (For brunch users, type "shell" at the prompt)
 - Type: `curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/brunch-toolkit -o ~/Downloads/brunch-toolkit` 
 - Type: `sudo install -Dt /usr/local/bin -m 755 ~/Downloads/brunch-toolkit` 
-- The toolkit can now be lunched with `brunch-toolkit` and updated using the steps above or through it's own menu.
-- Follow the on screen prompts. If something requires that you download a file, the script will probably offer to do it for you.
+- The toolkit can now be launched with `brunch-toolkit` and updated using the steps above or through its own menu.
+- Follow the on-screen prompts. If something requires that you download a file, the script will probably offer to do it for you.
 
-Note: The toolkit relies on ~/Downloads being avaliable (except in WSL) if you use an alternate download location, the toolkit may not work properly. In most cases the script will correct itself, but I strongly suggest running the script from the ~/Downloads folder whenever you use it (Unless you install it to your Brunch system)
+Note: The toolkit relies on ~/Downloads being available (except in WSL) if you use an alternate download location, the toolkit may not work properly. In most cases, the script will correct itself, but I strongly suggest running the script from the ~/Downloads folder whenever you use it (Unless you install it to your Brunch system)
 
 ## Usage
-This script is designed to make installing and updating brunch easy for users that are not comfortable with the command line. If you already know what you're doing, some tasks may be faster to so manually. The toolkit will provide easy to follow prompts and present options whenever necessary for the user to select from. Some features require update files, recoveries or bootsplash archives to be in the ~/Downloads folder. It is not required to unzip anything, the toolkit will do that. If no usable files are found, the user will be able to download them. (if there is a suitable internet connection)
+This script is designed to make installing and updating brunch easy for users that are not comfortable with the command line. If you already know what you're doing, some tasks may be faster to so manually. The toolkit will provide easy to follow prompts and present options whenever necessary for the user to select from. Some features require update files, recoveries or boot splash archives to be in the ~/Downloads folder. It is not required to unzip anything, the toolkit will do that. If no usable files are found, the user will be able to download them. (if there is a suitable internet connection)
 
-It is not a perfect script, if you find any issues please report them. It is difficult to account for every possible situation, but I've made an attempt to cover most of them. This toolkit is intended to be used on devices running Sebanc's Brunch framework, though it has some limited functionality on standard **buntu* and debian based linux distros.
+It is not a perfect script, if you find any issues, please report them. It is difficult to account for every possible situation, but I've made an attempt to cover most of them. This toolkit is intended to be used on devices running Sebanc's Brunch framework, though it has some limited functionality on standard **buntu* and Debian-based Linux distros.
 
 ## Features
 Brunch exclusive features:
@@ -45,7 +45,7 @@ Brunch, Linux & WSL compatible features:
 ## Debug Tools
 Below is a list of debug options and menu shortcuts that can be used. 
 Add either the *--long* or *-s* (short) version of a debug option to the end of the brunch-toolkit command to use them.
-Commands labeled "Brunch exclusive" will only work if the toolkit is used in Brunch.
+Commands labelled "Brunch exclusive" will only work if the toolkit is used in Brunch.
 
     --bootsplash (-b)
         Brunch Exclusive
@@ -64,7 +64,7 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
 
     --compatibility (-k)
         Displays helpful info about CPU compatibility.
-        This option should work on most linux distros.
+        This option should work on most Linux distros.
 
     --debug (-d)
         Tests the script without allowing updates or installs.
@@ -83,10 +83,10 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
         Skips the main menu and starts the Brunch install function.
     
     --legacychangelog (-lc)
-        Displays the entire changlog of this script.
+        Displays the entire changelog of this script.
         
     --offline (-o)
-        Disables all internet functions of the tooklit.
+        Disables all internet functions of the toolkit.
         It will not prompt for an internet connection at all.
         Useful if you know you don't need to download anything.
 
@@ -120,9 +120,9 @@ Commands labeled "Brunch exclusive" will only work if the toolkit is used in Bru
         Allows the user to download and install the newest brunch toolkit release.
 
     --version (-v)
-        Displays useful system information including:
+        Displays useful system information, including:
         The version of the toolkit you're using
         The kernel used by your system
         Which version of Chrome OS you're on
         Which version of Brunch you're on
-        Which recoveries are supported or recomended
+        Which recoveries are supported or recommended
