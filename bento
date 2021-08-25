@@ -6,7 +6,7 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.4"
+bento_version="1.0.5"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -472,7 +472,7 @@ eval set -- "$PARAMS"
             menu="previous_menu"
             line="${keys_opt_return}"
         elif [[ "$exit" == "true" ]] ; then
-            menu="previous_menu"
+            #menu="previous_menu"
             line="${keys_opt_exit}"
         elif [[ "$input" == "true" ]] ; then
             line="${keys_opt_input}"
@@ -518,7 +518,7 @@ input_reader(){
     if [[ "$boxless" == "true" ]] ; then
         b="-b"
     fi
-    read -p ' >> ' input_selection
+    read -rp ' >> ' input_selection
     bento_cleanup
     if [[ -z "$input_selection" ]] ; then
     bento $b -t "Confirm" -c "Continue without entering anything?" -m "Yes" "No" "Back" "Exit" -s "Confirm entry" "Try again" "Go back to the previous menu" "Exit without saving"
