@@ -17,7 +17,7 @@ Please do not use or showcase my script in videos, and do not use this script in
 Brunch is a framework that aims to create a generic x86_64 Chrome OS image that can be installed on non-standard hardware. I'd suggest reading up on the project at its official source: https://github.com/sebanc/brunch
 
 ## How to Use
-- Open a terminal with CTRL + ALT +T (For brunch users, type "shell" at the prompt)
+- Open a terminal with CTRL + ALT + T (For brunch users, type "shell" at the prompt)
 - Type: `curl -l https://raw.githubusercontent.com/WesBosch/brunch-toolkit/main/brunch-toolkit -o ~/Downloads/brunch-toolkit` 
 - Type: `sudo install -Dt /usr/local/bin -m 755 ~/Downloads/brunch-toolkit` 
 - The toolkit can now be launched with `brunch-toolkit` and updated using the steps above or through its own menu.
