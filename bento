@@ -6,7 +6,7 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.5"
+bento_version="1.0.7"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -140,7 +140,8 @@ bento(){
     keys_opt_return="Press Enter (⏎) to return to the previous menu."
     keys_opt_exit="Press Enter (⏎) to continue."
     keys_opt_input="Type your selection, then press Enter (⏎) to continue."
-    keys_opt_toggle=("Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle." "Options marked with ◯ are disabled, ◆ are enabled.")
+    keys_opt_toggle="Arrow Keys Up/Down (↑/↓)  Press Enter (⏎) to toggle."
+    toggle_hint="Options marked with ◯ are disabled, ◆ are enabled.  "
     arrows="false"
     return="false"
     toggle="false"
@@ -472,7 +473,7 @@ eval set -- "$PARAMS"
             menu="previous_menu"
             line="${keys_opt_return}"
         elif [[ "$exit" == "true" ]] ; then
-            #menu="previous_menu"
+            menu="continue"
             line="${keys_opt_exit}"
         elif [[ "$input" == "true" ]] ; then
             line="${keys_opt_input}"
@@ -490,7 +491,19 @@ eval set -- "$PARAMS"
             printf "     ${left_border}${line}${right_border} \n"
         fi
     fi
-
+    if [[ "$toggle" == "true" ]] ; then
+        line="$toggle_hint"
+        bento_vars
+        if (( (text_width + 8) > terminal_width )) ; then
+            long_content="$(echo "$line" | fold -w $box_width -s)"
+            IFS=$'\n'
+            multi_array=($long_content)
+            unset IFS
+            multistep "${multi_array[@]}"
+        else
+            printf "     ${left_border}${line}${right_border} \n"
+        fi
+    fi
     # unset alignment if it was only for this section
     if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
         rightaligned="false"
@@ -556,6 +569,10 @@ menumaker(){
             bento_cleanup
             unset selection
             $previous_menu
+        elif [[ "$selection" == "continue" ]] ; then
+                bento_cleanup
+                unset selection
+                : # continue to the next part of script logically
         elif [[ -n "$selection" ]] ; then
         echo ""
         echo ""
@@ -794,30 +811,6 @@ multistep(){
 
 function select_option {
 
-    # set/unset selections when dealing with a multiple selection menu
-    multimenu(){
-        if [[ "$multiselection" == "true" ]] ; then
-            for ((i = 0; i < ${#menu[@]}; ++i)); do
-                # keep looping for every option to add them to our array
-                if [[ "${menu[$i]}" == "Confirm Selection" ]] ; then
-                    break # end loop at "Confirm Selection" dont let it or others after it be added to selection
-                else
-                    multimenu+=("${menu[$i]}")
-                fi
-            done
-        fi
-        if  [[ "$multiselection" == "true" ]] && [[ "${menu[$selected]}" == "Confirm Selection" ]] ; then
-            break
-        elif [[ "$multiselection" == "true" ]] && [[ "${multimenu[$selected]}" == "${menu[$selected]}" ]] ; then
-            # toggle selection on or off
-            toggle_selection
-        else
-            # standard menu function down here
-            selection=("${menu[$selected]}")
-            break
-        fi
-    }
-
 toggle_selection(){
     # search already selected item to see if this option was already selected and deselect it
     # use the found variable to confirm if it was an exact match
@@ -897,13 +890,13 @@ print_selected()   {
     if [[ "$mrightaligned" == "true" ]] ; then
             line="$1"
             bento_vars
-            printf "\33[A\33[2K\r ⮞ ${left_border}${right_border}$ESC[7m $line $ESC[27m"
+            printf "\33[A\33[2K\r ➤ ${left_border}${right_border}$ESC[7m $line $ESC[27m"
     elif [[ "$mcenteraligned" == "true" ]] ; then
             line="$1"
             bento_vars
-            printf "\33[A\33[2K\r ⮞ $ESC[7m $line $ESC[27m${left_border}${right_border}"
+            printf "\33[A\33[2K\r ➤ $ESC[7m $line $ESC[27m${left_border}${right_border}"
     else
-            printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m"
+            printf "\33[A\33[2K\r%s ➤ $ESC[7m $1 $ESC[27m"
     fi fi
 }
 
@@ -1011,7 +1004,28 @@ print_selected()   {
 
         # user key control
         case `key_input` in
-            enter) multimenu ;;
+            enter)
+		if [[ "$multiselection" == "true" ]] ; then
+            	for ((i = 0; i < ${#menu[@]}; ++i)); do
+                # keep looping for every option to add them to our array
+                if [[ "${menu[$i]}" == "Confirm Selection" ]] ; then
+                	break # end loop at "Confirm Selection" dont let it or others after it be add>
+                else
+                	multimenu+=("${menu[$i]}")
+                fi
+           	done
+        	fi
+        	if  [[ "$multiselection" == "true" ]] && [[ "${menu[$selected]}" == "Confirm Selection" ]] ; then
+            		break
+        	elif [[ "$multiselection" == "true" ]] && [[ "${multimenu[$selected]}" == "${menu[$selected]}" ]] ; then
+            		# toggle selection on or off
+            		toggle_selection
+        	else
+            		# standard menu function down here
+            		selection=("${menu[$selected]}")
+            		break
+        	fi 
+		;;
             up)    ((selected--));
                    if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;
             down)  ((selected++));
