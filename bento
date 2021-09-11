@@ -6,7 +6,7 @@ source "/var/brunch/toolkit/toolkit.cfg"
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.7"
+bento_version="1.0.8"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -865,7 +865,9 @@ print_option()     {
 
 
     # set alignment
-    if [[ "$mrightaligned" == "true" ]] ; then
+    if [[ "$1" == "div" ]] ; then
+        printf "   "
+    elif [[ "$mrightaligned" == "true" ]] ; then
                 line="$1"
                 bento_vars
                 printf "\33[A\33[2K\r   $hilite $line $end_hilite${left_border}${right_border}"
@@ -886,6 +888,8 @@ print_selected()   {
     if [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] ; then
         # dont bother displaying an option with these enabled
         printf " "
+    elif [[ "$1" == "div*" ]] ; then
+        printf "   "
     else
     if [[ "$mrightaligned" == "true" ]] ; then
             line="$1"
@@ -1024,12 +1028,27 @@ print_selected()   {
             		# standard menu function down here
             		selection=("${menu[$selected]}")
             		break
-        	fi 
+        	fi
 		;;
-            up)    ((selected--));
-                   if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi;;
+            up)    ((selected--))
+                   if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi
+                    until [[ ! "${menu[$selected]}" == "div" ]] ; do
+                        ((selected--));
+                        if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi
+                    done ;;
+
+                   #if [[ "${menu[$selected]}" == "div" ]]; then
+                   #((selected--))
+                   #if [ $selected -lt 0 ]; then selected=$(($# - 1)); fi ; fi ;;
             down)  ((selected++));
-                   if [ $selected -ge $# ]; then selected=0; fi;;
+                   if [ $selected -ge $# ]; then selected=0; fi
+                   until [[ ! "${menu[$selected]}" == "div" ]] ; do
+                       ((selected++));
+                       if [ $selected -ge $# ]; then selected=0; fi
+                   done
+                   #if [[ "${menu[$selected]}" == "div" ]]; then
+                   #((selected++));
+                   #if [ $selected -ge $# ]; then selected=0; fi ; fi ;;
         esac
     done
 
