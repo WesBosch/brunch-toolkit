@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly toolkitversion="v3.0.0"
+readonly toolkitversion="v3.0.1"
 readonly discordinvite="https://discord.gg/x2EgK2M"
 
 #<~> Brunch Config Variables (Kernels, Framework options, etc)
@@ -116,7 +116,7 @@ readonly avaliablekernels=(kernel-4.19 kernel-5.4 kernel-5.10 kernel-chromebook)
 # This is the code that makes boxes possible,
 # When 'bento_boxes=disabled' then the script will not draw boxes.
 #
-bento_version="1.0.8"
+bento_version="1.0.9"
 bento_usage(){
 
 # Set variables to use in the menu
@@ -236,11 +236,14 @@ bento(){
     fi
     # preset variable defaults to keep menus from acidentally merging into eachother
     terminal_width=$(tput cols)             # query the Terminfo database: number of columns
+    terminal_height=$(tput lines)             # query the Terminfo database: number of columns
     box_width=$(( terminal_width - 8 ))     # set the width of the box with a buffer
     if [[ "$bento_boxes" == "disabled" ]] ; then
         boxless="true"
     elif (( terminal_width < 50 )) ; then
-      boxless="true"
+        boxless="true"
+    elif (( terminal_height < 30 )) ; then
+        boxless="true"
     else
       boxless="false"
     fi
@@ -514,7 +517,7 @@ eval set -- "$PARAMS"
             echo ""
             # make top of the box
             bento_vars
-            printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+            printf "${blank_spacer}${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
         fi
         # loop for each line in the box
         for line in "${title[@]}"; do
@@ -527,20 +530,20 @@ eval set -- "$PARAMS"
                 unset IFS
                 multititle "${multi_array[@]}"
             else
-                printf "  ${left_wall}\033[7m${title_left_border}${filler}${line}${filler}${title_right_border}\033[27m${right_wall}\n"
+                printf "${blank_spacer}${title_left_wall}\033[7m${title_left_border}${filler}${line}${filler}${title_right_border}\033[27m${title_right_wall}\n"
             fi
         done
         # if theres no content, make a box bottom instead of a divider
         if [[ -z "$content" ]] && [[ "$boxless" == "false" ]] ; then
-            printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+            printf "${blank_spacer}${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
         elif [[ -n "$content" ]] && [[ "$boxless" == "false" ]] ; then
-            printf "  ${left_div_wall}${left_bar}${topbar}${right_bar}${right_div_wall}\n"
+            printf "${blank_spacer}${left_div_wall}${left_bar}${topbar}${right_bar}${right_div_wall}\n"
         fi
     else
         # if theres no title, just make the top of the box
         echo ""
         bento_vars
-        printf "  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
+        printf "${blank_spacer}${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
     fi
         # unset alignment if it was only for this section
         if [[ "$trightaligned" == "true" ]] || [[ "$tleftaligned" == "true" ]] ; then
@@ -567,15 +570,16 @@ eval set -- "$PARAMS"
             unset IFS
             multibox "${multi_array[@]}"
             else
-            printf "  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+            printf "${blank_spacer}${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
             fi
         done
         if [[ "$boxless" == "false" ]] ; then
-            printf "  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+            printf "${blank_spacer}${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
         fi
     fi
 
 # display optional guides
+if [[ "$boxless" == "false" ]] ; then
     if [[ "$arrows" == "true" ]] || [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] || [[ "$toggle" == "true" ]] ; then
         if [[ "$arrows" == "true" ]] ; then
             line="${keys_opt_arrows}"
@@ -598,7 +602,7 @@ eval set -- "$PARAMS"
             unset IFS
             multistep "${multi_array[@]}"
         else
-            printf "     ${left_border}${line}${right_border} \n"
+            printf "${blank_spacer}${blank_spacer}${left_border}${line}${right_border} \n"
         fi
     fi
     if [[ "$toggle" == "true" ]] ; then
@@ -611,9 +615,10 @@ eval set -- "$PARAMS"
             unset IFS
             multistep "${multi_array[@]}"
         else
-            printf "     ${left_border}${line}${right_border} \n"
+            printf "${blank_spacer}${blank_spacer}${left_border}${line}${right_border} \n"
         fi
     fi
+fi
     # unset alignment if it was only for this section
     if [[ "$crightaligned" == "true" ]] || [[ "$cleftaligned" == "true" ]] ; then
         rightaligned="false"
@@ -735,6 +740,8 @@ bento_vars(){
       top_right_corner="╗"
       btm_left_corner="╚"
       btm_right_corner="╝"
+      title_left_wall="║"
+      title_right_wall="║"
       left_wall="║"
       right_wall="║"
       left_div_wall="╠"
@@ -745,6 +752,8 @@ bento_vars(){
       top_right_corner="┐"
       btm_left_corner="└"
       btm_right_corner="┘"
+      title_left_wall="│"
+      title_right_wall="│"
       left_wall="│"
       right_wall="│"
       left_div_wall="├"
@@ -852,24 +861,28 @@ bento_vars(){
         right_bar="${bar}${topbar}"
     fi
     # undo all of this if we arent making boxes
+    blank_spacer="  "
     if [[ "$boxless" == "true" ]] ; then
+        blank_spacer=""
         top_left_corner=""
         top_right_corner=""
         btm_left_corner=""
         btm_right_corner=""
         left_wall=""
         right_wall=""
-        left_div_wall=""
-        right_div_wall=""
+        title_left_wall=""
+        title_right_wall=""
+        left_div_wall="$topbar"
+        right_div_wall="$topbar"
         topbar=""
-        title_filler=""
-        filler=""
+        #title_filler=""
+        #filler=""
         left_bar=""
         right_bar=""
-        left_border=""
-        right_border=""
-        title_left_border=""
-        title_right_border=""
+        left_border+="${filler}${filler}${filler}"
+        right_border+="${filler}${filler}${filler}"
+        title_left_border+="${title_filler}${title_filler}${title_filler}"
+        title_right_border+="${title_filler}${title_filler}${title_filler}"
       fi
 }
 
@@ -877,7 +890,7 @@ multibox(){
   local multi=("$@")
   for line in "${multi[@]}" ; do
       bento_vars
-  printf "  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+  printf "${blank_spacer}${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
   done
 }
 
@@ -885,7 +898,7 @@ multititle(){
   local multi=("$@")
   for line in "${multi[@]}" ; do
       bento_vars
-  printf "  ${left_wall}\033[7m${title_left_border}${title_filler}${line}${title_filler}${title_right_border}\033[27m${right_wall}\n"
+  printf "${blank_spacer}${title_left_wall}\033[7m${title_left_border}${title_filler}${line}${title_filler}${title_right_border}\033[27m${title_right_wall}\n"
   done
 }
 
@@ -895,7 +908,7 @@ multisub(){
       bento_vars
           echo ""
           printf "\33[A\33[2K\r%s"
-      printf "\r%s  ${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
+      printf "\r%s${blank_spacer}${left_wall}${left_border}${filler}${line}${filler}${right_border}${right_wall}\n"
   done
 }
 
@@ -903,7 +916,7 @@ multistep(){
   local multi=("$@")
   for line in "${multi[@]}" ; do
       bento_vars
-      printf "     ${left_border}${filler}${line}${filler}${right_border} \n"
+      printf "${blank_spacer}${blank_spacer}${left_border}${filler}${line}${filler}${right_border} \n"
   done
 }
 
@@ -948,9 +961,6 @@ toggle_selection(){
     fi
 }
 
-
-
-echo""
     local menuopts=("$@")
     local terminal_height=$(tput lines)     # query the Terminfo database: number of lines
     local box_height=$(( terminal_height - 13 ))
@@ -964,7 +974,7 @@ echo""
 
 #   control display of non-highlighted options
 #   print_option()     { printf "\33[A\33[2K\r%s    $1 "; }
-print_option()     {
+    print_option()     {
     # check if option is among selections
     if [[ ${selection[@]} =~ "$1" ]]
     then
@@ -994,7 +1004,7 @@ print_option()     {
 
 #   control display of currently-highlighted options
 #   print_selected()   { printf "\33[A\33[2K\r%s ⮞ $ESC[7m $1 $ESC[27m";
-print_selected()   {
+    print_selected()   {
     if [[ "$return" == "true" ]] || [[ "$exit" == "true" ]] ; then
         # dont bother displaying an option with these enabled
         printf " "
@@ -1014,7 +1024,7 @@ print_selected()   {
     fi fi
 }
 
-    get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+    #get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
     key_input()        { read -s -n3 key 2>/dev/null >&2
                          if [[ $key = $ESC[A ]]; then echo up;     fi
                          if [[ $key = $ESC[B ]]; then echo down;   fi
@@ -1030,75 +1040,94 @@ print_selected()   {
       fi
     }
 
-
-    # initially print empty new lines (scroll down if at bottom of screen)
-    for opt ; do
-    printf "\n"; done
-
-    # determine current screen position for overwriting the options
-    lastrow=`get_cursor_row`
-    #local lastrow="$terminal_height"
-    startrow=$(($lastrow - $#))
-
-    # ensure cursor and input echoing back on upon a ctrl+c during read -s
-    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
-    cursor_blink_off
-
-
     get_subtitle_max_size(){
-      subtitle_length=-1
-        for x in "${submenu[@]}" ; do
-          if [[ ${#x} -gt $subtitle_length ]] ; then
-            subtitle_length=$(( ${#x} + 0 ))
-          fi
-        done
-    }
+          subtitle_length=-1
+            for x in "${submenu[@]}" ; do
+              if [[ ${#x} -gt $subtitle_length ]] ; then
+                subtitle_length=$(( ${#x} + 0 ))
+              fi
+            done
+        }
 
     make_subtitles(){
-      get_menuopts_total
-      get_subtitle_max_size
-      if [[ ! "$tooltips" == "disabled" ]] ; then
-        cursor_to $lastrow
-        printf "\33[A\33[2K\r%s\n"
-        bento_subs
-        printf "\33[2K\r%s\n"
-        printf "\33[2K\r%s\n"
-      fi
-    }
+        if (( terminal_height > 29 )) && [[ "$boxless" == "true" ]] ; then
+          get_menuopts_total
+          get_subtitle_max_size
+          if [[ ! "$tooltips" == "disabled" ]] ; then
+            cursor_to $lastrow
+            printf "\33[A\33[2K\r%s\n"
+            bento_subs
+            printf "\33[2K\r%s\n"
+            printf "\33[2K\r%s\n"
+            fi
+        elif (( terminal_height > 39 )) && [[ "$boxless" == "false" ]] ; then
+            get_menuopts_total
+            get_subtitle_max_size
+            if [[ ! "$tooltips" == "disabled" ]] ; then
+              cursor_to $lastrow
+              printf "\33[A\33[2K\r%s\n"
+              bento_subs
+              printf "\33[2K\r%s\n"
+              printf "\33[2K\r%s\n"
+            fi
+        fi
+        }
 
     bento_subs(){
-    if [[ -n "${submenu[$idx]}" ]] ; then
-                if [[ "$srightaligned" == "true" ]] ; then
-                    rightaligned="true"
-                elif [[ "$sleftaligned" == "true" ]] ; then
-                    leftaligned="true"
-                fi
-        line="${submenu[$idx]}"
-        glyph="true"
-        bento_vars
-            printf "\r%s  ${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
-            if (( (text_width + 8) > terminal_width )) ; then
-            long_content="$(echo "$line" | fold -w $box_width -s)"
-            IFS=$'\n'
-            multi_array=($long_content)
-            unset IFS
-            multisub "${multi_array[@]}"
-            else
-                echo ""
-                printf "\33[A\33[2K\r%s"
-            printf "\r%s  ${left_wall}${left_border} $line ${right_border}${right_wall}\n"
+        if [[ -n "${submenu[$idx]}" ]] ; then
+                    if [[ "$srightaligned" == "true" ]] ; then
+                        rightaligned="true"
+                    elif [[ "$sleftaligned" == "true" ]] ; then
+                        leftaligned="true"
+                    fi
+            glyph="true"
+            if [[ "$boxless" == "false" ]] ; then
+            bento_vars
+                printf "\r%s${blank_spacer}${top_left_corner}${left_bar}${topbar}${right_bar}${top_right_corner}\n"
             fi
-        echo ""
-        printf "\33[A\33[2K\r%s"
-        printf "\r%s  ${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
-        printf "\r%s"
 
-                if [[ "$srightaligned" == "true" ]] || [[ "$sleftaligned" == "true" ]] ; then
-                    rightaligned="false"
-                    leftaligned="false"
+                line="${submenu[$idx]}"
+                bento_vars
+                if (( (text_width + 8) > terminal_width )) ; then
+                long_content="$(echo "$line" | fold -w $box_width -s)"
+                IFS=$'\n'
+                multi_array=($long_content)
+                unset IFS
+                multisub "${multi_array[@]}"
+                else
+                    echo ""
+                    printf "\33[A\33[2K\r%s"
+                printf "\r%s${blank_spacer}${left_wall}${left_border} $line ${right_border}${right_wall}\n"
                 fi
-    fi
-    }
+
+            if [[ "$boxless" == "false" ]] ; then
+            echo ""
+            bento_vars
+            printf "\33[A\33[2K\r%s"
+            printf "\r%s${blank_spacer}${btm_left_corner}${left_bar}${topbar}${right_bar}${btm_right_corner}\n"
+            fi
+            printf "\r%s"
+
+                    if [[ "$srightaligned" == "true" ]] || [[ "$sleftaligned" == "true" ]] ; then
+                        rightaligned="false"
+                        leftaligned="false"
+                    fi
+        fi
+        }
+
+
+    # initially print empty new lines (scroll down if at bottom of screen)
+    #for opt ; do
+    #printf "\n"; done
+
+    # determine current screen position for overwriting the options
+    #lastrow=`get_cursor_row`
+    #local lastrow="$terminal_height"
+    #startrow=$(($lastrow - $#))
+
+        # ensure cursor and input echoing back on upon a ctrl+c during read -s
+    trap "cursor_blink_on; stty echo; printf '\n'; exit" 2
+    cursor_blink_off
 
     local selected=0
     while true; do
@@ -1169,12 +1198,45 @@ print_selected()   {
     return $selected
 }
 
+get_cursor_row()   { IFS=';' read -sdR -p $'\E[6n' ROW COL; echo ${ROW#*[}; }
+
+screen_size_warning(){
+        bento_cleanup
+        bento -t "Warning" -c " " "Your terminal is too small to display this menu, please zoom out or expand the terminal and try again." " "
+
+        if [[ -z "$previous_menu" ]] ; then
+            error_destination="Back"
+        else
+            error_destination="Exit"
+        fi
+
+        printf " ➤ \033[7m $error_destination \033[27m"
+            trap "printf '\033[?25h'; stty echo; printf '\n'; exit" 2
+        printf "\033[?25l"
+        read -rsn1 -p "" ; echo
+        printf "\033[?25h"
+        if [[ -z "$previous_menu" ]] ; then
+            selection="Exit"
+        else
+            selection="Back"
+        fi
+}
 
 function select_opt {
-    select_option "$@" 1>&2
-    local result=$?
-    #echo $result
-    return $result
+    echo ""
+    for opt ; do
+    printf "\n"; done
+    lastrow=`get_cursor_row`
+    startrow=$(($lastrow - $#))
+
+    if (( lastrow > (terminal_height - 1) )) ; then
+        screen_size_warning
+    else
+        select_option "$@" 1>&2
+        local result=$?
+        #echo $result
+        return $result
+    fi
 }
 #</>
 #</>
@@ -1842,14 +1904,16 @@ select_a_recovery(){
         fi
         done
         for ((i = 0; i < ${#allrecoveries[@]}; ++i)); do
-        if (( i < 15)) ; then
+        if (( i < 10)) ; then
             allrecoveries_page1+=("${allrecoveries[$i]}")
-        elif (( i < 30)) ; then
+        elif (( i < 20)) ; then
             allrecoveries_page2+=("${allrecoveries[$i]}")
-        elif (( i < 45)) ; then
+        elif (( i < 30)) ; then
             allrecoveries_page3+=("${allrecoveries[$i]}")
-        elif (( i > 44)) ; then
+        elif (( i < 40)) ; then
             allrecoveries_page4+=("${allrecoveries[$i]}")
+        elif (( i < 50)) ; then
+            allrecoveries_page5+=("${allrecoveries[$i]}")
         fi
     done
             current_page="1"
@@ -1869,17 +1933,17 @@ select_a_recovery(){
 long_recovery_menu(){
     if [[ "$current_page" == "1" ]] ; then
         clear
-        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." -m "${allrecoveries_page1[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page1[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
+        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." div "Page $current_page of 5" -m "${allrecoveries_page1[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page1[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
         case "$selection" in
             "Back") $previous_page ; return ;;
             "Exit") exit 0 ;;
             "Next Page") current_page="2" ; long_recovery_menu ;;
-            "Previous Page")  current_page="4" ; long_recovery_menu ;;
+            "Previous Page")  current_page="5" ; long_recovery_menu ;;
             *) selected_recovery="$selection" ; selection_made="true" ; $previous_page ; return ;;
         esac
     elif [[ "$current_page" == "2" ]] ; then
         clear
-        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." -m "${allrecoveries_page2[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page2[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
+        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." div "Page $current_page of 5" -m "${allrecoveries_page2[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page2[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
         case "$selection" in
             "Back") $previous_page ; return ;;
             "Exit") exit 0 ;;
@@ -1889,12 +1953,32 @@ long_recovery_menu(){
         esac
     elif [[ "$current_page" == "3" ]] ; then
         clear
-        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." -m "${allrecoveries_page3[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page3[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
+        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." div "Page $current_page of 5" -m "${allrecoveries_page3[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page3[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
+        case "$selection" in
+            "Back") $previous_page ; return ;;
+            "Exit") exit 0 ;;
+            "Next Page") current_page="4" ; long_recovery_menu ;;
+            "Previous Page")  current_page="2" ; long_recovery_menu ;;
+            *) selected_recovery="$selection" ; selection_made="true" ; $previous_page ; return ;;
+        esac
+    elif [[ "$current_page" == "4" ]] ; then
+        clear
+        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." div "Page $current_page of 5" -m "${allrecoveries_page4[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page4[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
+        case "$selection" in
+            "Back") $previous_page ; return ;;
+            "Exit") exit 0 ;;
+            "Next Page") current_page="5" ; long_recovery_menu ;;
+            "Previous Page")  current_page="3" ; long_recovery_menu ;;
+            *) selected_recovery="$selection" ; selection_made="true" ; $previous_page ; return ;;
+        esac
+    elif [[ "$current_page" == "5" ]] ; then
+        clear
+        bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." div "Page $current_page of 5" -m "${allrecoveries_page5[@]}" div "Next Page" "Previous Page" "Back" "Exit" -a -s "${allrecoveries_page5[@]}" div "See next set of recoveries" "See previous set of recoveries" "Go back to the previous page" "Exit without saving"
         case "$selection" in
             "Back") $previous_page ; return ;;
             "Exit") exit 0 ;;
             "Next Page") current_page="1" ; long_recovery_menu ;;
-            "Previous Page")  current_page="2" ; long_recovery_menu ;;
+            "Previous Page")  current_page="4" ; long_recovery_menu ;;
             *) selected_recovery="$selection" ; selection_made="true" ; $previous_page ; return ;;
         esac
     fi
@@ -1968,8 +2052,13 @@ main_menu_startup(){
     else
         header=("Brunch Toolkit $toolkitversion" -c "Need help? Found a bug? Find me in the Brunch Discord! --Wisteria" "$discordinvite")
     fi
-    bento -g -t "${header[@]}"
-    # bento -g -t "Brunch Toolkit" -c "${notify_content[@]}"
+    if [[ "$boxless" == "false" ]] ; then
+        bento -g -t "${header[@]}"
+    elif [[ -n "$notify_content" ]] && [[ "$boxless" == "true" ]] ; then
+        bento -t "Brunch Toolkit $toolkitversion" -c div "${notify_content[@]}"
+    elif [[ "$boxless" == "true" ]] ; then
+        bento -t "Brunch Toolkit $toolkitversion"
+    fi
     bento -n -c "Main Menu" -m "${main_menu_options[@]}" -s "${main_menu_options_subs[@]}" -a
     previous_menu="main_menu_startup"
     case "$selection" in
@@ -2118,7 +2207,7 @@ fi
     #    "Commandline Parameters      [Coming Soon!]")
     #    grub_subs+=("Add commandline parameters")
     #fi
-    if (( $current_brunch_version > 20201215 )) && [[ "$new_grub" == "true" ]] ; then
+    if (( $current_brunch_version > 20201215 )) ; then
         grub_opts+=("Kernel Options")
         grub_subs+=("Swap between kernels")
     fi
@@ -3279,9 +3368,9 @@ install_brunch_sub(){
         else
     unset possible_outs
         unset possible_outs_subs
-    data=($(lsblk -b -io KNAME,TYPE,SIZE | grep "[smn][dmv]" | grep -Ev "part" | sed 's/.*dev//'  | awk '$3 > 16*2^30 {print $1"="$3/1073741824"G"}'))
+    data=($(lsblk -b -io KNAME,TYPE,SIZE,TRAN | grep "[smn][dmv]" | grep -Ev "part" | sed 's/.*dev//'  | awk '$3 > 16*2^30 {print $1"="$3/1073741824"G="$4}'))
     for elem in "${data[@]}" ; do
-        seperate_parts=$(echo "$elem" | sed 's/=/    /')
+        seperate_parts=$(echo "$elem" | sed 's/=/    /g' | sed 's/sata/Internal/' | sed 's/usb/USB/')
         possible_outs+=("$seperate_parts")
         possible_outs_subs+=("Select $seperate_parts")
     done
@@ -3303,7 +3392,7 @@ select_dst(){
     elif [[ "$install_method" = "Dualboot" ]] ||  [[ "$install_method" =~ "IMG" ]] ; then
         data=($(lsblk -b -io KNAME,TYPE,SIZE | grep "$selected_dst" | grep -Ev "disk" | sed 's/.*dev//'  | awk '$3 > 16*2^30 {print $1"="$3/1073741824"G"}'))
         for elem in "${data[@]}" ; do
-            seperate_parts=$(echo "$elem" | sed 's/=/    /')
+            seperate_parts=$(echo "$elem" | sed 's/=/    /g')
             possible_outs+=("$seperate_parts")
             possible_outs_subs+=("Select $seperate_parts")
         done
