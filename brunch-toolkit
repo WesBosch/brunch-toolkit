@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly toolkitversion="v3.0.1"
+readonly toolkitversion="v3.0.2"
 readonly discordinvite="https://discord.gg/x2EgK2M"
 
 #<~> Brunch Config Variables (Kernels, Framework options, etc)
@@ -2048,9 +2048,9 @@ main_menu_startup(){
     sed -i "s/current_brunch_version=.*/current_brunch_version=$current_brunch_version/" "$config_file"
     # Only display notifications if there are actually notifications.
     if [[ -n "$notify_content" ]] ; then
-        header=("Brunch Toolkit $toolkitversion" -c "Need help? Found a bug? Find me in the Brunch Discord! --Wisteria" "$discordinvite" div "${notify_content[@]}")
+        header=("Brunch $current_brunch_version | Toolkit $toolkitversion" -c "Need help? Found a bug? Find me in the Brunch Discord! --Wisteria" "$discordinvite" div "${notify_content[@]}")
     else
-        header=("Brunch Toolkit $toolkitversion" -c "Need help? Found a bug? Find me in the Brunch Discord! --Wisteria" "$discordinvite")
+        header=("Brunch $current_brunch_version | Toolkit $toolkitversion" -c "Need help? Found a bug? Find me in the Brunch Discord! --Wisteria" "$discordinvite")
     fi
     if [[ "$boxless" == "false" ]] ; then
         bento -g -t "${header[@]}"
@@ -2068,6 +2068,7 @@ main_menu_startup(){
         "Update Toolkit") update_brunch_toolkit ; main_menu_startup ; return ;;
         "Brioche Options") brioche_menu ; return ;;
         "Bootscripts") bootscript_menu ; return ;;
+        "Update Brunch Unstable") update_brunch_unstable ; main_menu_startup ; return ;;
         "Update Brunch") update_brunch ; main_menu_startup ; return ;;
         "Toolkit Settings") toolkit_settings_menu ; return ;;
         "Compatibility Check") loud_compatibility_check ; main_menu_startup ; return ;;
@@ -2092,6 +2093,10 @@ set_main_menu_options(){
     if [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$stable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
         main_menu_options+=("Update Brunch")
         main_menu_options_subs+=("Update Brunch to the latest release")
+    fi
+    if [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$unstable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
+        main_menu_options+=("Update Brunch Unstable")
+        main_menu_options_subs+=("Update Brunch to the latest unstable release")
     fi
     if [[ "$onlineallowed" == "true" ]] && [[ "$toolkit_update" == "true" ]] ; then
         main_menu_options+=("Update Toolkit")
@@ -2139,11 +2144,11 @@ check_grub_format(){
             brunch_config="$HOME/tmp/brunch-workspace/efi/boot/grub.cfg"
             new_grub="false"
         fi
-          if (( $current_brunch_version < 20210620 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] ; then
+          if (( $current_brunch_version < 20210621 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] ; then
             grub_editable="false"
-        elif (( $current_brunch_version > 20210619 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] && [[ "$new_grub" == "false" ]] ; then
+        elif (( $current_brunch_version > 20210620 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] && [[ "$new_grub" == "false" ]] ; then
             grub_editable="false"
-        elif (( $current_brunch_version > 20210619 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] && [[ "$new_grub" == "true" ]] ; then
+        elif (( $current_brunch_version > 20210620 )) && [[ "$toolkit_mode" == "brunch_dualboot" ]] && [[ "$new_grub" == "true" ]] ; then
             grub_editable="true"
         else
             grub_editable="true"
@@ -3425,10 +3430,19 @@ select_size(){
         bento -g -c "Entered value is too small." -r
         select_size
     elif (( "$selection" > "$avaliable_space" )) ; then
-        bento -g -c "Entered value is too large." -r
+        if (( i < 3 )) ; then
+            ((i++))
+            bento -g -c "Entered value is too large." -r
+        else
+            bento -g -c "Entered value is too large, trying anyway..." -e
+            selected_size="$selection"
+            i=0
+            select_src
+        fi
     else
         : # proceed with this size
         selected_size="$selection"
+        i=0
         select_src
     fi
 }
@@ -3935,6 +3949,17 @@ advanced_install_toolchain(){
 #<~> Update Brunch
 update_brunch(){
     if [[ "$onlineallowed" == "true" ]] ; then
+        update_channel="brunch"
+        automatic_brunch_update
+    else
+        bento -t "Update Brunch" -c "Unable to update automatically, trying advanced update option." -e
+        advanced_brunch_update
+    fi
+}
+
+update_brunch_unstable(){
+    if [[ "$onlineallowed" == "true" ]] ; then
+        update_channel="brunch-unstable"
         automatic_brunch_update
     else
         bento -t "Update Brunch" -c "Unable to update automatically, trying advanced update option." -e
@@ -3997,10 +4022,15 @@ automatic_brunch_update(){
         curdir=$(pwd)
         cd ~/tmp/brunch-workspace
         bento -t "Update Brunch" -c "Downloading the latest Brunch update, please wait..."
-        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/brunch/releases/latest | grep 'browser_' | cut -d\" -f4)"
+        curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/$update_channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
         updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
     # Call built in update command
-    if (( $latest_brunch_version > 20210620 )) ; then
+        if [[ "$update_channel" == "brunch" ]] ; then
+            compare_string=$latest_brunch_version
+        else
+            compare_string=$latest_brunch_unstable_version
+        fi
+    if (( $compare_string > 20210620 )) ; then
         bento -t "Update Brunch" -c "Newer releases of brunch have an updated internal Grub, would you like to update the EFI partition?" "This is suggested for most users." -m "Yes" "No" "Back" "Exit" -s "Update Brunch's internal grub" "Continue without updating the internal grub" "Go back to the previous menu" "Exit the toolkit" -a
         case "$selection" in
             "Back") cd "$curdir" ; "main_menu_startup" ; return ;;
@@ -4131,7 +4161,7 @@ if [[ "$toolkit_mode" =~ "brunch" ]] ; then
    elif (( "$current_brunch_version" < "$latest_brunch_unstable_version" )) ; then
        unstable_update="true"
    else
-       unstable_update="true"
+       unstable_update="false"
    fi
 
    # check if ChromeOS is outdated
@@ -4187,9 +4217,9 @@ check_for_notifications(){
     if [[ "$stable_update" == "true" ]] ; then
     notify_content+=("Brunch Stable update avaliable!")
     fi
-    if [[ "$chromeos_update" == "true" ]] ; then
-    notify_content+=("ChromeOS update avaliable!")
-    fi
+    #if [[ "$chromeos_update" == "true" ]] ; then
+    #notify_content+=("ChromeOS update avaliable!")
+    #fi
     if [[ "$unstable_update" == "true" ]] && [[ "$get_unstable_updates" == "true" ]]; then
     notify_content+=("Brunch Unstable update avaliable!")
     fi
