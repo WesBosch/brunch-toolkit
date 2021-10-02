@@ -3405,7 +3405,7 @@ select_dst(){
         case "$selection" in
                 "Exit") exit 0 ;;
                 "Back") install_brunch_sub ; return ;;
-                *) selected_dst=$(echo "$selection" | awk '{print $1}') ; select_size ; return ;;
+                *) selected_dst=$(echo "$selection" | awk '{print $1}') ; selected_dst="/dev/$selected_dst" ; select_size ; return ;;
         esac
     fi
 }
