@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly toolkitversion="v3.0.2"
+readonly toolkitversion="v3.0.3"
 readonly discordinvite="https://discord.gg/x2EgK2M"
 
 #<~> Brunch Config Variables (Kernels, Framework options, etc)
@@ -2090,11 +2090,11 @@ set_main_menu_options(){
         main_menu_options_subs+=("Check for Updates to Brunch or the Toolkit")
     fi
     # only show update option if an update is actually avaliable
-    if [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$stable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
+    if [[ "$onlineallowed" == "true" ]] && [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$stable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
         main_menu_options+=("Update Brunch")
         main_menu_options_subs+=("Update Brunch to the latest release")
     fi
-    if [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$unstable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
+    if [[ "$onlineallowed" == "true" ]] && [[ "$toolkit_mode" =~ "brunch" ]] && [[ "$unstable_update" == "true" ]] && [[ ! "$update_complete" == "true" ]] ; then
         main_menu_options+=("Update Brunch Unstable")
         main_menu_options_subs+=("Update Brunch to the latest unstable release")
     fi
@@ -3405,7 +3405,7 @@ select_dst(){
         case "$selection" in
                 "Exit") exit 0 ;;
                 "Back") install_brunch_sub ; return ;;
-                *) selected_dst=$(echo "$selection" | awk '{print $1}') ; selected_dst="/dev/$selected_dst" ; select_size ; return ;;
+                *) selected_dst=$(echo "$selection" | awk '{print $1}') ; select_size ; return ;;
         esac
     fi
 }
@@ -3664,7 +3664,7 @@ if [[ -n "${bootscript[@]}" ]] ; then
     bootscript+=("Remove Bootscript")
     bootscript_sub+=("Uninstall script file")
         bootscript+=("Edit Bootscript")
-        bootscript_sub+=("Edit script file in $EDITOR")
+        bootscript_sub+=("Edit script file in $brunch_editor")
 fi
     bootscript+=("Install Bootscript")
     bootscript_sub+=("Install script file")
@@ -3703,16 +3703,29 @@ edit_bootscript(){
         if [[ -z "${bootscript[@]}" ]] ; then
             bootscript_menu
         fi
-    bento -t "Bootscript Menu" -c "Select a bootscript to edit with $EDITOR" -m "${bootscript[@]}" "Back" "Exit" -s "${bootscript_sub[@]}" "Go back to the previous menu" "Exit the toolkit" -a
+
+        bootscript+=("div")
+        bootscript_sub+=("div")
+        bootscript+=("Change editor (Currently $brunch_editor)")
+        bootscript_sub+=("Toggle which editor you'd like to use")
+    bento -t "Bootscript Menu" -c "Select a bootscript to edit with $brunch_editor" -m "${bootscript[@]}" "Back" "Exit" -s "${bootscript_sub[@]}" "Go back to the previous menu" "Exit the toolkit" -a
     case "$selection" in
             "Exit") exit 0 ;;
             "Back") bootscript_menu ;;
+            "Change editor (Currently $brunch_editor)")
+                                                    if [[ "$brunch_editor" == "nano" ]] ; then
+                                                        brunch_editor="vi"
+                                                    else
+                                                        brunch_editor="nano"
+                                                    fi
+                                                    sed -i "s/brunch_editor=.*/brunch_editor=$brunch_editor/" "$config_file"
+                                                    edit_bootscript ; return ;;
             *) edit_bootscript_sub ; edit_bootscript ; return ;;
     esac
 }
 
 edit_bootscript_sub(){
-    sudo "$EDITOR" /var/brunch/bootscripts/"$selection"
+    sudo "$brunch_editor" /var/brunch/bootscripts/"$selection"
 }
 
 remove_bootscript(){
@@ -3986,15 +3999,15 @@ done < <(find . -name "*runch_r*.tar.gz" -print0)
         "Exit") exit 0 ;;
         *) updatefile="$selection" ;;
     esac
-    if (( $latest_brunch_version > 20210620 )) ; then
-        bento -t "Update Brunch" -c "Newer releases of brunch have an updated internal Grub, would you like to update the EFI partition?" "This is suggested for most users." -m "Yes" "No" "Back" "Exit" -s "Update Brunch's internal grub" "Continue without updating the internal grub" "Go back to the previous menu" "Exit the toolkit" -a
-        case "$selection" in
-            "Back") cd "$curdir" ; "$previous_menu" ; return ;;
-            "Exit") exit 0 ;;
-            "Yes") update_internal_grub="true" ;;
-            "No") update_internal_grub="false" ;;
-        esac
-    fi
+#    if (( $latest_brunch_version > 20210620 )) ; then
+#        bento -t "Update Brunch" -c "Newer releases of brunch have an updated internal Grub, would you like to update the EFI partition?" "This is suggested for most users." -m "Yes" "No" "Back" "Exit" -s "Update Brunch's internal grub" "Continue without updating the internal grub" "Go back to the previous menu" "Exit the toolkit" -a
+#        case "$selection" in
+#            "Back") cd "$curdir" ; "$previous_menu" ; return ;;
+#            "Exit") exit 0 ;;
+#            "Yes") update_internal_grub="true" ;;
+#            "No") update_internal_grub="false" ;;
+#        esac
+#    fi
 
     bento -t "Update Brunch" -c "Now applying Brunch update, please wait..."
     # Call built in update command
@@ -4025,20 +4038,20 @@ automatic_brunch_update(){
         curl -L -O --progress-bar "$(curl -s https://api.github.com/repos/sebanc/$update_channel/releases/latest | grep 'browser_' | cut -d\" -f4)"
         updatefile="$(find *runch*tar.gz 2> /dev/null | sort -r | head -1 )"
     # Call built in update command
-        if [[ "$update_channel" == "brunch" ]] ; then
-            compare_string=$latest_brunch_version
-        else
-            compare_string=$latest_brunch_unstable_version
-        fi
-    if (( $compare_string > 20210620 )) ; then
-        bento -t "Update Brunch" -c "Newer releases of brunch have an updated internal Grub, would you like to update the EFI partition?" "This is suggested for most users." -m "Yes" "No" "Back" "Exit" -s "Update Brunch's internal grub" "Continue without updating the internal grub" "Go back to the previous menu" "Exit the toolkit" -a
-        case "$selection" in
-            "Back") cd "$curdir" ; "main_menu_startup" ; return ;;
-            "Exit") exit 0 ;;
-            "Yes") update_internal_grub="true" ;;
-            "No") update_internal_grub="false" ;;
-        esac
-    fi
+#        if [[ "$update_channel" == "brunch" ]] ; then
+#            compare_string=$latest_brunch_version
+#        else
+#            compare_string=$latest_brunch_unstable_version
+#        fi
+#    if (( $compare_string > 20210620 )) ; then
+#        bento -t "Update Brunch" -c "Newer releases of brunch have an updated internal Grub, would you like to update the EFI partition?" "This is suggested for most users." -m "Yes" "No" "Back" "Exit" -s "Update Brunch's internal grub" "Continue without updating the internal grub" "Go back to the previous menu" "Exit the toolkit" -a
+#        case "$selection" in
+#            "Back") cd "$curdir" ; "main_menu_startup" ; return ;;
+#            "Exit") exit 0 ;;
+#            "Yes") update_internal_grub="true" ;;
+#            "No") update_internal_grub="false" ;;
+#        esac
+#    fi
 
         bento -t "Update Brunch" -c "Now applying Brunch update, please wait..."
         if [[ "$update_internal_grub" == "true" ]] ; then
