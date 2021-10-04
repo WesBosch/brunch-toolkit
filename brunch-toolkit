@@ -4941,25 +4941,8 @@ check_for_announcements(){
 # Currently working on:
 
 toolkit_debug(){
- function test_unicode {
-  echo -ne "\xe2\x88\xb4\033[6n\033[1K\r"
-  read -d R foo
-  echo -ne "\033[1K\r"
-  echo -e "${foo}" | cut -d \[ -f 2 | cut -d";" -f 2 | (
-    read UNICODE
-    [ $UNICODE -eq 2 ] && return 0
-    [ $UNICODE -ne 2 ] && return 1
-  )
+bento -t "Debug" -c "Nothing to see here currently." -e
 }
-
-test_unicode
-RC=$?
-export UNICODE_SUPPORT=`[ $RC -eq 0 ] && echo "Unicode Supported" || echo "Unicode is not supported"`
-echo "$UNICODE_SUPPORT"
-echo "Examples: ↑ ↓ ⏎ ◆ ◯ ➤"
-unset test_unicode#!/bin/bash
-readonly toolkitversion="v2.9.1"
-readonly discordinvite="https://discord.gg/x2EgK2M"
 
 #</>
 preset_vars
