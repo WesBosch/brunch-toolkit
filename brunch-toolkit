@@ -1,5 +1,5 @@
 #!/bin/bash
-readonly toolkitversion="v3.0.4"
+readonly toolkitversion="v3.0.5"
 readonly discordinvite="https://discord.gg/x2EgK2M"
 
 #<~> Brunch Config Variables (Kernels, Framework options, etc)
@@ -3057,6 +3057,9 @@ retry_value=
 check_for_all_cba(){
     bento -c "Checking zip contents, please wait..."
     valid_cba=
+    if [[ -z "attempts" ]] ; then
+        attempts=0
+    fi
     for i in {1..9} ; do
         if [[ ! "$valid_cba" == "false" ]] ; then
             ls ~/tmp/brunch-image_converter/boot_splash_frame0$i.png 2> /dev/null || valid_cba="false"
@@ -3067,11 +3070,19 @@ check_for_all_cba(){
         ls ~/tmp/brunch-image_converter/boot_splash_frame$i.png 2> /dev/null || valid_cba="false"
         fi
     done
-    if [[ "$valid_cba" == "false" ]] ; then
-        bento -c "This zip archive does not contain a valid ChromeOS Boot Animation" "A valid ChromeOS Boot Animation should contain 13 pngs named as follows:" "" "boot_splash_frame01.png through boot_splash-frame13.png" -e
-        cd "$curdir"
-        rm -rf ~/tmp/brunch-image_converter/*
-        boot_anim_installer
+    if [[ "$valid_cba" == "false" ]] && [[ "$attempts" != "3" ]]; then
+        bento -c "This zip archive does not contain a valid ChromeOS Boot Animation" "A valid ChromeOS Boot Animation should contain 13 pngs named as follows:" "" "boot_splash_frame01.png through boot_splash-frame13.png" -m "Validate again" "Back" "Exit"" -s "Attempt to check the workspace again." "Returns to the previous menu." "Exit"   
+  case "$selection" in
+    "Validate again") attempts=$((attempts+1)) ; check_for_all_cba ; return ;;
+    "Back") attempts=0 ; cd "$curdir" ; rm -rf ~/tmp/brunch-image_converter/* ; boot_anim_installer ; return ;;
+    "Exit") attempts=0 ; cd "$curdir" ; rm -rf ~/tmp/brunch-image_converter/* ; exit 0 ;;
+  esac
+    elif [[ "$valid_cba" == "false" ]] && [[ "$attempts" == "3" ]]; then
+        bento -c "This zip archive does not contain a valid ChromeOS Boot Animation" "A valid ChromeOS Boot Animation should contain 13 pngs named as follows:" "" "boot_splash_frame01.png through boot_splash-frame13.png" -m "Back" "Exit"" -s "Returns to the previous menu." "Exit"   
+  case "$selection" in
+    "Back") attempts=0 ; cd "$curdir" ; rm -rf ~/tmp/brunch-image_converter/* ; boot_anim_installer ; return ;;
+    "Exit") attempts=0 ; cd "$curdir" ; rm -rf ~/tmp/brunch-image_converter/* ; exit 0 ;;
+  esac
     else
         source_img=$(ls ~/tmp/brunch-image_converter/boot_splash_frame01.png 2> /dev/null)
     fi
