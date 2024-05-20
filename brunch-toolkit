@@ -3428,7 +3428,7 @@ select_size(){
     previous_menu="install_brunch_sub"
     unmount_target
     mount_target
-    avaliable_space=$(df -BG ~/tmpmount | awk 'NR==2 {print $4}')
+    avaliable_space=$(df -BG ~/tmpmount | awk 'NR==2 {print $4-1}')
     unmount_target
     if [[ -n "$avaliable_space" ]] ; then
     avaliable_space=$(echo "${avaliable_space%.*}" | sed 's/G//')
