@@ -1846,6 +1846,18 @@ dependency_installer(){
             command -v gcc >/dev/null 2>&1 || needed_programs_arch+=("base-devel")
             command -v cgpt >/dev/null 2>&1 || need_vboot_utils="true"
 
+	    # AUR_HELPER
+	    if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
+		git clone --depth 1 https://aur.archlinux.org/yay.git
+		cd yay
+		yes | makepkg -si --noconfirm
+        	AUR_HELPER=yay
+	    elif command -v paru &>/dev/null; then
+		AUR_HELPER=paru
+	    else
+		AUR_HELPER=yay
+	    fi
+
         bento -t "Additional Dependencies" -c "Please wait while the toolkit installs dependencies." "Your password may be required for sudo."
 
         # use pacman for most of these, set a failed var if something goes wrong.
