@@ -1888,7 +1888,7 @@ select_a_recovery(){
     clear
     bento -n -t "Select a Recovery" -c "Fetching recoveries,  please wait..."
     if [[ "$detected_recovery" == "unsupported" ]] ; then
-    suggested_recoveries=("Rammus" "Volteer" "Grunt" "Zork")
+    suggested_recoveries=("rammus" "volteer" "grunt" "zork")
     else
     get_chrome_recoveries=($(curl https://cros-updates-serving.appspot.com/ | grep 'id="' | cut -d\" -f2 | sed -e s/cros-updates/remove-this/))
     fi
@@ -1922,7 +1922,7 @@ select_a_recovery(){
             current_page="1"
         long_recovery_menu
     else
-         allrecoveries=("Rammus" "Volteer" "Grunt" "Zork")
+         allrecoveries=("rammus" "volteer" "grunt" "zork")
          clear
          bento -t "Select a Recovery" -c "Please select which option you'd like to save as your preferred recovery." -m "${allrecoveries[@]}" div "Back" "Exit" -a -s "${allrecoveries[@]}" div "Go back to the previous page" "Exit without saving"
          case "$selection" in
@@ -2024,7 +2024,7 @@ quietamdcpu(){
 
 quietintelcpu(){
         newcpu=$(cat /proc/cpuinfo  | sed -e "s/G//g" | grep "i[3|5|7|9]-1[0-1][0-9][0-9][0-9]")
-        oldcpu=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/Rammus is suggested./g')
+        oldcpu=$(grep -Ewo 'sse4_2' /proc/cpuinfo  | sort | uniq | sed -e 's/sse4_2/rammus is suggested./g')
         if [ -z "$oldcpu" ] ; then
             detected_recovery="unsupported"
         elif [ -n "$oldcpu" ] && [ -z "$newcpu" ] ; then
