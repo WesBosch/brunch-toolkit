@@ -1295,8 +1295,11 @@ if [[ -n "$DOWNLOADS" ]] ; then
     downloads="$DOWNLOADS"
 elif [[ "$toolkit_mode" =~ "wsl" ]] ; then
     downloads=$(wslpath $(cmd.exe /C "echo %USERPROFILE%/Downloads"))
-else
+elif [[ -n "$HOME/Downloads" ]] ; then
     downloads="$HOME/Downloads"
+else
+    downloads="~/tmp/brunch-downloads"
+    mkdir -p $downloads
 fi
 
 }
