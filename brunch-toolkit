@@ -1844,7 +1844,8 @@ dependency_installer(){
             command -v sed >/dev/null 2>&1 || needed_programs_arch+=("sed")
             command -v patch >/dev/null 2>&1 || needed_programs_arch+=("patch")
             command -v gcc >/dev/null 2>&1 || needed_programs_arch+=("base-devel")
-            command -v cgpt >/dev/null 2>&1 || need_vboot_utils="true"
+            command -v cgpt >/dev/null 2>&1 || need_cgpt="true"
+            command -v rootdev >/dev/null 2>&1 || need_rootdev="true"
 
 	    # AUR_HELPER
 	    if ! command -v yay &>/dev/null && ! command -v paru &>/dev/null; then
@@ -1862,17 +1863,12 @@ dependency_installer(){
 
         # use pacman for most of these, set a failed var if something goes wrong.
         sudo pacman -Syu "${needed_programs_arch[*]}" || dep_installation_failed="true"
-        # build trousers and vboot-utils for cgpt, including workaround from Sebanc
-            if [[ "$need_vboot_utils" == "true" ]] ; then
-                git clone https://aur.archlinux.org/trousers.git
-                cd trousers
-                yes | makepkg -si
-                cd ..
-                git clone https://aur.archlinux.org/vboot-utils.git
-                cd vboot-utils
-                sed -i "s@cd vboot_reference@cd vboot_reference\n  sed -i 's/-Werror//g' Makefile@g" PKGBUILD
-                yes | makepkg -si
-                cd ..
+        # cgpt-bin and rootdev install
+            if [[ "$need_cgpt" == "true" ]] ; then
+		yes | $AUR_HELPER -S cgpt-bin --needed
+	    fi
+            if [[ "$need_rootdev" == "true" ]] ; then
+		yes | $AUR_HELPER -S chromeos-rootdev-git --needed
             fi
     fi
     if [[ "$dep_installation_failed" == "true" ]] ; then
