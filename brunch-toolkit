@@ -3491,8 +3491,8 @@ automatic_chromeos_download(){
                 mkdir -p ~/tmp/brunch-workspace
                 curdir=$(pwd)
                 cd ~/tmp/brunch-workspace
-                chrome_url=$(curl -s https://cros.tech/device/$selected_recovery | tr ' ' '\n' | tr '>' '\n' | grep href= | sed 's/"//g' | sed 's/href=//g' | tail -1)
-                chrome_url_vers=$(curl -s https://cros.tech/device/$selected_recovery | tr ' ' '\n' | tr '>' '\n' | sed 's/"//g' | sed 's/href=//g' | grep '</span' | sed 's/<\/span//g' | tail -1)
+                chrome_url=$(curl -sL https://cros.tech/device/$selected_recovery | tr ' ' '\n' | tr '>' '\n' | grep href=\"https:// | sed 's/"//g' | sed 's/href=//g' | tail -1)
+		chrome_url_vers=$(curl -sL https://cros.tech/device/$selected_recovery | tr ' ' '\n' | tr '>' '\n' | sed 's/"//g' | sed 's/href=//g'|sed 's|</a||g' |grep "$chrome_url" -A1|tail -n 1)
                 bento -t "Install Brunch" -c "Downloading the latest ${selected_recovery^} $chrome_url_vers recovery, please wait..."
                 curl -L -O --progress-bar "$chrome_url"
                 updatefile="$(find *$selected_recovery*bin.zip 2> /dev/null | sort -r | head -1 )"
