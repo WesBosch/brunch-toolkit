@@ -3463,7 +3463,7 @@ select_size(){
 
 mount_target(){
     mkdir -p ~/tmpmount
-    sudo mount "$selected_dst" ~/tmpmount
+    sudo mount "/dev/$selected_dst" ~/tmpmount
 }
 
 unmount_target(){
