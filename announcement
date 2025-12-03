@@ -1,6 +1,6 @@
 #!/bin/bash
 # This is the Brunch Toolkit Announcement script
-announcement=("Currently there is a known issue with installations from Linux." "If you are unable to install Brunch using the toolkit, please follow the steps to install manually from the Brunch github" "https://github.com/sebanc/brunch" )
-announcement_ver="1"
-# Previous Announcement Number: 0
+announcement=("The project has not been updated in a long time, and I do not have the time or resources to maintain it." "Please do not use this toolkit, I cannot guarantee that it won't mess up your system." "PRs are welcome." )
+announcement_ver="2"
+# Previous Announcement Number: 1
 # Don't repeat announcement numbers to ensure important updates are not missed
