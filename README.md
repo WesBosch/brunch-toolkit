@@ -1,3 +1,10 @@
+# Attention! 
+This toolkit is not currently being maintained, and is not expected to work properly with changes that have been made to ChromeOS over the last several years. I am leaving this repo here for archival purposes but you really shouldn't use this program anymore. 
+
+- Peace, Love, and all of the above
+  Wisteria
+
+
 # Brunch Toolkit
 Stable release channel for the Brunch Toolkit
 
